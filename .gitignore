@@ -1,0 +1,17 @@
+# Rust
+/target/
+
+# Node / Vite
+node_modules/
+/frontend/dist/
+
+# Local data and secrets
+*.db
+*.db-shm
+*.db-wal
+.env
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
