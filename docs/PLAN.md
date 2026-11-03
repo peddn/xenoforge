@@ -185,9 +185,34 @@ Wo der Wurf eine Entscheidung braucht, hält die Engine an und fragt die richtig
 - **Stress sinkt** pro vollem Turn Ruhe in sicherer Umgebung, auf 0 nach einer ungestörten Schicht Ruhe (F-16), einmal pro Akt bzw. Sitzung über das Signature Item, durch Medikamente und Talente. Blockiert wird das durch Zustände wie Starving oder Freezing, Traumata und laufenden Raumkampf [S. 104, 106–107, 193].
 - **Trauma-Prüfung:** Wer in einer Sitzung 13 oder mehr gewürfelt hat, wird beim Sitzungsabschluss automatisch zur EMPATHY-Probe aufgefordert. Misslingt sie, würfelt die App das Trauma auf der W6-Tabelle aus (Festlegung in Abschnitt 2) [S. 101, 104].
 
-### 4.4 Effekte mit Dauer
+### 4.4 Effekt-System
 
-Vieles im Spiel ist ein Modifikator mit Ablaufzeit: Tremble bis die Panik endet, kritische Verletzungen bis zur Heilung, Bier −1 auf WITS für eine Schicht, Naproleve-Überdosis bis Schichtende. Die Engine führt das als **Effekte** am Charakter: Quelle, betroffene Proben, Wert, Ende (Runde, Turn, Schicht, Tag, Ereignis oder manuell). Der Wurfdialog zeigt alle aktiven Effekte an, und sie laufen mit den Zeitschritten ab (9.1).
+Verletzungen, Schiffsschäden, Ausrüstung, Talente, Zustände, Panik und Kreaturen wirken alle über ein gemeinsames Effekt-System. Kein Modul bekommt eine eigene Logik dafür. Das System ist das Rückgrat der Regel-Engine und entsteht in Phase 1.
+
+Die Ideen stammen aus Spielen mit ähnlichem Problem: Effektarten und zustandsbasierte Prüfungen aus den [Comprehensive Rules von Magic](https://media.wizards.com/2026/downloads/MagicCompRules%2020260619.pdf) (Regeln 603, 614, 704), Neuberechnen statt Überschreiben und eine Ereigniswarteschlange wie bei Hearthstone, Dauerarten und Zustandsmarkierungen wie im [Gameplay Ability System der Unreal Engine](https://github.com/tranek/gasdocumentation). Übernommen werden die Ideen, nicht die volle Maschinerie: Das Grundregelwerk hat grob gezählt 350 bis 400 Einträge mit Wirkung.
+
+**Grundsätze**
+
+1. **Grundwerte werden nie verändert.** Der wirksame Wert entsteht jedes Mal aus Grundwert und aktiven Effekten. Endet ein Effekt, etwa durch Heilung oder Reparatur, stimmt der Wert von selbst.
+2. **Jeder Effekt kennt Quelle, Ziel, Dauer und Sichtbarkeit.** So erklärt die App jeden Wert, etwa „MOBILITY −2 durch Broken ribs (Verletzung 33), noch 4 Tage“, im Wurfdialog wie im Lagebild (3.1).
+3. **Ein kleiner, fester Wortschatz als Daten, Sonderfälle als Funktionen.** Häufige Muster stehen als Daten in `data/`. Einmalige Dinge wie Face Grapple mit Final Embrace oder Acid Splash sind benannte Funktionen in Rust, auf die die Daten verweisen. Eine eigene Skriptsprache gibt es nicht.
+4. **Ereignisse lösen Effekte aus, danach folgt die zustandsbasierte Prüfung.** Ereignisse sind etwa „Schaden erlitten“, „Probe gewürfelt“ oder „Turn weiter“. Ausgelöste Effekte laufen über eine Warteschlange, damit Ketten wie Scream mit weiteren Panic Rolls sauber nacheinander ablaufen. Nach jedem Befehl prüft die Engine Zustände: Health 0 heißt Broken, Schiffsschaden ab Hull heißt Disabled, Broken beendet Panik [S. 98, 104, 197].
+5. **Eine Reihenfolge gibt es nur, wo das Buch sie vorgibt.** Modifikationen werden addiert, ein negativer Überhang frisst Stresswürfel [S. 62]; Armor Piercing kommt vor U-238 [S. 123]. Diese Fälle stehen fest im Code.
+
+**Effektarten**
+
+| Art | Beispiele aus dem Buch |
+| --- | --- |
+| Modifikator | Broken ribs: MOBILITY −2 [S. 100]. Bier: WITS −1 für eine Schicht [S. 139]. Instrumente: −1 auf Proben mit Schiffssystemen [S. 198, F-11] |
+| Sperre oder Änderung einer Aktion | „Kann nicht rennen“, „Rennen wird langsam“ [S. 100]; „kein Dock“ [S. 198] |
+| Auslöser bei einer Handlung | Schwerkraft aus: Rennen verlangt eine MOBILITY-Probe [S. 198]. Crotch hit: jede MOBILITY- oder CLOSE-COMBAT-Probe kostet 1 Schaden [S. 100] |
+| Wiederkehrend an Zeitschritten | Strahlung pro Turn [S. 110], Dehydrated pro Schicht [S. 106], Säure pro Runde [S. 298] |
+| Ersetzung („statt“) | Rüstung senkt Schaden [S. 98]. Panik ab 10 ersetzt die Aktion [S. 104]. Overkill, The Long Haul [S. 74, 76] |
+| Zustand (bündelt Effekte) | Broken, liegt, Freezing, Panik, gepackt |
+| Fähigkeit eines Bauteils | Docking Umbilical ermöglicht Dock; Science Lab gibt +2 auf Analysis [S. 171, 193] |
+| Hinweis | Bordsprechanlage aus: Sprechen nur im selben Bereich (7.4) |
+
+Jeder Effekt hat eine Dauer: sofort, bis zum nächsten Schritt einer Einheit (Runde, Turn, Schicht, Tag), bis zu einem Ereignis (Panik endet, geheilt, repariert) oder dauerhaft. Er läuft mit den Zeitschritten ab (9.1). Der Wurfdialog zeigt alle aktiven Effekte mit Quelle. Grob geschätzt passen 80 bis 90 % der Einträge in diese Arten; der Rest sind vor allem besondere Kreaturenangriffe.
 
 ## 5. Charaktermanager
 
@@ -614,6 +639,7 @@ Das Modell trennt **Regeldaten** aus dem Buch, die versioniert im Repo liegen un
 | Schiffssysteme und Schäden | Katalog der Systeme; jeder Eintrag der beiden Schadenstabellen mit System, Bedingung, Wirkung, Stufe (AUTO, HINWEIS, INFO) und Reparaturproben; Funktionen von Science Lab und Tractor Hitch (F-15) |
 | Szenarien | Vorgefertigte Charaktere und NSC für Hope's Last Day |
 | Regelentscheidungen | Katalog der Widersprüche und Lücken mit Standard und Alternative |
+| Effekte | Ein gemeinsames Format für alle Wirkungen (4.4): Art, Ziel, Wert, Bedingung, Dauer, Sichtbarkeit, Stufe (AUTO, HINWEIS, INFO), Quelle mit Seite; bei Sonderfällen der Name der Rust-Funktion |
 
 ### 10.2 Spieldaten
 
@@ -725,8 +751,8 @@ Ich schlage sieben Phasen vor, jede mit einer Abnahme, meist einer Testsitzung m
 
 ```mermaid
 flowchart TD
-    p0["Phase 0 · Fundament<br/>Cargo-Workspace, Vite-Projekt, CI,<br/>Regeldaten mit Schema, Errata und Festlegungen<br/>Abnahme: alle Regeldaten bestehen die Prüfung"]
-    p1["Phase 1 · Regel-Engine<br/>Alle Wurfarten, Push, Stress, Paniktabellen,<br/>Modifikationen, Effekte mit Dauer<br/>Abnahme: alle Buchbeispiele als Tests grün"]
+    p0["Phase 0 · Fundament<br/>Cargo-Workspace, Vite-Projekt, CI,<br/>Regeldaten mit Schema inkl. Effektformat,<br/>Errata und Festlegungen<br/>Abnahme: alle Regeldaten bestehen die Prüfung"]
+    p1["Phase 1 · Regel-Engine<br/>Alle Wurfarten, Push, Stress, Paniktabellen,<br/>Effekt-System mit Ereignissen und Zustandsprüfung<br/>Abnahme: alle Buchbeispiele und ihre Effekte als Tests grün"]
     p2["Phase 2 · Teams und Charaktere<br/>Konten, Teams, Rollen, Echtzeit, Protokoll, Würfeln;<br/>alle Erschaffungswege, Bogen, Ausrüstung;<br/>Terminal-Design als Grundlage aller Seiten<br/>Abnahme: erste Testsitzung mit Proben"]
     p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Turn- und Runden-Phasen<br/>Abnahme: Hope's Last Day komplett spielbar"]
     p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Story Points<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
