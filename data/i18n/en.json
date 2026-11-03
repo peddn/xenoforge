@@ -46,7 +46,7 @@
   "flee.hint": "Flees and stays in the safe place: no attacks, nothing dangerous, no retreat roll.",
   "berserk.name": "Berserk",
   "berserk.desc": "Attacks the nearest person or creature at once, friend or foe. Friendly characters who witness it make a Panic Roll at once.",
-  "berserk.hint": "Attacks the nearest person or creature and only stops once one side is Broken.",
+  "berserk.hint": "Attacks the nearest person or creature and only stops once they or the target is Broken.",
   "catatonic.name": "Catatonic",
   "catatonic.desc": "Collapses; can neither talk nor move.",
   "catatonic.hint": "Lies on the floor, does not talk, does not move.",
@@ -91,7 +91,7 @@
   "life_support.name": "Life Support",
   "artificial_gravity_malfunction.name": "Artificial Gravity Malfunction",
   "artificial_gravity_malfunction.desc": "Running needs a MOBILITY roll.",
-  "artificial_gravity_malfunction.run_failed": "MOBILITY failed: the run does not work out. The GM decides what happens.",
+  "artificial_gravity_malfunction.run_failed": "MOBILITY roll failed. The book does not say what happens then; the GM decides.",
   "coffee_maker_malfunction.name": "Coffee Maker Malfunction",
   "coffee_maker_malfunction.desc": "The galley's coffee maker is out of order.",
   "coffee_maker_malfunction.hint": "No coffee aboard.",
@@ -143,5 +143,8 @@
   "F-16.full_recovery": "Stress 0 and full Health if undisturbed",
   "F-17.name": "Nightmares trauma",
   "F-17.as_printed": "Nightmare on a successful roll (as printed)",
-  "F-17.on_fail": "Nightmare on a failed roll"
+  "F-17.on_fail": "Nightmare on a failed roll",
+  "F-18.name": "Life support offline: which suit protects",
+  "F-18.vacuum_suits": "Any suit that protects in a vacuum",
+  "F-18.pressure_suit_only": "Only the IRC Mk.35 Pressure Suit"
 }

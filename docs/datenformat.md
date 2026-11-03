@@ -48,7 +48,7 @@ Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editore
 
 ### Würfelbereiche
 
-`roll` ist `{ "from": 16, "to": 16 }`. Ohne `to` ist der Bereich nach oben offen (Panik 15+). Auf D66-Tabellen sind beide Enden D66-Ergebnisse. Die Prüfung verlangt bei der Paniktabelle Lückenlosigkeit ab 1 und ein offenes Ende, bei Schadenstabellen gültige Würfe ohne Überschneidung.
+`roll` ist `{ "from": 16, "to": 16 }`. Ohne `to` ist der Bereich nach oben offen (Panik 15+). Auf D66-Tabellen sind beide Enden D66-Ergebnisse. Die Prüfung verlangt bei der Paniktabelle Lückenlosigkeit ab 1 und ein offenes Ende, bei Schadenstabellen gültige Würfe ohne Überschneidung. Ein Panikwurf unter 1 (möglich mit Nerves of Steel) zählt zum ersten Bereich, denn weniger als „keine Wirkung“ gibt es nicht.
 
 ### Heilung
 

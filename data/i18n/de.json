@@ -46,7 +46,7 @@
   "flee.hint": "Flieht und bleibt am sicheren Ort: keine Angriffe, nichts Gefährliches, kein Rückzugswurf.",
   "berserk.name": "Berserker",
   "berserk.desc": "Greift sofort die nächste Person oder Kreatur an, egal ob Freund oder Feind. Befreundete Figuren, die zusehen, machen sofort einen Panikwurf.",
-  "berserk.hint": "Greift die nächste Person oder Kreatur an und hört erst auf, wenn eine Seite Broken ist.",
+  "berserk.hint": "Greift die nächste Person oder Kreatur an und hört erst auf, wenn sie selbst oder das Ziel Broken ist.",
   "catatonic.name": "Katatonie",
   "catatonic.desc": "Bricht zusammen; kann weder sprechen noch sich bewegen.",
   "catatonic.hint": "Liegt am Boden, spricht nicht, bewegt sich nicht.",
@@ -91,7 +91,7 @@
   "life_support.name": "Lebenserhaltung",
   "artificial_gravity_malfunction.name": "Störung der künstlichen Schwerkraft",
   "artificial_gravity_malfunction.desc": "Wer rennen will, braucht eine BEWEGLICHKEIT-Probe.",
-  "artificial_gravity_malfunction.run_failed": "BEWEGLICHKEIT misslungen: Das Rennen klappt nicht. Die Spielleitung entscheidet über die Folgen.",
+  "artificial_gravity_malfunction.run_failed": "BEWEGLICHKEIT-Probe misslungen. Was dann passiert, lässt das Buch offen; die Spielleitung entscheidet.",
   "coffee_maker_malfunction.name": "Kaffeemaschine defekt",
   "coffee_maker_malfunction.desc": "Die Kaffeemaschine in der Kombüse ist außer Betrieb.",
   "coffee_maker_malfunction.hint": "Kein Kaffee an Bord.",
@@ -143,5 +143,8 @@
   "F-16.full_recovery": "Stress 0 und volle Health, wenn ungestört",
   "F-17.name": "Trauma Albträume",
   "F-17.as_printed": "Albtraum bei gelungener Probe (wie gedruckt)",
-  "F-17.on_fail": "Albtraum bei misslungener Probe"
+  "F-17.on_fail": "Albtraum bei misslungener Probe",
+  "F-18.name": "Lebenserhaltung ausgefallen: welcher Anzug schützt",
+  "F-18.vacuum_suits": "Jeder Anzug, der im Vakuum schützt",
+  "F-18.pressure_suit_only": "Nur der IRC Mk.35 Pressure Suit"
 }
