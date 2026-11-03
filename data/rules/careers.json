@@ -1,0 +1,14 @@
+{
+  "$schema": "../schema/careers.schema.json",
+  "entries": [
+    { "id": "colonial_marine", "page": 39, "key_attribute": "strength" },
+    { "id": "colonial_marshal", "page": 41, "key_attribute": "wits" },
+    { "id": "company_agent", "page": 43, "key_attribute": "wits" },
+    { "id": "kid", "page": 45, "key_attribute": "agility" },
+    { "id": "medic", "page": 47, "key_attribute": "empathy" },
+    { "id": "officer", "page": 49, "key_attribute": "empathy" },
+    { "id": "pilot", "page": 51, "key_attribute": "agility" },
+    { "id": "roughneck", "page": 53, "key_attribute": "strength" },
+    { "id": "scientist", "page": 55, "key_attribute": "wits" }
+  ]
+}

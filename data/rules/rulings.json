@@ -1,0 +1,23 @@
+{
+  "$schema": "../schema/rulings.schema.json",
+  "entries": [
+    { "id": "F-01", "pages": [104], "options": ["on_fail"], "default": "on_fail" },
+    { "id": "F-02", "pages": [198], "options": ["double", "halve"], "default": "double" },
+    { "id": "F-03", "pages": [291], "options": ["plus_per_success", "base_only"], "default": "plus_per_success" },
+    { "id": "F-04", "pages": [190, 196], "options": ["transponder_replaces_lock", "always_lock"], "default": "transponder_replaces_lock" },
+    { "id": "F-05", "pages": [196], "options": ["no_evade"], "default": "no_evade" },
+    { "id": "F-06", "pages": [61, 389], "options": ["cinematic_one_per_skill_roll"], "default": "cinematic_one_per_skill_roll" },
+    { "id": "F-07", "pages": [99], "options": ["merciless"], "default": "merciless" },
+    { "id": "F-08", "pages": [88, 113], "options": ["slow", "fast"], "default": "slow" },
+    { "id": "F-09", "pages": [34, 78], "options": ["cap_then_minus", "minus_then_cap"], "default": "cap_then_minus" },
+    { "id": "F-10", "pages": [83, 95], "options": ["one_light_level"], "default": "one_light_level" },
+    { "id": "F-11", "pages": [198], "options": ["ship_systems_only", "all_rolls_aboard"], "default": "ship_systems_only" },
+    { "id": "F-12", "pages": [198], "options": ["suffocation_after_shift"], "default": "suffocation_after_shift" },
+    { "id": "F-13", "pages": [199], "options": ["no_pilot_actions", "no_pilot_or_sensor_actions"], "default": "no_pilot_actions" },
+    { "id": "F-14", "pages": [197], "options": ["reroll_major"], "default": "reroll_major" },
+    { "id": "F-15", "pages": [171], "options": ["own_function_only"], "default": "own_function_only" },
+    { "id": "F-16", "pages": [98, 104, 106], "options": ["full_recovery"], "default": "full_recovery" },
+    { "id": "F-17", "pages": [101], "options": ["as_printed", "on_fail"], "default": "as_printed" },
+    { "id": "F-18", "pages": [198, 128], "options": ["vacuum_suits", "pressure_suit_only"], "default": "vacuum_suits" }
+  ]
+}

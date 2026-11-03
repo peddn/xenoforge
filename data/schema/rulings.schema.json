@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataFile",
+  "description": "A file in `data/rules`.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "description": "Path to the JSON Schema of this file, for editors.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Ruling"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "entries"
+  ],
+  "$defs": {
+    "Ruling": {
+      "description": "A ruling from `docs/rules/00-errata-und-festlegungen.md`. The game\nmaster can switch between its options per team.",
+      "type": "object",
+      "properties": {
+        "default": {
+          "type": "string"
+        },
+        "id": {
+          "description": "`F-NN`, as in the catalog.",
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint16",
+            "maximum": 65535,
+            "minimum": 0
+          }
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "pages",
+        "options",
+        "default"
+      ]
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "$schema": "../schema/traumas.schema.json",
+  "entries": [
+    {
+      "id": "phobia",
+      "page": 101,
+      "d6": 1,
+      "effects": [
+        { "kind": "hint", "text": "phobia.hint", "tier": "hint" }
+      ]
+    },
+    {
+      "id": "alcoholism",
+      "page": 101,
+      "d6": 2,
+      "effects": [
+        {
+          "kind": "periodic",
+          "every": { "step": "shift" },
+          "then": [
+            { "op": "ask", "question": "alcoholism.question", "on_no": [{ "op": "stress", "delta": 1 }] }
+          ]
+        },
+        { "kind": "hint", "text": "alcoholism.hint", "tier": "hint" }
+      ]
+    },
+    {
+      "id": "nightmares",
+      "page": 101,
+      "d6": 3,
+      "effects": [
+        {
+          "kind": "trigger",
+          "on": "sleep",
+          "then": [
+            {
+              "op": "roll",
+              "roll": { "attribute": "empathy" },
+              "on_success": [
+                { "op": "stress", "delta": 1 },
+                { "op": "block", "blocks": "stress_relief", "lasts": { "steps": { "unit": "day", "count": 1 } } }
+              ]
+            }
+          ]
+        }
+      ],
+      "ruling": {
+        "id": "F-17",
+        "alternatives": {
+          "on_fail": [
+            {
+              "kind": "trigger",
+              "on": "sleep",
+              "then": [
+                {
+                  "op": "roll",
+                  "roll": { "attribute": "empathy" },
+                  "on_fail": [
+                    { "op": "stress", "delta": 1 },
+                    { "op": "block", "blocks": "stress_relief", "lasts": { "steps": { "unit": "day", "count": 1 } } }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "depression",
+      "page": 101,
+      "d6": 4,
+      "effects": [
+        {
+          "kind": "periodic",
+          "every": { "step": "day" },
+          "then": [
+            {
+              "op": "roll",
+              "roll": { "attribute": "empathy" },
+              "on_fail": [
+                { "op": "stress", "delta": 1 },
+                { "op": "block", "blocks": "stress_relief", "lasts": { "until": "day_change" } }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drug_use",
+      "page": 101,
+      "d6": 5,
+      "effects": [
+        {
+          "kind": "periodic",
+          "every": { "step": "shift" },
+          "then": [
+            { "op": "ask", "question": "drug_use.question", "on_no": [{ "op": "stress", "delta": 1 }] }
+          ]
+        },
+        { "kind": "hint", "text": "drug_use.hint", "tier": "hint" }
+      ]
+    },
+    {
+      "id": "amnesia",
+      "page": 101,
+      "d6": 6,
+      "effects": [
+        { "kind": "hint", "text": "amnesia.hint", "tier": "hint" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "../schema/actions.schema.json",
+  "entries": [
+    { "id": "run", "page": 88, "kind": "fast" },
+    { "id": "dock", "page": 193, "kind": "space_pilot" }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataFile",
+  "description": "A file in `data/rules`.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "description": "Path to the JSON Schema of this file, for editors.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Action"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "entries"
+  ],
+  "$defs": {
+    "Action": {
+      "description": "An action that effects can block, grant or listen to.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ActionKind"
+        },
+        "page": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "page",
+        "kind"
+      ]
+    },
+    "ActionKind": {
+      "description": "When an action can be taken.",
+      "oneOf": [
+        {
+          "description": "Slow action in a Round [p. 88].",
+          "type": "string",
+          "const": "slow"
+        },
+        {
+          "description": "Fast action in a Round [p. 88].",
+          "type": "string",
+          "const": "fast"
+        },
+        {
+          "description": "Space combat, sensor phase [p. 192].",
+          "type": "string",
+          "const": "space_sensor"
+        },
+        {
+          "description": "Space combat, pilot phase [p. 192].",
+          "type": "string",
+          "const": "space_pilot"
+        },
+        {
+          "description": "Space combat, gunner phase [p. 192].",
+          "type": "string",
+          "const": "space_gunner"
+        },
+        {
+          "description": "Space combat, engineer phase [p. 192].",
+          "type": "string",
+          "const": "space_engineer"
+        }
+      ]
+    }
+  }
+}

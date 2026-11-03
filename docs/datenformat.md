@@ -1,0 +1,183 @@
+# Datenformat der Regeldaten
+
+Alle Regelwerte stehen in `data/`, nicht im Code. Dieses Dokument beschreibt das Format. Maßgeblich sind die Rust-Typen in `crates/engine/src/data/` (`model.rs` für die Einträge, `effects.rs` für Effekte und Operationen). Die JSON-Schemas in `data/schema/` werden daraus erzeugt und nie von Hand bearbeitet.
+
+```
+data/
+├─ rules/    eine JSON-Datei pro Regeltabelle
+├─ i18n/     Namen und Texte, de.json und en.json
+└─ schema/   erzeugte JSON-Schemas (für Editoren und zur Kontrolle)
+```
+
+Phase 0 enthält nur einen **Probesatz**: genug Einträge, um jedes Feld und jede Effektart einmal zu benutzen. Die vollständige Erfassung folgt mit den Phasen, die die Daten brauchen.
+
+## Dateien
+
+Jede Datei in `data/rules/` hat diese Form:
+
+```json
+{
+  "$schema": "../schema/skills.schema.json",
+  "entries": [
+    { "id": "mobility", "page": 58, "attribute": "agility" }
+  ]
+}
+```
+
+Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editoren wie VS Code prüfen und vervollständigen damit beim Tippen. Unbekannte Felder sind überall ein Fehler.
+
+| Datei | Inhalt | Wichtige Felder |
+| --- | --- | --- |
+| `attributes.json` | Attribute | – |
+| `careers.json` | Karrieren | `key_attribute` |
+| `skills.json` | Fertigkeiten | `attribute` |
+| `actions.json` | Aktionen, auf die Effekte verweisen | `kind`: `slow`, `fast`, `space_sensor`, `space_pilot`, `space_gunner`, `space_engineer` |
+| `panic.json` | Paniktabelle | `roll`, `cancels_action` (10+), `trauma_check` (13+), `on_apply`, `effects`, `lasts` |
+| `traumas.json` | Dauerhafte Traumata | `d6`, `effects`, `ruling` |
+| `critical-injuries.json` | Kritische Verletzungen | `d66`, `fatal`, `instant_death`, `healing`, `on_apply`, `effects` |
+| `conditions.json` | Zustände wie Freezing | `effects`, `ends` |
+| `talents.json` | Talente | `career` (fehlt bei allgemeinen Talenten), `effects` |
+| `ship-systems.json` | Kernkomponenten, Module, sonstige Systeme | `category`: `core`, `module`, `other`; `effects` |
+| `ship-damage.json` | Komponentenschäden | `table`: `minor`, `major`; `roll`, `system`, `repair`, `ruling`, `on_apply`, `effects` |
+| `rulings.json` | Festlegungen F-NN aus dem Katalog | `pages`, `options`, `default` |
+
+### Ids und Seiten
+
+- `id` ist über **alle** Dateien eindeutig, kleingeschrieben mit Unterstrichen (`sprained_ankle`). Festlegungen heißen wie im Katalog (`F-02`).
+- Jeder Eintrag nennt die Buchseite (`page`, bei Festlegungen `pages`), gedruckte Seitenzahl der 1. Auflage.
+
+### Würfelbereiche
+
+`roll` ist `{ "from": 16, "to": 16 }`. Ohne `to` ist der Bereich nach oben offen (Panik 15+). Auf D66-Tabellen sind beide Enden D66-Ergebnisse. Die Prüfung verlangt bei der Paniktabelle Lückenlosigkeit ab 1 und ein offenes Ende, bei Schadenstabellen gültige Würfe ohne Überschneidung. Ein Panikwurf unter 1 (möglich mit Nerves of Steel) zählt zum ersten Bereich, denn weniger als „keine Wirkung“ gibt es nicht.
+
+### Heilung
+
+`healing` bei kritischen Verletzungen: `"none"`, `{ "days_d6": 2 }` (2D6 Tage), `"until_medical_aid"` oder `"permanent"`. Daraus ergibt sich die Dauer der Effekte der Verletzung.
+
+## Texte
+
+Texte stehen in `data/i18n/de.json` und `en.json` als flache Schlüssel:
+
+- `<id>.name`: Name, Pflicht für jeden Eintrag.
+- `<id>.desc`: Kurzbeschreibung in eigenen Worten, freiwillig.
+- Weitere Schlüssel für Hinweise und Fragen beginnen mit der Id des Eintrags (`phobia.hint`, `alcoholism.question`).
+- Festlegungen: `F-NN.name` und ein Schlüssel je Option (`F-02.double`).
+
+Beide Sprachen haben genau dieselben Schlüssel. Ein Schlüssel, den kein Eintrag benutzt, ist ein Fehler. Keine Sätze aus dem Buch übernehmen, siehe [Werkzeug](#wortlaut-prüfen).
+
+## Effekte
+
+Ein **Effekt** wirkt, solange seine Quelle aktiv ist. Eine **Operation** (`op`) passiert einmal: beim Anwenden (`on_apply`) oder wenn ein Trigger oder ein periodischer Effekt auslöst. Die Grundidee steht im Plan, Abschnitt 4.4: Grundwerte werden nie verändert; Effekte liegen darüber und werden bei jeder Berechnung ausgewertet.
+
+Gemeinsame Felder aller Effekte:
+
+| Feld | Bedeutung | Standard |
+| --- | --- | --- |
+| `kind` | Effektart, siehe unten | Pflicht |
+| `target` | `bearer` (Träger der Quelle), `ship`, `aboard` (alle an Bord) | `bearer` |
+| `lasts` | Dauer, siehe unten | ergibt sich aus der Quelle |
+| `gm_only` | nur für die Spielleitung sichtbar | `false` |
+
+Die acht Effektarten:
+
+| `kind` | Wirkung | Felder | Beispiel |
+| --- | --- | --- | --- |
+| `modifier` | ändert Würfelpool oder Schiffswert | `applies_to` (`skills`, `based_on`, `rolls`, `ship_stats`), `change` (`add`, `multiply`, `divide`) | Tremble: −2 auf alles unter AGILITY |
+| `restriction` | verbietet etwas | `blocks`: `{ "action": "run" }`, `"stress_relief"`, `"health_recovery"` | Sprained ankle: kein Rennen |
+| `trigger` | Operationen bei einem Ereignis | `on`: `{ "skill_roll": [...] }`, `{ "action": "run" }`, `"sleep"`; `then` | Crotch hit: 1 Schaden bei jeder MOBILITY-Probe |
+| `periodic` | Operationen bei jedem Zeitschritt | `every`: `{ "step": "shift" }` oder `{ "by_cold": {...} }`; `then` | Alcoholism: Frage jede Schicht |
+| `replacement` | ersetzt ein Ergebnis („stattdessen“) | `replaces`, `with`, `uses`, `optional` | The Long Haul: Facehugger eines Wurfs ignorieren |
+| `condition` | legt einen Zustand an | `condition`, `cold`, `unless_wearing` | Life support offline: Freezing |
+| `capability` | ermöglicht eine Aktion | `grants` | Docking Umbilical: Andocken |
+| `hint` | Hinweis für die Spielleitung | `text`, `tier`: `hint` (handeln) oder `info` (ohne Spielfolge) | Intercoms disabled |
+
+Die Stufen AUTO, HINWEIS und INFO aus dem Plan (Abschnitt 7.4) ergeben sich daraus: Alle Effektarten außer `hint` wendet die App selbst an (AUTO), `hint` erscheint je nach `tier` als HINWEIS oder INFO.
+
+### Operationen
+
+| `op` | Wirkung | Felder |
+| --- | --- | --- |
+| `stress` | STRESS LEVEL ändern | `delta`, `who` |
+| `damage` | Schaden ohne Rüstung | `amount`, `who` |
+| `roll` | Probe würfeln und verzweigen | `roll`: `{ "skill": ... }` oder `{ "attribute": ... }`; `on_success`, `on_fail` |
+| `panic_roll` | Panikwurf | `who` |
+| `lose_next_action` | nächste Aktion entfällt | `action`: `slow` |
+| `drop_item` | Gegenstand fallen lassen | `chosen_by`: `gm` |
+| `block` | etwas für eine Weile verbieten | `blocks`, `lasts` |
+| `ask` | Ja/Nein-Frage an Spieler oder Spielleitung | `question`, `on_no` |
+| `hint` | Hinweis ins Protokoll | `text` |
+| `special` | benannte Funktion der Engine für Einzelfälle | `handler` |
+
+`who` ist `bearer` (Standard), `friendly_pcs_short_range`, `friendly_who_hear`, `friendly_who_see`, `friendly_who_witness` oder `aboard`. Die App kennt keine Positionen; Gruppen, die von Entfernung, Hören oder Sehen abhängen, schlägt sie vor und die Spielleitung bestätigt.
+
+`special` ist für Regeln, die sich mit dem Vokabular nicht sauber ausdrücken lassen. Jeder Name muss in der Engine existieren (`SPECIAL_HANDLERS`); in Phase 0 gibt es noch keinen.
+
+### Dauer
+
+`lasts` ist eines von:
+
+- `"instant"`: nur die einmaligen Operationen.
+- `{ "steps": { "unit": "round", "count": 1 } }`: Schritte einer Zeiteinheit (`round`, `turn`, `shift`, `day`).
+- `{ "until": "panic_stops" }`: bis zu einem Ereignis (`panic_stops`, `healed`, `medical_aid`, `repaired`, `warm`, `day_change`).
+- `"permanent"` oder `"while_source"`.
+
+Fehlt `lasts` an einem Effekt, gilt die Dauer der Quelle:
+
+| Quelle | Dauer |
+| --- | --- |
+| Panikergebnis | `lasts` des Ergebnisses |
+| Kritische Verletzung | aus `healing` |
+| Zustand | bis `ends` |
+| Schiffsschaden | bis repariert |
+| Talent, Trauma, Schiffssystem | solange die Quelle besteht |
+
+## Festlegungen
+
+Einträge mit einer umschaltbaren Festlegung tragen `ruling`:
+
+```json
+"effects": [ { "kind": "modifier", "applies_to": { "ship_stats": ["ftl_rating"] }, "change": { "multiply": 2 } } ],
+"ruling": {
+  "id": "F-02",
+  "alternatives": {
+    "halve": [ { "kind": "modifier", "applies_to": { "ship_stats": ["ftl_rating"] }, "change": { "divide": 2 } } ]
+  }
+}
+```
+
+Die eigenen `effects` gelten für die Standardoption der Festlegung, `alternatives` enthält die Effekte für jede andere Option. Die Prüfung verlangt genau diese Optionen.
+
+`rulings.json` und die Tabelle in `docs/rules/00-errata-und-festlegungen.md` müssen übereinstimmen: gleiche Ids in gleicher Reihenfolge, gleiche Seiten, eine Option ohne Alternative, zwei mit.
+
+## Prüfungen
+
+```
+cargo test -p xenoforge-engine
+```
+
+prüft neben dem Schema:
+
+- eindeutige Ids im richtigen Muster, Seiten im Bereich des Buchs;
+- alle Verweise (Fertigkeiten, Attribute, Aktionen, Zustände, Schiffssysteme, Karrieren, Festlegungen);
+- Texte: jeder Name und jeder benutzte Schlüssel in beiden Sprachen, keine unbenutzten Schlüssel, keine leeren Texte;
+- Würfelbereiche der Tabellen;
+- jede Effektart kommt in den Daten mindestens einmal vor;
+- Festlegungen gegen den Katalog;
+- die Schemas in `data/schema/` sind aktuell.
+
+Nach einer Änderung an den Rust-Typen die Schemas neu erzeugen:
+
+```
+XENOFORGE_UPDATE_SCHEMAS=1 cargo test -p xenoforge-engine schemas
+```
+
+## Wortlaut prüfen
+
+`tools/verbatim-check.mjs` sucht Stellen, die mit dem Buch wörtlich übereinstimmen. Es braucht ein eigenes Exemplar als Text, das nie ins Repo gehört:
+
+```
+pdftotext alien-rpg-core-rulebook.pdf ~/alien-book.txt 2>/dev/null
+node tools/verbatim-check.mjs --book ~/alien-book.txt
+```
+
+Ohne weitere Angaben prüft es `data/i18n`, `docs` und `README.md` und meldet jede Zeile mit 12 oder mehr aufeinanderfolgenden Wörtern aus dem Buch. Tabellenzeilen mit Namen und Zahlen können dabei auffallen, ohne Fließtext zu enthalten; diese bitte von Hand ansehen.

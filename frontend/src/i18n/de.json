@@ -1,0 +1,20 @@
+{
+  "app": {
+    "tagline": "Begleit-App für das ALIEN-Rollenspiel",
+    "disclaimer": "Inoffizielles Fan-Projekt, nicht mit Free League oder den Rechteinhabern von ALIEN verbunden."
+  },
+  "language": {
+    "label": "Sprache",
+    "de": "Deutsch",
+    "en": "English"
+  },
+  "status": {
+    "heading": "Systemstatus",
+    "server": "Server",
+    "version": "Version",
+    "checking": "PRÜFE",
+    "online": "ONLINE",
+    "offline": "KEINE VERBINDUNG",
+    "retry": "Erneut prüfen"
+  }
+}

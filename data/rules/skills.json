@@ -1,0 +1,17 @@
+{
+  "$schema": "../schema/skills.schema.json",
+  "entries": [
+    { "id": "heavy_machinery", "page": 58, "attribute": "strength" },
+    { "id": "stamina", "page": 58, "attribute": "strength" },
+    { "id": "close_combat", "page": 58, "attribute": "strength" },
+    { "id": "mobility", "page": 58, "attribute": "agility" },
+    { "id": "ranged_combat", "page": 58, "attribute": "agility" },
+    { "id": "piloting", "page": 58, "attribute": "agility" },
+    { "id": "observation", "page": 58, "attribute": "wits" },
+    { "id": "comtech", "page": 58, "attribute": "wits" },
+    { "id": "survival", "page": 58, "attribute": "wits" },
+    { "id": "command", "page": 58, "attribute": "empathy" },
+    { "id": "manipulation", "page": 58, "attribute": "empathy" },
+    { "id": "medical_aid", "page": 58, "attribute": "empathy" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "app": {
+    "tagline": "Companion app for the ALIEN roleplaying game",
+    "disclaimer": "Unofficial fan project, not affiliated with Free League or the owners of ALIEN."
+  },
+  "language": {
+    "label": "Language",
+    "de": "Deutsch",
+    "en": "English"
+  },
+  "status": {
+    "heading": "System status",
+    "server": "Server",
+    "version": "Version",
+    "checking": "CHECKING",
+    "online": "ONLINE",
+    "offline": "NO CONNECTION",
+    "retry": "Check again"
+  }
+}

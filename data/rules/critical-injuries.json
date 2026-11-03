@@ -1,0 +1,47 @@
+{
+  "$schema": "../schema/critical-injuries.schema.json",
+  "entries": [
+    {
+      "id": "sprained_ankle",
+      "page": 100,
+      "d66": 14,
+      "healing": "until_medical_aid",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["mobility"] }, "change": { "add": -2 } },
+        { "kind": "restriction", "blocks": { "action": "run" } }
+      ]
+    },
+    {
+      "id": "crotch_hit",
+      "page": 100,
+      "d66": 32,
+      "healing": { "days_d6": 1 },
+      "effects": [
+        {
+          "kind": "trigger",
+          "on": { "skill_roll": ["mobility", "close_combat"] },
+          "then": [{ "op": "damage", "amount": 1 }]
+        }
+      ]
+    },
+    {
+      "id": "broken_ribs",
+      "page": 100,
+      "d66": 33,
+      "healing": { "days_d6": 2 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["mobility", "close_combat"] }, "change": { "add": -2 } }
+      ]
+    },
+    {
+      "id": "ruptured_jugular",
+      "page": 100,
+      "d66": 61,
+      "fatal": { "time_limit": "round", "medical_aid_modifier": -1 },
+      "healing": { "days_d6": 2 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["stamina"] }, "change": { "add": -1 } }
+      ]
+    }
+  ]
+}
