@@ -12,9 +12,9 @@ Die App begleitet eine ALIEN-RPG-Spielrunde am Tisch. Charakterbögen, Würfe, K
 | Proben und Kampf | Spieler, Spielleitung | Würfe per Klick mit Push, Stress und Panik; Kampf mit Initiative, Aktionen, Schaden, kritischen Verletzungen; Gegner, NSC und Kreaturen |
 | Schiffsdesigner | Spielleitung, Spieler | Neue Schiffe nach den Bauregeln, vorgefertigte Schiffe aus dem Buch laden |
 | Raumkampf | Spielleitung, Spieler | Charaktere auf Schiffspositionen setzen, Raumkampf nach den Regeln des Buchs |
-| Zeitmanagement | Spielleitung | Spieluhr in Runden, Turns und Schichten; daran hängende Timer laufen automatisch mit |
+| Zeitmanagement | Spielleitung | Spielzeit in Schritten: Schichten, darin Turns und Runden; daran hängende Timer laufen mit |
 
-Quer über alle Module liegen die **Regel-Engine** (Würfel und Regelprüfungen), das gemeinsame **Spielprotokoll**, das alle live sehen, und die **Spieluhr**.
+Quer über alle Module liegen die **Regel-Engine** (Würfel und Regelprüfungen), das gemeinsame **Spielprotokoll**, das alle live sehen, und die **Spielzeit** in Schritten.
 
 Beide Spielmodi des Buchs werden unterstützt: **Cinematic** (Einzelszenario in Akten, vorgefertigte Charaktere, Story Points) und **Campaign** (fortlaufende Kampagne, selbst erschaffene Charaktere, XP).
 
@@ -66,7 +66,7 @@ Den vollständigen Katalog baut Phase 0 aus den Abschnitten „Ambiguities“ de
 
 ## 3. Rollen und Rechte
 
-Jede Person hat ein Benutzerkonto. Gespielt wird in **Teams**: Die Spielleitung (im Buch „Game Mother“) legt ein Team an, lädt Spieler per Einladungslink ein und ordnet ihm Charaktere zu. Ein Team ist entweder ein **Szenario** (Cinematic) oder eine **Kampagne** (Campaign) und bündelt Mitglieder, Charaktere, NSC, Schiffe, Spieluhr und Protokoll. Die Rolle hängt am Team, nicht am Konto: Wer in einem Team Spielleitung ist, kann in einem anderen Spieler sein. Den Begriff „Team“ nutzt der Plan auch, damit er nicht mit der Kampfrunde verwechselt wird.
+Jede Person hat ein Benutzerkonto. Gespielt wird in **Teams**: Die Spielleitung (im Buch „Game Mother“) legt ein Team an, lädt Spieler per Einladungslink ein und ordnet ihm Charaktere zu. Ein Team ist entweder ein **Szenario** (Cinematic) oder eine **Kampagne** (Campaign) und bündelt Mitglieder, Charaktere, NSC, Schiffe, Spielzeit und Protokoll. Die Rolle hängt am Team, nicht am Konto: Wer in einem Team Spielleitung ist, kann in einem anderen Spieler sein. Den Begriff „Team“ nutzt der Plan auch, damit er nicht mit der Kampfrunde verwechselt wird.
 
 | Bereich | Spielleitung | Spieler |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ Jede Person hat ein Benutzerkonto. Gespielt wird in **Teams**: Die Spielleitung 
 | NSC und Kreaturen | Anlegen, Werte sehen, würfeln | Sehen nur Namen und Wirkungen, keine Werte |
 | Würfe | Würfe für NSC und Kreaturen öffentlich oder verdeckt | Immer offen, denn über den Push entscheidet, wer das Ergebnis sieht [S. 60]. Ergebnisse stehen im gemeinsamen Protokoll |
 | Kampf und Raumkampf | Starten, Reihenfolge führen, Gegner steuern, beenden | Eigene Aktionen ausführen, wenn sie dran sind |
-| Spieluhr | Vorstellen, Szenen umschalten | Sehen |
+| Spielzeit | Schritte weiterschalten, Phasen öffnen und schließen | Sehen |
 | Schiffsstatus | Schäden setzen, Systeme ändern, Bereiche bearbeiten | Sehen, ohne Geheimes |
 | Aufenthaltsort an Bord | Für alle setzen | Für den eigenen Charakter setzen |
 | XP (Campaign) | Fragen nach der Sitzung abschließen, letztes Wort [S. 35] | Antworten vorschlagen, XP zwischen Sitzungen ausgeben [S. 36] |
@@ -180,14 +180,14 @@ Wo der Wurf eine Entscheidung braucht, hält die Engine an und fragt die richtig
 - **Panic Roll:** W6 + Stresslevel auf der Paniktabelle [S. 105], im Raumkampf auf der eigenen Raumkampf-Paniktabelle [S. 201]. Beide Tabellen sind Daten.
 - **Mehr Panik:** Ein neuer Effekt ersetzt den alten. Liegt er niedriger, wird er auf eine Stufe über dem alten angehoben [S. 104].
 - **Ketten:** Scream, Flee, Berserk und Overkill zwingen andere zu Panic Rolls [S. 104–105]. Weil die App keine Positionen kennt, schlägt sie alle Spielercharaktere der Szene vor, und die Spielleitung hakt ab, wer es hört oder sieht. Dasselbe gilt für „alle in SHORT range“.
-- **Panik endet** durch eine erfolgreiche COMMAND-Probe eines anderen, durch Broken oder wenn ein Turn vergeht. Den Turn erkennt die Spieluhr selbst [S. 104].
+- **Panik endet** durch eine erfolgreiche COMMAND-Probe eines anderen, durch Broken oder wenn ein Turn vergeht. Das erkennt die App an den Zeitschritten [S. 104].
 - **Stress steigt automatisch** bei Push, Dauerfeuer, Schaden, Gnadenstoß, Angriff durch die eigene Crew, gescheiterter Analysis und Paniktabelle, bei Zuständen und Traumata über Timer. Bei Kreaturen und Schreckensmomenten entscheidet die Spielleitung; dafür gibt es „Stress ±N für ausgewählte Charaktere“ [S. 103, 211].
-- **Stress sinkt** pro vollem Turn Ruhe in sicherer Umgebung, einmal pro Akt bzw. Sitzung über das Signature Item, durch Medikamente und Talente. Blockiert wird das durch Zustände wie Starving oder Freezing, Traumata und laufenden Raumkampf [S. 104, 106–107, 193].
+- **Stress sinkt** pro vollem Turn Ruhe in sicherer Umgebung, auf 0 nach einer ungestörten Schicht Ruhe (F-16), einmal pro Akt bzw. Sitzung über das Signature Item, durch Medikamente und Talente. Blockiert wird das durch Zustände wie Starving oder Freezing, Traumata und laufenden Raumkampf [S. 104, 106–107, 193].
 - **Trauma-Prüfung:** Wer in einer Sitzung 13 oder mehr gewürfelt hat, wird beim Sitzungsabschluss automatisch zur EMPATHY-Probe aufgefordert. Misslingt sie, würfelt die App das Trauma auf der W6-Tabelle aus (Festlegung in Abschnitt 2) [S. 101, 104].
 
 ### 4.4 Effekte mit Dauer
 
-Vieles im Spiel ist ein Modifikator mit Ablaufzeit: Tremble bis die Panik endet, kritische Verletzungen bis zur Heilung, Bier −1 auf WITS für eine Schicht, Naproleve-Überdosis bis Schichtende. Die Engine führt das als **Effekte** am Charakter: Quelle, betroffene Proben, Wert, Ende (Runde, Turn, Schicht, Tag, Ereignis oder manuell). Der Wurfdialog zeigt alle aktiven Effekte an, und die Spieluhr lässt sie ablaufen.
+Vieles im Spiel ist ein Modifikator mit Ablaufzeit: Tremble bis die Panik endet, kritische Verletzungen bis zur Heilung, Bier −1 auf WITS für eine Schicht, Naproleve-Überdosis bis Schichtende. Die Engine führt das als **Effekte** am Charakter: Quelle, betroffene Proben, Wert, Ende (Runde, Turn, Schicht, Tag, Ereignis oder manuell). Der Wurfdialog zeigt alle aktiven Effekte an, und sie laufen mit den Zeitschritten ab (9.1).
 
 ## 5. Charaktermanager
 
@@ -255,7 +255,7 @@ Ein Android ist ein Schalter am Charakter, kein eigener Charaktertyp. Er wirkt i
 
 ### 5.5 Vorräte
 
-Air, Food, Water und Power werden nur verfolgt, wenn die Spielleitung die Lage als knapp markiert [S. 34]. Dann fordert die Spieluhr die Vorratswürfe an: Air jeden Turn und nach jeder Anstrengung, Water täglich und nach Anstrengung, Food täglich, Power je nach Gerät [S. 35]. Bei Air 0 beginnt sofort das Ersticken [S. 110]. Bei Food oder Water 0 startet ein Tageszähler; nach einem Tag ohne ausreichend Nahrung oder Wasser setzt die App Starving bzw. Dehydrated [S. 106].
+Air, Food, Water und Power werden nur verfolgt, wenn die Spielleitung die Lage als knapp markiert [S. 34]. Dann fordert die App die Vorratswürfe bei den passenden Zeitschritten an: Air jeden Turn und nach jeder Anstrengung, Water täglich und nach Anstrengung, Food täglich, Power je nach Gerät [S. 35]. Bei Air 0 beginnt sofort das Ersticken [S. 110]. Bei Food oder Water 0 startet ein Tageszähler; nach einem Tag ohne ausreichend Nahrung oder Wasser setzt die App Starving bzw. Dehydrated [S. 106].
 
 ### 5.6 Laufende Werte auf dem Bogen
 
@@ -292,13 +292,13 @@ Spieler würfeln per Klick vom eigenen Bogen aus. Die Spielleitung führt Kämpf
 
 ### 6.2 Kampfablauf
 
-1. **Kampf anlegen:** Spielercharaktere, NSC und Kreaturen hinzufügen. Die Spieluhr schaltet von Turns auf Runden um [S. 86].
+1. **Kampf anlegen:** Spielercharaktere, NSC und Kreaturen hinzufügen. Eine Runden-Phase öffnet sich (9.1) [S. 86].
 2. **Hinterhalt zuerst:** Gelungene Schleichangriffe und Hinterhalte bekommen vor der Initiative eine freie Aktion, die nicht geblockt werden kann [S. 90].
 3. **Initiative:** Zehn virtuelle Karten, 1 bis 10. Wer Fast Reflexes hat, zieht zuerst zwei und behält eine. Kreaturen ziehen so viele Karten wie ihr Speed. Bei mehr als zehn Beteiligten teilen sich gleiche NSC eine Karte. Die Karten gelten für den ganzen Kampf [S. 78, 87, 291].
 4. **Rundenbeginn:** Spielercharaktere, die miteinander sprechen können, dürfen Karten tauschen. Getauschte Initiative aus Stunts der Vorrunde wird wirksam. Das Aktionsbudget wird zurückgesetzt, fällige Timer laufen [S. 87, 92, 95].
 5. **Wer dran ist:** Eine langsame und eine schnelle Aktion oder zwei schnelle. Die App zeigt nur Aktionen an, deren Voraussetzungen erfüllt sind. Das hängt an Liegen, Broken, Gepackt-sein, Gegner auf ENGAGED, Verletzungen und Panik. Alle 14 langsamen und 15 schnellen Aktionen des Buchs sind Daten [S. 87–88]. Ein- und Aussteigen ist laut Errata eine schnelle Aktion, Motor starten bleibt langsam (Abschnitt 2).
 6. **Reaktionen außerhalb der Reihe:** Blocken, Feuer aus Overwatch und Helfen kosten Aktionen der laufenden Runde. Die betroffene Person bekommt die Frage auf ihr Gerät, *bevor* der Angreifer würfelt [S. 89, 92, 97].
-7. **Rundenende:** Wenn alle gehandelt haben, läuft die Uhr eine Runde weiter. Die Spielleitung beendet den Kampf von Hand, die Uhr springt zurück in Turns [S. 83, 87].
+7. **Rundenende:** Wenn alle gehandelt haben, beginnt die nächste Runde. Die Spielleitung beendet den Kampf von Hand; die Runden-Phase schließt sich, und man ist wieder in der Turn-Phase oder Schicht, in der der Kampf begann (9.1) [S. 83, 87].
 
 ### 6.3 Ein Angriff von Anfang bis Ende
 
@@ -336,7 +336,7 @@ Die 26 Kreaturen des Buchs, von der Neomorph-Linie über alle Stufen des XX121 b
 - **Bei 0 Health** ist ein Xenomorph nicht Broken. Er würfelt W6: Rise Again, Wounded, Desperate Action, Last Breath oder Torn Apart, jeweils mit eigenen Folgen in den nächsten Runden [S. 291]. Der Swarm wird bei 0 Health nur vertrieben [S. 316]; für Harvester, Lion Worm und Scorpionid schweigt das Buch, das regelt der Katalog.
 - **Acid Splash** bei jeder XX121-Stufe, auch Eiern: Erleidet die Kreatur Schaden, außer durch Feuer, werden der Angreifer und alle auf ENGAGED angegriffen, mit Würfeln = Acid-Wert + erlittener Schaden. Rüstung verliert dabei dauerhaft Punkte. Wer Schaden nimmt, brennt jede neue Runde mit erneut halbierten Würfeln (abgerundet) weiter, bis ein Wurf keinen Schaden mehr macht [S. 298].
 - **Erstbegegnung:** Die App merkt sich pro Spielercharakter, welche Kreaturenarten er schon gesehen hat, und fordert beim ersten Angriff einen Panic Roll an [S. 104].
-- **Lebenszyklen** laufen auf der Spieluhr: Facehugger, Chestburster, Neomorph-Sporen (Abschnitt 9).
+- **Lebenszyklen** laufen über die Zeitschritte: Facehugger, Chestburster, Neomorph-Sporen (Abschnitt 9).
 
 ### 6.7 Gefahren und Fahrzeuge
 
@@ -401,7 +401,7 @@ Ein Schiff gehört dem Team. Es hat einen Bogen mit allen Feldern des Original-S
 - **Ersatzteile** mechanisch (ca. $100.000) und elektronisch (ca. $200.000); Ausschlachten von Wracks [S. 200].
 - **Munition** für Raketen, Minen und Atomwaffen.
 - **Betriebszustand:** Transponder, Sensoren und Antrieb an oder aus, Schlepplast (FTL verdoppelt), Überladung des Antriebs (FTL −1 für eine Woche, Risiko bis zur Explosion) [S. 167, 171, 190].
-- **Wöchentliche Wartung:** eine HEAVY-MACHINERY- und eine COMTECH-Probe, je eine Schicht. Misslingt eine oder fehlt sie, gibt es kleinen Komponentenschaden (W66). Die Spieluhr erinnert daran [S. 179].
+- **Wöchentliche Wartung:** eine HEAVY-MACHINERY- und eine COMTECH-Probe, je eine Schicht. Misslingt eine oder fehlt sie, gibt es kleinen Komponentenschaden (W66). Die App erinnert beim Wochenwechsel daran [S. 179].
 - **Reisen:** FTL-Tage = FTL-Rating × Parsec. Die App rechnet Ankunft, Hyperschlaf (macht ohne Hydr8tion Dehydrated), NDD-Würfe für Wache und Begegnungswürfe vor und nach dem Sprung (Abschnitt 9) [S. 151, 167, 351].
 - **Landung:** nur mit Planetfall Capacity, bis zu drei PILOTING-Proben mit steigendem Risiko [S. 167].
 
@@ -523,28 +523,49 @@ Nach den Pilotenaktionen bewegen sich alle Schiffe um ihre Geschwindigkeit aufei
 
 ## 9. Zeitmanagement
 
-Die Spieluhr zählt Spielzeit in den Einheiten des Buchs und löst alles aus, was daran hängt: Death Rolls, Vorratswürfe, Erholung, Krankheit, Lebenszyklen der Kreaturen, Schiffswartung. Sie läuft nie in Echtzeit. Wann eine Runde, ein Turn oder eine Schicht vorbei ist, entscheidet laut Buch die Spielleitung [S. 83].
+Spielzeit läuft in Schritten, nicht als Uhr. Wann eine Runde, ein Turn oder eine Schicht vorbei ist, entscheidet laut Buch die Spielleitung [S. 83]. Die App rechnet nie in Minuten oder Stunden und nie zwischen den Einheiten um. An die Schritte hängt sie, was die Regeln daran binden: Death Rolls, Vorratswürfe, Erholung, Krankheit, Lebenszyklen der Kreaturen, Schiffswartung.
 
-### 9.1 Einheiten und Modi
+### 9.1 Ebenen
 
-| Einheit | Dauer laut Buch | Wofür | Wie sie weiterläuft |
-| --- | --- | --- | --- |
-| Runde | 5–10 Sekunden | Kampf | Automatisch, wenn alle gehandelt haben [S. 87] |
-| Turn | 5–10 Minuten | Schleichmodus, Erkundung, Raumkampf | Spielleitung klickt, im Raumkampf nach der Technikphase |
-| Schicht | 5–10 Stunden | Erholung, Reparaturen, Krankheit | Spielleitung klickt; vier pro Tag: Morning, Day, Evening, Night [S. 83] |
-| Tag | 4 Schichten | Heilung, Zustände, Reisen | Ergibt sich aus den Schichten |
-| Woche | 7 Tage | Wartung, Lebenshaltung, Lohn, Überladung | Ergibt sich aus den Tagen |
-| Akt / Sitzung | – | Story Points, Signature Item, XP, Trauma-Probe | Spielleitung schließt ab |
+Die Schicht ist immer da und zeigt, wo im Tag man ist. Darüber öffnet die Spielleitung bei Bedarf kurze Phasen und schließt sie wieder:
 
-Wie viele Runden einen Turn ergeben, legt das Buch nicht fest. Die App rechnet deshalb nicht um: Nach einem Kampf springt die Uhr zurück in Turns, und die Spielleitung kann einen Turn nachtragen. Wie viele Turns eine Schicht hat, steht ebenfalls nicht im Buch; Schichten setzt die Spielleitung. Springt die Uhr über mehrere Einheiten, etwa „eine Schicht schlafen“ oder „54 Tage Reise“, sammelt die App alle fälligen Ereignisse und arbeitet sie der Reihe nach ab. Die Spielleitung kann einzelne davon überspringen.
+```
+Tag 3 · Evening                        ← Schicht (immer vorhanden)
+ └─ Turn-Phase: Turn 1, 2 … 6          ← z. B. Schleichen durch ein Wrack
+     └─ Runden-Phase: Runde 1 … 4      ← Kampf
+     ← Kampf vorbei: zurück zu Turn 6
+ ← Turn-Phase beendet: zurück zu Tag 3 · Evening
+Schicht weiter → Tag 3 · Night
+```
 
-### 9.2 Was an der Uhr hängt
+| Ebene | Wofür | Weiterschalten |
+| --- | --- | --- |
+| Schicht | Wo im Tag man ist: Morning, Day, Evening, Night [S. 83]. Erholung, Arbeit, Reparaturen, Reisen | Spielleitung, nur wenn keine Phase offen ist. Nach Night folgt Morning des nächsten Tages |
+| Turn-Phase | Schleichen, Erkunden, Raumkampf [S. 85, 188] | Die Spielleitung öffnet sie, schaltet Turns weiter und schließt sie |
+| Runden-Phase | Kampf [S. 86–87] | Öffnet sich mit dem Kampf, auf einer Turn-Phase oder direkt auf der Schicht. Nächste Runde, sobald alle gehandelt haben |
+
+- **Turns und Runden verschieben die Schicht nicht.** Wird eine Phase geschlossen, ist man wieder dort, wo sie begann. Beim Kampfbeginn zählt man Runden statt Turns, umgerechnet wird nicht [S. 86]. Zähler beginnen in jeder Phase bei 1; das Protokoll zeigt etwa „Tag 3 · Evening · Turn 4 · Runde 2“.
+- **Jeder Vorgang zählt nur die Schritte seiner Einheit.** Ein Death Roll „jede Runde“ läuft nur in einer Runden-Phase, Strahlung „pro Turn“ nur in einer Turn-Phase, Krankheit und Reparaturen nur beim Weiterschalten der Schicht.
+- **Beim Schließen einer Phase** zeigt die App, was in dieser Einheit noch läuft, etwa einen offenen Death Roll, Feuer, Säure, Panik oder Ersticken. Die Spielleitung klärt oder beendet es; hochgerechnet wird nichts.
+- **Beim Weiterschalten der Schicht** ist mindestens ein Turn vergangen. Was „nach einem Turn“ endet, endet spätestens jetzt: Panik hört auf, und wer Broken allein liegt, steht mit 1 Health auf [S. 98, 104].
+- **Tage und Wochen:** Tägliche Abläufe wie Nahrung, Wasser, Starving, Depression und Heilungsdauer laufen beim Tageswechsel. Fristen in Tagen, etwa ein Death Roll „One Day“, laufen vier Schicht-Schritte ab dem Ereignis. Eine Woche sind sieben Tageswechsel, etwa für Wartung und Überladung.
+- **Längere Zeiträume** wie eine Reise, Heilung oder Downtime sind viele Schicht-Schritte hintereinander. Die App schaltet Tag für Tag weiter und fasst am Ende zusammen.
+- **Akt und Sitzung** sind keine Zeiteinheiten, sondern Marker, die die Spielleitung abschließt.
+
+### 9.2 Ruhe und Schlaf über eine Schicht
+
+- **Ganze Schicht Ruhe (F-16):** Wer eine Schicht ungestört in Sicherheit ruht, hat danach Stress 0 und volle Health, außer bei Broken. Eine Schicht Schlaf beendet Exhausted [S. 98, 104, 106].
+- **Ruhe stören:** Unterbrochene Ruhe zählt nicht [S. 104]. Die Spielleitung kann die Ruhe einzelner oder aller Charaktere als gestört markieren; dann entfallen Stressabbau, Health-Erholung und die Schlafwirkung dieser Schicht. Automatisch gestört ist die Ruhe von allen, die beim Ruhen eine Probe würfeln, denn Proben sind beim Ruhen nicht erlaubt [S. 104], und von allen, die in dieser Schicht in einen Kampf geraten. Die Spielleitung kann das zurücknehmen.
+- **Sperren bleiben:** Starving, Dehydrated, Exhausted, Freezing und manche Traumata verhindern den Stressabbau weiterhin [S. 101, 104, 106–107].
+- **Kurze Ruhe in einer Turn-Phase** bleibt wie im Buch: Stress −1 und Health +1 pro vollem Turn [S. 98, 104].
+
+### 9.3 Was an den Schritten hängt
 
 | Was | Rhythmus | Seite |
 | --- | --- | --- |
 | Panik endet von selbst | nach einem Turn | 104 |
-| Stress sinkt bei Ruhe in Sicherheit | −1 pro vollem Turn | 104 |
-| Health kehrt zurück | +1 pro Turn Ruhe; Broken und allein: +1 nach einem Turn | 98 |
+| Stress sinkt bei Ruhe in Sicherheit | −1 pro vollem Turn; nach einer ungestörten Schicht 0 (F-16) | 104 |
+| Health kehrt zurück | +1 pro Turn Ruhe, nach einer ungestörten Schicht voll (F-16); Broken und allein: +1 nach einem Turn | 98 |
 | Death Roll bei tödlicher Verletzung | je nach Verletzung jede Runde, jeden Turn, jede Schicht oder jeden Tag | 99–100 |
 | Heilung kritischer Verletzungen | W6, 2W6 oder 3W6 Tage oder dauerhaft; halbiert durch Pflege, ebenso durch das Talent Healer | 100–101 |
 | Vorratswurf Air / Water / Food | jeden Turn / täglich / täglich, Air und Water auch nach Anstrengung | 35 |
@@ -568,11 +589,11 @@ Wie viele Runden einen Turn ergeben, legt das Buch nicht fest. Die App rechnet d
 | Begegnungen im All | vor und nach dem Sprung; im System täglich, wöchentlich oder monatlich | 351 |
 | Akt bzw. Sitzung | Signature Item und The Long Haul einmal; Breakthrough einmal pro Sitzung | 76–77, 104 |
 
-### 9.3 Bedienung
+### 9.4 Bedienung
 
-- **Leiste der Spielleitung:** +1 Turn, +1 Schicht, Schlafen (eine Schicht mit Schlafstatus), Zeitsprung (beliebige Dauer mit Vorschau der fälligen Ereignisse), Reise starten, Akt bzw. Sitzung beenden.
-- **Zustand pro Charakter**, den die Uhr braucht: ruht, schläft, in sicherer Umgebung, im Hyperschlaf, im Strahlungsgebiet, kälte- oder vakuumexponiert. Hyperschlaf hält etwa eine Chestburster-Schwangerschaft an [S. 306].
-- **Zeitleiste pro Charakter:** Was als Nächstes fällig wird, etwa „Death Roll in einem Turn“. Timer der Spielleitung bleiben für Spieler unsichtbar, zum Beispiel ein Embryo.
+- **Leiste der Spielleitung:** Turn-Phase öffnen, Turn weiter, Turn-Phase schließen; Kampf beginnen und beenden (Runden-Phase); Schicht weiter, dabei für jeden Charakter ruht, schläft oder ist wach, und Ruhe stören; mehrere Schichten oder Tage weiter, etwa für eine Reise, mit Zusammenfassung; Akt bzw. Sitzung beenden.
+- **Zustand pro Charakter**, den die Zeitschritte brauchen: ruht, schläft, Ruhe gestört, in sicherer Umgebung, im Hyperschlaf, im Strahlungsgebiet, kälte- oder vakuumexponiert. Hyperschlaf hält etwa eine Chestburster-Schwangerschaft an [S. 306].
+- **Zeitleiste pro Charakter:** Was als Nächstes fällig wird, etwa „Death Roll nächste Runde“ oder „beim nächsten Schichtwechsel“. Timer der Spielleitung bleiben für Spieler unsichtbar, zum Beispiel ein Embryo.
 - **Alle Timer sind editierbar und pausierbar.** Das Buch lässt manche Dauern offen (Queenburster „Tage“) und erlaubt der Spielleitung, sie zu ändern [S. 305–306].
 
 ## 10. Datenmodell
@@ -610,7 +631,7 @@ Das Modell trennt **Regeldaten** aus dem Buch, die versioniert im Repo liegen un
 | Bereich | Name, Deck, Markierung (Brücke, Reaktorbereich oder keine) | Schiff |
 | Aufenthaltsort | Schiff und Bereich oder „unbekannt“ | Charakter, NSC, Kreatur |
 | Raumkampf | Seiten, Zonenposition und Geschwindigkeit je Schiff, Erfassungen, Phase, geheime Ansagen, Crewzuteilung | Team |
-| Spieluhr | Kampfrunde, Turn, Schicht, Tag, aktueller Modus | Team |
+| Spielzeit | Tag, Schicht (Morning, Day, Evening, Night), offene Phasen mit Zähler (Turn-Phase, Runden-Phase) | Team |
 | Timer | Auslöser, fällig bei, Wiederholung, Sichtbarkeit, Bezug | Charakter, Kreatur, Schiff |
 | Protokoll | Jeder Wurf mit allen Würfeln, Modifikationen und Entscheidungen; jede Korrektur mit vorher und nachher; Sichtbarkeit | Team |
 
@@ -624,7 +645,7 @@ Xenoforge besteht aus einem Rust-Server und einer Vue-Oberfläche in JavaScript.
 flowchart LR
     subgraph Browser
         player["Spieler<br/>Bogen, Würfeln, Protokoll"]
-        gm["Spielleitung<br/>Kampf, Uhr, NSC, Schiffe, Korrekturen"]
+        gm["Spielleitung<br/>Kampf, Zeit, NSC, Schiffe, Korrekturen"]
     end
     subgraph Server["Rust-Server"]
         api["HTTP-API und WebSocket"]
@@ -667,7 +688,7 @@ xenoforge/
 ├─ Cargo.toml        Workspace
 ├─ crates/
 │  ├─ engine/        Regel-Engine: reine Bibliothek ohne Netz und Datenbank
-│  └─ server/        axum-Server: API, WebSocket, Rechte, Datenbank, Spieluhr
+│  └─ server/        axum-Server: API, WebSocket, Rechte, Datenbank, Spielzeit
 ├─ data/             Regeldaten als JSON mit Seitenangaben, dazu JSON-Schemas
 │  └─ i18n/          Texte der Regeldaten auf Deutsch und Englisch
 ├─ frontend/         Vue 3, Pinia, Router, vue-i18n (JavaScript, Vite)
@@ -707,7 +728,7 @@ flowchart TD
     p0["Phase 0 · Fundament<br/>Cargo-Workspace, Vite-Projekt, CI,<br/>Regeldaten mit Schema, Errata und Festlegungen<br/>Abnahme: alle Regeldaten bestehen die Prüfung"]
     p1["Phase 1 · Regel-Engine<br/>Alle Wurfarten, Push, Stress, Paniktabellen,<br/>Modifikationen, Effekte mit Dauer<br/>Abnahme: alle Buchbeispiele als Tests grün"]
     p2["Phase 2 · Teams und Charaktere<br/>Konten, Teams, Rollen, Echtzeit, Protokoll, Würfeln;<br/>alle Erschaffungswege, Bogen, Ausrüstung;<br/>Terminal-Design als Grundlage aller Seiten<br/>Abnahme: erste Testsitzung mit Proben"]
-    p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Uhr in Runden und Turns<br/>Abnahme: Hope's Last Day komplett spielbar"]
+    p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Turn- und Runden-Phasen<br/>Abnahme: Hope's Last Day komplett spielbar"]
     p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Story Points<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
     p5["Phase 5 · Schiffe<br/>Designer, sechs Buchschiffe, Schiffsbogen,<br/>Schiffsstatus, Bereiche und Decks,<br/>Wartung, Reparatur, FTL-Reisen<br/>Abnahme: Buchschiffe laden, Eigenbau prüft,<br/>jeder Schadenseintrag wirkt wie im Buch"]
     p6["Phase 6 · Raumkampf<br/>Positionen, vier Phasen, geheime Ansagen,<br/>Schiffsschaden, Raumkampf-Panik, Entern<br/>Abnahme: Beispiel S. 202–203 nachspielbar"]

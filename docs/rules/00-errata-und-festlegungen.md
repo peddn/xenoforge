@@ -38,6 +38,7 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-13 | Bridge exposed to vacuum, S. 199 | Was „nicht mehr steuerbar“ umfasst | Keine Pilotenaktionen; Sensoren bleiben nutzbar | auch keine Sensoraktionen |
 | F-14 | Großer Komponentenschaden, S. 197 | Neu würfeln bei nicht passendem Ergebnis steht nur beim kleinen Schaden | Auch beim großen Schaden neu würfeln | – |
 | F-15 | Science Lab und Tractor Hitch, S. 171 | Die Schadenstabellen kennen für beide keinen Ausfall | Setzt die Spielleitung sie auf ausgefallen, entfällt nur ihre Funktion: +2 auf OBSERVATION bei Analysis bzw. Schleppen. Alle anderen Ausfälle wirken genau wie der gewählte Eintrag der Schadenstabelle | – |
+| F-16 | Ruhe über eine Schicht, S. 98, 104, 106 | Stress −1 und Health +1 gibt es pro Turn Ruhe; wie viel eine ganze Schicht bringt, sagt das Buch nicht | Eine ungestörte Schicht Ruhe in Sicherheit: Stress 0 und volle Health, außer bei Broken; eine Schicht Schlaf beendet Exhausted. Die Spielleitung kann die Ruhe stören, dann entfällt beides; automatisch gestört bei einer Probe während der Ruhe oder einem Kampf in dieser Schicht | – |
 
 ## Entscheidungen zur App
 
