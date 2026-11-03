@@ -14,6 +14,15 @@ use super::{Data, Entry, LANGUAGES, Page};
 /// Highest page number of the core rulebook.
 pub const MAX_PAGE: Page = 400;
 
+/// Constants the engine reads from `constants.json`.
+pub const REQUIRED_CONSTANTS: &[&str] = &[
+    "base_pushes",
+    "help_max",
+    "panic_effect_from",
+    "shifts_per_day",
+    "supply_dice_max",
+];
+
 /// Names of the engine functions that `special` operations may call.
 /// Phase 0 has none yet.
 pub const SPECIAL_HANDLERS: &[&str] = &[];
@@ -414,6 +423,12 @@ impl<'a> Checker<'a> {
         }
 
         self.panic_table();
+
+        for id in REQUIRED_CONSTANTS {
+            if !rules.constants.iter().any(|c| c.id == *id) {
+                self.problem("constants", format!("missing constant \"{id}\""));
+            }
+        }
 
         let mut d6 = BTreeSet::new();
         for trauma in &rules.traumas {

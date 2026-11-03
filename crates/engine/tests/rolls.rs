@@ -6,7 +6,7 @@ mod common;
 use common::*;
 use xenoforge_engine::data::effects::Unit;
 use xenoforge_engine::roll::{Outcome, Purpose, RollKind, RollRequest};
-use xenoforge_engine::state::{ActivePanic, Actor, Ending, Mode, Supply};
+use xenoforge_engine::state::{ActivePanic, Ending, Mode, Supply};
 use xenoforge_engine::{Choice, Command, Event, RuleError};
 
 fn max_pushes(events: &[Event]) -> u8 {
@@ -325,7 +325,7 @@ fn androids_roll_no_stress_dice_and_never_push() {
 
 #[test]
 fn npcs_never_push() {
-    let mut t = Table::new(Mode::Campaign).with("guard", Actor::npc().attr("agility", 2));
+    let mut t = Table::new(Mode::Campaign).with("guard", npc().attr("agility", 2));
     let ev = t.roll(RollRequest::skill("guard", "ranged_combat"), &[1, 2]);
     assert!(options(&ev).is_empty());
 }
@@ -335,7 +335,7 @@ fn npcs_never_push() {
 fn defender_panic_cancels_the_defence() {
     let mut t = Table::new(Mode::Campaign)
         .with("pc", pc().attr("strength", 1).stress(5))
-        .with("npc", Actor::npc().attr("strength", 1));
+        .with("npc", npc().attr("strength", 1));
     let ev = t.run(
         Command::Opposed {
             attacker: RollRequest::skill("npc", "close_combat"),
@@ -561,6 +561,7 @@ fn command_roll_stops_someone_elses_panic() {
         effect: "tremble".into(),
         value: 8,
         effects_end: Some(Ending::Never),
+        started_broken: false,
     };
     let mut medic = pc().attr("empathy", 3).skill("command", 1);
     let mut victim = pc();
@@ -598,6 +599,7 @@ fn modifiers_from_effects_name_their_source() {
         effect: "tremble".into(),
         value: 8,
         effects_end: Some(Ending::Never),
+        started_broken: false,
     });
     let mut t = Table::new(Mode::Campaign).with("v", victim);
     let ev = t.roll(RollRequest::skill("v", "mobility"), &[2]);
@@ -634,4 +636,119 @@ fn the_long_haul_and_the_push_ruling_f47() {
             "{option}"
         );
     }
+}
+
+/// An NPC defender rolls its skill and never pushes; the PC attacker may.
+#[test]
+fn npc_defender_and_pc_attacker() {
+    let mut t = Table::new(Mode::Campaign)
+        .with("pc", pc().attr("agility", 2))
+        .with("guard", npc().attr("wits", 2));
+    let ev = t.run(
+        Command::Opposed {
+            attacker: RollRequest::skill("pc", "mobility"),
+            defender: RollRequest::skill("guard", "observation"),
+        },
+        &[2, 3, /* attacker */ 6, 2],
+    );
+    let decisions: Vec<_> = ev
+        .iter()
+        .filter(|e| matches!(e, Event::Decision { .. }))
+        .collect();
+    assert_eq!(decisions.len(), 1, "only the attacker decides");
+    assert_eq!(options(&ev), [Choice::Push, Choice::Accept]);
+    let ev = t.decide(&ev, Choice::Accept, &[]);
+    assert_eq!(finished(&ev).0, Outcome::Success);
+}
+
+/// A PC defender is not offered a push [p. 64].
+#[test]
+fn pc_defender_cannot_push() {
+    let mut t = Table::new(Mode::Campaign)
+        .with("pc", pc().attr("agility", 2))
+        .with("npc", npc().attr("agility", 1));
+    let ev = t.run(
+        Command::Opposed {
+            attacker: RollRequest::skill("npc", "mobility"),
+            defender: RollRequest::skill("pc", "mobility"),
+        },
+        &[2, 3, /* attacker */ 6],
+    );
+    assert!(options(&ev).is_empty());
+    assert_eq!(finished(&ev).0, Outcome::Success);
+}
+
+/// While the defender decides, the attacker's roll cannot be touched, and
+/// only offered choices are accepted.
+#[test]
+fn opposed_roll_cannot_be_derailed() {
+    let mut t = Table::new(Mode::Campaign)
+        .with(
+            "r",
+            pc().attr("strength", 2).stress(1).talent("the_long_haul"),
+        )
+        .with("npc", npc().attr("strength", 2));
+    let ev = t.run(
+        Command::Opposed {
+            attacker: RollRequest::skill("npc", "close_combat"),
+            defender: RollRequest::skill("r", "close_combat"),
+        },
+        &[2, 3, 1],
+    );
+    assert_eq!(
+        t.state.pending.len(),
+        1,
+        "only the defender's decision is open"
+    );
+    let wrong = t.try_decide(&ev, Choice::Push, &[]);
+    assert!(matches!(wrong, Err(RuleError::InvalidChoice(_))));
+    let ev = t.decide(&ev, Choice::IgnoreFacehuggers, &[/* attacker */ 6, 6]);
+    assert_eq!(finished(&ev).0, Outcome::Success);
+    assert!(t.state.pending.is_empty());
+}
+
+#[test]
+fn story_point_cannot_be_spent_twice() {
+    let mut t = Table::new(Mode::Cinematic).with("a", pc().attr("wits", 2).player("p"));
+    t.state.story_points.insert("p".into(), 3);
+    let ev = t.roll(RollRequest::skill("a", "observation"), &[2, 3]);
+    let _ = t.decide(&ev, Choice::StoryPoint, &[]);
+    let again = t.try_decide(&ev, Choice::StoryPoint, &[]);
+    assert!(matches!(again, Err(RuleError::UnknownPending(_))));
+    assert_eq!(t.state.story_points["p"], 2);
+}
+
+#[test]
+fn no_story_points_on_fixed_pools_or_supply_rolls() {
+    let mut t = Table::new(Mode::Cinematic).with("a", pc().player("p").supply(Supply::Air, 2));
+    t.state.story_points.insert("p".into(), 3);
+    let mut armor = RollRequest::pool(2);
+    armor.actor = Some("a".into());
+    let ev = t.roll(armor, &[2, 3]);
+    assert!(options(&ev).is_empty());
+    let ev = t.roll(
+        RollRequest::new(
+            "a",
+            RollKind::Supply {
+                supply: Supply::Air,
+            },
+        ),
+        &[2, 3],
+    );
+    assert!(options(&ev).is_empty());
+}
+
+/// A Broken character cannot roll for skills; the Death Roll stays
+/// allowed [p. 98–99].
+#[test]
+fn broken_characters_cannot_roll_skills() {
+    let mut t = Table::new(Mode::Campaign).with("a", pc().attr("wits", 2).health(0));
+    let err = t.try_run(
+        Command::Roll {
+            request: RollRequest::skill("a", "observation"),
+        },
+        &[],
+    );
+    assert!(matches!(err, Err(RuleError::NotAllowed(_))));
+    t.roll(RollRequest::new("a", RollKind::Death), &[1, 2, 3, 4]);
 }

@@ -157,3 +157,8 @@ pub fn has<F: Fn(&Event) -> bool>(events: &[Event], f: F) -> bool {
 pub fn pc() -> Actor {
     Actor::pc().attr("strength", 4)
 }
+
+/// An NPC with Health.
+pub fn npc() -> Actor {
+    Actor::npc().attr("strength", 3)
+}

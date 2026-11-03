@@ -272,6 +272,10 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         modifies: Modified,
         change: Change,
+        /// The changed value never goes below this, e.g. "to a minimum of
+        /// one die" [p. 78].
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        at_least: Option<u8>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         lasts: Option<Lasts>,
         #[serde(default, skip_serializing_if = "is_false")]

@@ -70,6 +70,7 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-45 | Zweiter Push nach Facehugger, S. 61, 104 | Die Regel ist nur für den ersten Push ausdrücklich (02-A41) | Kein zweiter Push; es folgt der Panikwurf | – |
 | F-46 | Stoic beim Death Roll, S. 79, 99 | Der Death Roll ist eine STAMINA-Probe (01-A26) | Stoic gilt auch beim Death Roll | – |
 | F-47 | The Long Haul und Push, S. 76 | „Alle Facehugger eines Wurfs“: offen, ob ein Push nach dem Einsatz noch zu diesem Wurf gehört | Vorschlag: Das Talent gilt für den Wurf, bei dem es eingesetzt wird; bringt der Push neue Facehugger, zählen sie (**offen**, Rückfrage) | gilt auch für den Push |
+| F-48 | Panik bei Broken, S. 98, 104 | Panik endet, wenn man Broken ist. Eine kritische Verletzung verlangt aber einen Panikwurf, meist wenn man schon Broken ist | Vorschlag: Die Panik endet sofort; ihre sofortigen Folgen (Stress, Panikwürfe anderer, 13+) gelten (**offen**, Rückfrage) | läuft weiter, bis ein Turn vergeht oder COMMAND sie beendet |
 
 ## Entscheidungen zur App
 

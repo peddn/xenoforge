@@ -109,14 +109,14 @@
       "id": "calm_breather",
       "page": 78,
       "effects": [
-        { "kind": "modifier", "applies_to": { "rolls": ["air_supply"] }, "change": { "add": -2 } }
+        { "kind": "modifier", "applies_to": { "rolls": ["air_supply"] }, "change": { "add": -2 }, "at_least": 1 }
       ]
     },
     {
       "id": "light_eater",
       "page": 78,
       "effects": [
-        { "kind": "modifier", "applies_to": { "rolls": ["food_supply"] }, "change": { "add": -2 } }
+        { "kind": "modifier", "applies_to": { "rolls": ["food_supply"] }, "change": { "add": -2 }, "at_least": 1 }
       ]
     },
     {

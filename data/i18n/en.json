@@ -240,5 +240,13 @@
   "overkill_effect.hint": "Attacks the enemies until oneself or all enemies in sight are Broken.",
   "F-47.name": "The Long Haul and pushing",
   "F-47.this_throw": "Applies to the throw it is used on",
-  "F-47.including_push": "Also applies to the push"
+  "F-47.including_push": "Also applies to the push",
+  "base_pushes.name": "Pushes per roll",
+  "help_max.name": "Most helpers that count",
+  "panic_effect_from.name": "Panic effect from",
+  "shifts_per_day.name": "Shifts per day",
+  "supply_dice_max.name": "Most dice in a supply roll",
+  "F-48.name": "Panic while Broken",
+  "F-48.ends_at_once": "Ends at once",
+  "F-48.runs_on": "Runs on"
 }

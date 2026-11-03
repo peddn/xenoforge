@@ -14,11 +14,6 @@ use crate::engine::{Choice, Ctx, Event, OpFlags, Result, RuleError, Task};
 use crate::panic::{PanicCause, StopReason};
 use crate::state::{ActorId, Mode, Pending, PendingId, Supply};
 
-/// Most helpers that count [p. 63].
-pub const MAX_HELP: u8 = 3;
-/// Most Stress Dice in a Supply roll [p. 34].
-pub const MAX_SUPPLY_DICE: u8 = 6;
-
 /// What to roll.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -160,8 +155,10 @@ pub enum Role {
     Attacker {
         against: Option<u8>,
     },
+    /// Carries the attacker's roll, which is thrown once the defence is
+    /// known.
     Defender {
-        attacker: PendingId,
+        attacker: Box<RollState>,
     },
 }
 
@@ -199,6 +196,9 @@ pub struct RollState {
     pub automatic: bool,
     pub role: Role,
     pub then: Option<Continuation>,
+    /// Choices offered while the roll waits.
+    #[serde(default)]
+    pub offered: Vec<Choice>,
 }
 
 impl RollState {
@@ -235,18 +235,62 @@ impl Ctx<'_> {
             }
         }
         let attacker = self.build(attacker, Role::Attacker { against: None }, None)?;
-        let attacker_id = attacker.id;
-        self.state
-            .pending
-            .insert(attacker_id, Pending::Roll(Box::new(attacker)));
         let defender = self.build(
             defender,
             Role::Defender {
-                attacker: attacker_id,
+                attacker: Box::new(attacker),
             },
             None,
         )?;
         self.throw_and_go(defender)
+    }
+
+    /// A roll asked for by an operation, e.g. Freezing's STAMINA roll. A
+    /// Broken character cannot roll for skills [p. 98]; optional talents
+    /// that fit the roll are offered first.
+    pub(crate) fn roll_for_op(&mut self, request: RollRequest, then: Continuation) -> Result<()> {
+        let actor = request.actor.clone().unwrap_or_default();
+        if let RollKind::Skill { skill } = &request.kind {
+            if self.actor(&actor)?.broken() {
+                self.emit(Event::RollSkipped {
+                    actor,
+                    skill: skill.clone(),
+                });
+                return Ok(());
+            }
+            let effects = self.effects(&actor)?;
+            let mut options = Vec::new();
+            for usable in active::replacements(&effects) {
+                let fits = match usable.replaces {
+                    Replaceable::AttributeFor(s) | Replaceable::Skill(s) | Replaceable::Roll(s) => {
+                        s == skill
+                    }
+                    _ => false,
+                };
+                let talent = self.actor(&actor)?.talents.contains(&usable.owner);
+                if fits && talent && self.uses_left(&actor, &usable.owner)? > 0 {
+                    options.push(Choice::UseTalent(usable.owner));
+                }
+            }
+            if !options.is_empty() {
+                options.push(Choice::Accept);
+                let pending = self.next_pending();
+                self.state.pending.insert(
+                    pending,
+                    Pending::StartRoll {
+                        request: Box::new(request),
+                        then: Some(then),
+                    },
+                );
+                self.emit(Event::Decision {
+                    pending,
+                    actor: Some(actor),
+                    options,
+                });
+                return Ok(());
+            }
+        }
+        self.start_roll_with(request, Role::Single, Some(then))
     }
 
     pub(crate) fn start_roll_with(
@@ -306,6 +350,14 @@ impl Ctx<'_> {
             None if matches!(request.kind, RollKind::FixedPool { .. }) => None,
             None => return Err(RuleError::NotAllowed("this roll needs an actor".into())),
         };
+
+        if let (RollKind::Skill { .. }, Some(a)) = (&request.kind, &actor) {
+            if a.broken() {
+                return Err(RuleError::NotAllowed(
+                    "a Broken character cannot roll for skills [p. 98]".into(),
+                ));
+            }
+        }
 
         let (mut skill, mut attribute) = match &request.kind {
             RollKind::Skill { skill } => {
@@ -397,7 +449,8 @@ impl Ctx<'_> {
         if request.helpers > 0 && matches!(request.kind, RollKind::Skill { .. }) {
             modifications.push(Modification {
                 source: "help".into(),
-                value: i8::try_from(request.helpers.min(MAX_HELP)).unwrap_or(0),
+                value: i8::try_from(request.helpers.min(engine.constant_u8("help_max")))
+                    .unwrap_or(0),
             });
         }
         let matcher = RollMatch {
@@ -409,7 +462,8 @@ impl Ctx<'_> {
         if let (Some(id), true) = (&actor_id, skill.is_some()) {
             modifications.extend(self.effect_modifiers(id, matcher)?);
             if is_skill && human && !matches!(role, Role::Defender { .. }) {
-                max_pushes = 1 + active::extra_pushes(&self.effects(id)?, matcher);
+                max_pushes = engine.constant_u8("base_pushes")
+                    + active::extra_pushes(&self.effects(id)?, matcher);
             }
         }
         base += modifications
@@ -456,6 +510,7 @@ impl Ctx<'_> {
             automatic,
             role,
             then,
+            offered: Vec::new(),
         })
     }
 
@@ -545,7 +600,8 @@ impl Ctx<'_> {
         self.wait(roll, options)
     }
 
-    fn wait(&mut self, roll: RollState, options: Vec<Choice>) -> Result<()> {
+    fn wait(&mut self, mut roll: RollState, options: Vec<Choice>) -> Result<()> {
+        roll.offered = options.clone();
         self.emit(Event::Decision {
             pending: roll.id,
             actor: roll.request.actor.clone(),
@@ -564,6 +620,10 @@ impl Ctx<'_> {
                 "{c:?} is not possible now"
             )))
         };
+        if !roll.offered.contains(&choice) {
+            return invalid(&choice);
+        }
+        roll.offered.clear();
         match choice {
             Choice::IgnoreFacehuggers => {
                 if !self.facehuggers_count(&roll) {
@@ -728,15 +788,12 @@ impl Ctx<'_> {
                 });
             }
         }
-        if let Role::Defender { attacker } = roll.role {
+        if let Role::Defender { mut attacker } = roll.role {
             // A cancelled defence counts as no successes (F-22).
             let against = if outcome == Outcome::Cancelled {
                 0
             } else {
                 successes
-            };
-            let Some(Pending::Roll(mut attacker)) = self.state.pending.remove(&attacker) else {
-                return Err(RuleError::UnknownPending(attacker));
             };
             attacker.role = Role::Attacker {
                 against: Some(against),
@@ -771,26 +828,24 @@ impl Ctx<'_> {
             Supply::Water => DataRollKind::WaterSupply,
             Supply::Power => DataRollKind::PowerSupply,
         };
-        let change: i16 = self
-            .effect_modifiers(
-                &actor,
-                RollMatch {
-                    skill: None,
-                    attribute: None,
-                    kind: Some(kind),
-                },
-            )?
+        let matcher = RollMatch {
+            skill: None,
+            attribute: None,
+            kind: Some(kind),
+        };
+        let effects = self.effects(&actor)?;
+        let change: i16 = active::roll_modifiers(&effects, matcher)
             .iter()
             .map(|m| i16::from(m.value))
             .sum();
+        let floor = i16::from(active::floor(&effects, matcher).unwrap_or(0));
         let rating16 = i16::from(rating);
-        let cap = i16::from(MAX_SUPPLY_DICE);
-        let count = if change == 0 {
-            rating16.min(cap)
-        } else if self.engine.ruling_option(&self.state, "F-09") == "minus_then_cap" {
-            (rating16 + change).min(cap).max(1)
+        let cap = self.engine.constant("supply_dice_max");
+        // Order of cap and talent: F-09.
+        let count = if self.engine.ruling_option(&self.state, "F-09") == "minus_then_cap" {
+            (rating16 + change).min(cap).max(floor)
         } else {
-            (rating16.min(cap) + change).max(1)
+            (rating16.min(cap) + change).max(floor)
         };
         let dice = self.throw(0, u8::try_from(count).unwrap_or(0));
         let lost = count_facehuggers(&dice);

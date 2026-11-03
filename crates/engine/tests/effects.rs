@@ -347,6 +347,7 @@ fn effects_with_their_own_duration() {
             },
             modifies: Modified::Dice,
             change: Change::Add(-1),
+            at_least: None,
             lasts: Some(Lasts::Steps {
                 unit: Unit::Round,
                 count: 1,
@@ -409,4 +410,49 @@ fn errors_leave_the_state_alone() {
     );
     assert!(matches!(err, Err(RuleError::UnknownActor(_))));
     assert_eq!(t.state, before);
+}
+
+/// Stoic works on STAMINA rolls that a condition asks for [p. 79].
+#[test]
+fn stoic_on_freezing_rolls() {
+    let mut t = Table::new(Mode::Campaign).with(
+        "a",
+        pc().attr("strength", 1).attr("wits", 4).talent("stoic"),
+    );
+    apply(
+        &mut t,
+        "a",
+        NewSource::Condition {
+            id: "freezing".into(),
+            cold: Some(Cold::SubZero),
+        },
+        &[],
+    );
+    let ev = shift(&mut t, false, &[]);
+    assert_eq!(
+        options(&ev),
+        [Choice::UseTalent("stoic".into()), Choice::Accept]
+    );
+    let ev = t.decide(&ev, Choice::UseTalent("stoic".into()), &[6, 2, 3, 4]);
+    assert_eq!(started(&ev).0, 4);
+}
+
+/// A Broken character makes no cold roll; the hint tells the game master
+/// about the Death Roll [p. 98, 107].
+#[test]
+fn broken_characters_skip_condition_rolls() {
+    let mut t = Table::new(Mode::Campaign).with("a", pc().health(0));
+    apply(
+        &mut t,
+        "a",
+        NewSource::Condition {
+            id: "freezing".into(),
+            cold: Some(Cold::SubZero),
+        },
+        &[],
+    );
+    let ev = shift(&mut t, false, &[]);
+    assert!(has(&ev, |e| matches!(e, Event::RollSkipped { .. })));
+    let hints = t.engine.hints(&t.state, "a");
+    assert!(hints.iter().any(|(_, text, _)| text == "freezing.broken"));
 }

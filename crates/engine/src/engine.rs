@@ -105,6 +105,8 @@ pub enum Choice {
     IgnoreFacehuggers,
     StoryPoint,
     Overkill,
+    /// Use this optional talent for the roll, e.g. Stoic.
+    UseTalent(Id),
     Answer(bool),
     Targets(Vec<ActorId>),
 }
@@ -141,6 +143,12 @@ pub enum Event {
     StoryPointSpent {
         roll: PendingId,
         player: PlayerId,
+    },
+    /// A roll an operation asked for did not happen: a Broken character
+    /// cannot roll for skills [p. 98].
+    RollSkipped {
+        actor: ActorId,
+        skill: Id,
     },
     RollFinished {
         roll: PendingId,
@@ -408,23 +416,41 @@ impl Engine {
     }
 }
 
-/// Duration of a source or effect from its data.
-pub(crate) fn ending(lasts: Lasts) -> Option<Ending> {
-    match lasts {
-        Lasts::Instant => None,
-        Lasts::Steps {
-            unit: Unit::Day,
-            count,
-        } => Some(Ending::After {
-            unit: Unit::Shift,
-            left: u16::from(count) * 4,
-        }),
-        Lasts::Steps { unit, count } => Some(Ending::After {
-            unit,
-            left: count.into(),
-        }),
-        Lasts::Until(event) => Some(Ending::On(event)),
-        Lasts::Permanent | Lasts::WhileSource => Some(Ending::Never),
+impl Engine {
+    /// A value from `constants.json`. The data validation makes sure the
+    /// engine's constants exist.
+    pub fn constant(&self, id: &str) -> i16 {
+        self.rules
+            .constants
+            .iter()
+            .find(|c| c.id == id)
+            .map(|c| c.value)
+            .unwrap_or_else(|| panic!("constant \"{id}\" is missing in constants.json"))
+    }
+
+    pub(crate) fn constant_u8(&self, id: &str) -> u8 {
+        u8::try_from(self.constant(id)).unwrap_or(0)
+    }
+
+    /// Duration of a source or effect from its data. Days count as Shift
+    /// steps (plan section 9.1).
+    pub(crate) fn ending(&self, lasts: Lasts) -> Option<Ending> {
+        match lasts {
+            Lasts::Instant => None,
+            Lasts::Steps {
+                unit: Unit::Day,
+                count,
+            } => Some(Ending::After {
+                unit: Unit::Shift,
+                left: u16::from(count) * u16::from(self.constant_u8("shifts_per_day")),
+            }),
+            Lasts::Steps { unit, count } => Some(Ending::After {
+                unit,
+                left: count.into(),
+            }),
+            Lasts::Until(event) => Some(Ending::On(event)),
+            Lasts::Permanent | Lasts::WhileSource => Some(Ending::Never),
+        }
     }
 }
 
@@ -559,6 +585,14 @@ impl<'a> Ctx<'a> {
             .ok_or(RuleError::UnknownPending(id))?;
         match pending {
             Pending::Roll(roll) => self.decide_roll(*roll, choice),
+            Pending::StartRoll { mut request, then } => {
+                match choice {
+                    Choice::UseTalent(talent) => request.talents.push(talent),
+                    Choice::Accept => {}
+                    other => return Err(RuleError::InvalidChoice(format!("{other:?}"))),
+                }
+                self.start_roll_with(*request, crate::roll::Role::Single, then)
+            }
             Pending::Overkill {
                 actor,
                 value,
@@ -659,13 +693,20 @@ impl<'a> Ctx<'a> {
         Ok(())
     }
 
-    /// Checks after every step: Broken ends panic [p. 104].
+    /// Checks after every step: Broken ends panic [p. 104]. A panic that
+    /// began while Broken ends at once or runs on (F-48).
     fn state_checks(&mut self) -> Result<()> {
+        let runs_on = self.engine.ruling_option(&self.state, "F-48") == "runs_on";
         let broken: Vec<ActorId> = self
             .state
             .actors
             .iter()
-            .filter(|(_, a)| a.broken() && a.panic.is_some())
+            .filter(|(_, a)| {
+                a.broken()
+                    && a.panic
+                        .as_ref()
+                        .is_some_and(|p| !(runs_on && p.started_broken))
+            })
             .map(|(id, _)| id.clone())
             .collect();
         for actor in broken {
@@ -736,7 +777,7 @@ impl<'a> Ctx<'a> {
                     },
                 };
                 let request = RollRequest::new(actor, kind);
-                self.start_roll_with(request, crate::roll::Role::Single, Some(continuation))
+                self.roll_for_op(request, continuation)
             }
             Op::PanicRoll { .. } => {
                 self.queue.push_back(Task::Panic {
@@ -762,7 +803,7 @@ impl<'a> Ctx<'a> {
                 Ok(())
             }
             Op::Block { blocks, lasts } => {
-                let Some(ends) = ending(*lasts) else {
+                let Some(ends) = self.engine.ending(*lasts) else {
                     return Ok(());
                 };
                 self.add_source(
@@ -929,7 +970,7 @@ impl<'a> Ctx<'a> {
                         let days: u16 = (0..n).map(|_| u16::from(self.dice.d6())).sum();
                         Some(Ending::After {
                             unit: Unit::Shift,
-                            left: days * 4,
+                            left: days * u16::from(engine.constant_u8("shifts_per_day")),
                         })
                     }
                     Healing::UntilMedicalAid => Some(Ending::On(EndEvent::MedicalAid)),
@@ -970,7 +1011,12 @@ impl<'a> Ctx<'a> {
             .origin_effects(&self.state, &origin)
             .iter()
             .enumerate()
-            .filter_map(|(i, e)| e.common().1.and_then(ending).map(|end| (i, end)))
+            .filter_map(|(i, e)| {
+                e.common()
+                    .1
+                    .and_then(|l| engine.ending(l))
+                    .map(|end| (i, end))
+            })
             .collect();
         let a = self.actor_mut(actor)?;
         a.sources.push(ActiveSource {
@@ -1290,12 +1336,14 @@ mod tests {
 
     #[test]
     fn days_count_as_four_shifts() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/rules");
+        let engine = Engine::new(RuleData::load(&dir).unwrap());
         let lasts = Lasts::Steps {
             unit: Unit::Day,
             count: 1,
         };
         assert_eq!(
-            ending(lasts),
+            engine.ending(lasts),
             Some(Ending::After {
                 unit: Unit::Shift,
                 left: 4

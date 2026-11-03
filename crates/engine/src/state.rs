@@ -255,6 +255,9 @@ pub struct ActivePanic {
     /// When the entry's effects end; `None` once they are over. The panic
     /// itself runs on until it stops (F-25).
     pub effects_end: Option<Ending>,
+    /// The character was already Broken when it began (F-48).
+    #[serde(default)]
+    pub started_broken: bool,
 }
 
 /// A decision the engine waits for.
@@ -262,6 +265,12 @@ pub struct ActivePanic {
 #[serde(rename_all = "snake_case")]
 pub enum Pending {
     Roll(Box<RollState>),
+    /// A roll started by an operation, waiting for the choice of an
+    /// optional talent such as Stoic.
+    StartRoll {
+        request: Box<crate::roll::RollRequest>,
+        then: Option<crate::roll::Continuation>,
+    },
     /// Use Overkill instead of the panic effect? [p. 104]
     Overkill {
         actor: ActorId,

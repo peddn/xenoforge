@@ -28,6 +28,7 @@ Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editore
 
 | Datei | Inhalt | Wichtige Felder |
 | --- | --- | --- |
+| `constants.json` | Einzelne Regelwerte, die die Engine braucht: höchstens drei Helfer, sechs Würfel beim Vorratswurf, ein Push, Panikeffekt ab 7, vier Schichten pro Tag | `value` |
 | `attributes.json` | Attribute | – |
 | `careers.json` | Karrieren | `key_attribute` |
 | `skills.json` | Fertigkeiten | `attribute` |
@@ -91,7 +92,7 @@ Die acht Effektarten:
 | `capability` | ermöglicht eine Aktion | `grants` | Docking Umbilical: Andocken |
 | `hint` | Hinweis für die Spielleitung | `text`, `tier`: `hint` (handeln) oder `info` (ohne Spielfolge) | Intercoms disabled |
 
-**Modifikatoren im Einzelnen.** `skills` und `based_on` gelten für Proben mit einer Fertigkeit, auch den Death Roll (eine STAMINA-Probe). Maßgeblich sind Fertigkeit und Attribut, mit denen tatsächlich gewürfelt wird (F-35). `rolls` nennt andere Wurfarten: `panic` (verändert das Ergebnis), `air_supply`, `food_supply`, `water_supply`, `power_supply` (verändern die Zahl der Stresswürfel, mindestens einer, Reihenfolge nach F-09). Multiplizieren und Teilen gibt es nur für Schiffswerte; `pushes` nur für Proben mit Fertigkeit.
+**Modifikatoren im Einzelnen.** `skills` und `based_on` gelten für Proben mit einer Fertigkeit, auch den Death Roll (eine STAMINA-Probe). Maßgeblich sind Fertigkeit und Attribut, mit denen tatsächlich gewürfelt wird (F-35). `rolls` nennt andere Wurfarten: `panic` (verändert das Ergebnis), `air_supply`, `food_supply`, `water_supply`, `power_supply` (verändern die Zahl der Stresswürfel, mindestens einer, Reihenfolge nach F-09). Multiplizieren und Teilen gibt es nur für Schiffswerte; `pushes` nur für Proben mit Fertigkeit. `at_least` setzt eine Untergrenze für den veränderten Wert, etwa „mindestens ein Würfel“ bei Calm Breather.
 
 **Ersetzungen im Einzelnen.** Zu jeder Art von `replaces` passt genau eine Art von `with`:
 
@@ -103,7 +104,7 @@ Die acht Effektarten:
 | `{ "attribute_for": "<fertigkeit>" }` | `{ "attribute": "<attribut>" }` | anderes Attribut für diese Fertigkeit | Take Control, Menacing, Stoic |
 | `{ "skill": "<fertigkeit>" }` | `{ "skill": "<fertigkeit>" }` | andere Fertigkeit | Authority |
 
-Mit `optional` entscheidet die Person, ob sie die Ersetzung nutzt; `uses` begrenzt das pro Akt oder Sitzung (`act_or_session`: pro Akt im Cinematic-Spiel, pro Sitzung in der Kampagne).
+Mit `optional` entscheidet die Person, ob sie die Ersetzung nutzt. Dazu gehören Bedingungen, die die App nicht kennt, etwa „Feinde in Sicht“ bei Overkill oder „beim Drohen“ bei Menacing; `uses` begrenzt das pro Akt oder Sitzung (`act_or_session`: pro Akt im Cinematic-Spiel, pro Sitzung in der Kampagne).
 
 Die Stufen AUTO, HINWEIS und INFO aus dem Plan (Abschnitt 7.4) ergeben sich daraus: Alle Effektarten außer `hint` wendet die App selbst an (AUTO), `hint` erscheint je nach `tier` als HINWEIS oder INFO.
 

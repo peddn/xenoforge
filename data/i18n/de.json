@@ -240,5 +240,13 @@
   "overkill_effect.hint": "Greift die Feinde an, bis man selbst oder alle Feinde in Sicht Broken sind.",
   "F-47.name": "The Long Haul und Push",
   "F-47.this_throw": "Gilt nur für den Wurf, bei dem es eingesetzt wird",
-  "F-47.including_push": "Gilt auch für den Push"
+  "F-47.including_push": "Gilt auch für den Push",
+  "base_pushes.name": "Pushes pro Probe",
+  "help_max.name": "Höchstzahl zählender Helfer",
+  "panic_effect_from.name": "Panikeffekt ab",
+  "shifts_per_day.name": "Schichten pro Tag",
+  "supply_dice_max.name": "Höchstzahl Würfel beim Vorratswurf",
+  "F-48.name": "Panik bei Broken",
+  "F-48.ends_at_once": "Endet sofort",
+  "F-48.runs_on": "Läuft weiter"
 }

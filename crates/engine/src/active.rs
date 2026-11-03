@@ -259,6 +259,22 @@ pub fn roll_modifiers(effects: &[ActiveEffect], roll: RollMatch) -> Vec<Modifica
         .collect()
 }
 
+/// The highest `at_least` of the dice modifiers that apply to a roll.
+pub fn floor(effects: &[ActiveEffect], roll: RollMatch) -> Option<u8> {
+    effects
+        .iter()
+        .filter_map(|active| match active.effect.as_ref() {
+            Effect::Modifier {
+                applies_to,
+                modifies: Modified::Dice,
+                at_least,
+                ..
+            } if matches_roll(applies_to, roll) => *at_least,
+            _ => None,
+        })
+        .max()
+}
+
 /// Extra pushes for a skill roll, e.g. Past the Limit [p. 74]. The
 /// attribute is the one actually rolled (F-35).
 pub fn extra_pushes(effects: &[ActiveEffect], roll: RollMatch) -> u8 {

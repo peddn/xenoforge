@@ -13,6 +13,7 @@ fn panicking(effect: &str, value: u8) -> Option<ActivePanic> {
         effect: effect.into(),
         value,
         effects_end: Some(Ending::Never),
+        started_broken: false,
     })
 }
 
@@ -271,7 +272,7 @@ fn game_master_stops_panic() {
 fn trauma_on_a_failed_empathy_roll() {
     let mut t = Table::new(Mode::Campaign).with("a", pc().attr("empathy", 2).stress(7));
     panic_roll(&mut t, "a", 6); // 13 Flee
-    panic_roll(&mut t, "a", 6); // 13 again: still one roll (F-42)
+    panic_roll(&mut t, "a", 6); // 12, raised to 14: still one roll (F-42)
     let ev = t.run(Command::EndSession, &[1, 2, /* trauma d6 */ 3]);
     assert!(has(
         &ev,
@@ -307,4 +308,18 @@ fn raised_value_counts_for_trauma() {
     let ev = panic_roll(&mut t, "a", 2);
     assert_eq!(panic_effect(&ev).0, 13);
     assert!(t.actor("a").panic_13_plus);
+}
+
+/// A panic that begins while Broken ends at once; its one-shot effects
+/// still happen (F-48 default). The alternative lets it run on.
+#[test]
+fn panic_while_broken_ruling_f48() {
+    for (option, runs) in [("ends_at_once", false), ("runs_on", true)] {
+        let mut t = Table::new(Mode::Campaign).with("a", pc().stress(3).health(0));
+        t.state.rulings.insert("F-48".into(), option.into());
+        let ev = panic_roll(&mut t, "a", 6); // 9 Drop Item
+        assert!(has(&ev, |e| matches!(e, Event::ItemDropped { .. })));
+        assert_eq!(t.actor("a").stress, 4);
+        assert_eq!(t.actor("a").panic.is_some(), runs, "{option}");
+    }
 }

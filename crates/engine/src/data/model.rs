@@ -286,6 +286,15 @@ pub struct ShipDamage {
     pub effects: Vec<Effect>,
 }
 
+/// A single rule value, such as the most helpers that count [p. 63].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Constant {
+    pub id: Id,
+    pub page: Page,
+    pub value: i16,
+}
+
 /// A ruling from `docs/rules/00-errata-und-festlegungen.md`. The game
 /// master can switch between its options per team.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

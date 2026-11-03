@@ -34,15 +34,6 @@ pub enum StopReason {
     GameMaster,
 }
 
-/// When a panic entry's own effects end. "Until panic stops" means as
-/// long as the panic runs.
-fn effects_end(lasts: Lasts) -> Option<Ending> {
-    match lasts {
-        Lasts::Until(EndEvent::PanicStops) => Some(Ending::Never),
-        other => crate::engine::ending(other),
-    }
-}
-
 impl Ctx<'_> {
     /// D6 + STRESS LEVEL + modifications, raised by More Panic. Returns
     /// whether the result cancels the action the roll came from.
@@ -115,10 +106,13 @@ impl Ctx<'_> {
                     _ => None,
                 });
         if let Some(talent) = overkill {
-            self.actor_mut(actor)?.panic = Some(ActivePanic {
+            let a = self.actor_mut(actor)?;
+            let started_broken = a.broken();
+            a.panic = Some(ActivePanic {
                 effect: row_id.clone(),
                 value,
                 effects_end: None,
+                started_broken,
             });
             let pending = self.next_pending();
             self.state.pending.insert(
@@ -159,11 +153,19 @@ impl Ctx<'_> {
             .panic_entry(effect)
             .ok_or_else(|| RuleError::UnknownEntry(effect.clone()))?;
         let (lasts, on_apply) = (entry.lasts, entry.on_apply.clone());
+        // "Until panic stops" means as long as the panic runs.
+        let effects_end = match lasts {
+            Lasts::Until(EndEvent::PanicStops) => Some(Ending::Never),
+            other => self.engine.ending(other),
+        };
+        let from = self.engine.constant_u8("panic_effect_from");
         let a = self.actor_mut(actor)?;
-        a.panic = (value >= 7).then(|| ActivePanic {
+        let started_broken = a.broken();
+        a.panic = (value >= from).then(|| ActivePanic {
             effect: effect.clone(),
             value,
-            effects_end: effects_end(lasts),
+            effects_end,
+            started_broken,
         });
         self.emit(Event::PanicEffect {
             actor: actor.to_owned(),

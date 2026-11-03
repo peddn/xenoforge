@@ -155,6 +155,16 @@
             "applies_to": {
               "$ref": "#/$defs/ModTarget"
             },
+            "at_least": {
+              "description": "The changed value never goes below this, e.g. \"to a minimum of\none die\" [p. 78].",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0
+            },
             "change": {
               "$ref": "#/$defs/Change"
             },

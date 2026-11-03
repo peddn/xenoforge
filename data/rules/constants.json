@@ -1,0 +1,10 @@
+{
+  "$schema": "../schema/constants.schema.json",
+  "entries": [
+    { "id": "base_pushes", "page": 60, "value": 1 },
+    { "id": "help_max", "page": 63, "value": 3 },
+    { "id": "panic_effect_from", "page": 104, "value": 7 },
+    { "id": "shifts_per_day", "page": 83, "value": 4 },
+    { "id": "supply_dice_max", "page": 34, "value": 6 }
+  ]
+}

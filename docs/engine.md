@@ -34,7 +34,7 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 
 ## Ablauf einer Fertigkeitsprobe
 
-1. **Pool bauen:** Attribut + Fertigkeit + Modifikationen (Ausrüstung und Schwierigkeit vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit oder bestehen die Probe ohne Wurf (Breakthrough).
+1. **Pool bauen:** Wer Broken ist, kann keine Fertigkeitsprobe machen, der Death Roll bleibt erlaubt [S. 98–99]. Attribut + Fertigkeit + Modifikationen (Ausrüstung und Schwierigkeit vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit oder bestehen die Probe ohne Wurf (Breakthrough).
 2. **Würfeln.** Grundwürfel zuerst, dann Stresswürfel.
 3. **Facehugger** auf Stresswürfeln: Mit The Long Haul fragt die Engine, ob es eingesetzt wird. Sonst gibt es keinen Push mehr, und es folgt sofort der Panikwurf; ab 10 ist die Aktion abgebrochen (F-44 für 1–9).
 4. **Push oder Story Point anbieten**, solange erlaubt. Ein Push kostet zuerst Stress +1, dann bleiben die 6er liegen, ein neuer Stresswürfel kommt dazu, und der Rest wird neu geworfen (F-20).
@@ -47,6 +47,7 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 - **Ende:** ein Turn oder eine Schicht vergeht, Broken, eine gelungene COMMAND-Probe eines anderen, die Spielleitung [S. 104].
 - **Ketten:** Wer etwas hört, sieht oder auf kurzer Distanz ist, kennt die App nicht. Sie schlägt alle anderen menschlichen Spielercharaktere vor (F-39), die Spielleitung wählt aus.
 - **Overkill** bietet die Engine ab 11 an; der Wert bleibt für Mehr Panik und die Trauma-Schwelle maßgeblich (F-26, F-30).
+- **Broken:** Eine Panik endet, wenn man Broken wird. Beginnt sie, während man schon Broken ist, endet sie sofort; die sofortigen Folgen gelten (F-48, noch offen).
 - **Trauma:** Wer in der Sitzung 13+ hatte, würfelt bei `end_session` einmal EMPATHY ohne Stresswürfel und ohne Push (F-27, F-42); misslingt sie, entsteht ein Trauma (F-01).
 
 ## Effekte und Zeit
@@ -54,11 +55,12 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 - Aktive Quellen sind Traumata, Zustände, Verletzungen und Sperren aus `block`-Operationen. Talente wirken immer. Ein Zustand innerhalb eines Effekts (`condition`) bringt dessen Effekte mit, außer die Figur trägt passende Ausrüstung.
 - Dauern laufen nur mit den Schritten ihrer Einheit ab (Plan 9.1). Ein Tag zählt als vier Schicht-Schritte; „bis zum nächsten Tag“ endet beim Tageswechsel.
 - Periodische Effekte feuern beim passenden Zeitschritt, Freezing nach Kälte: über null täglich, unter null jede Schicht, im All jeden Turn.
+- Verlangt ein Effekt eine Probe, etwa Freezing eine STAMINA-Probe, bietet die Engine passende freiwillige Talente vorher an (Stoic). Wer Broken ist, würfelt nicht; das Ereignis `roll_skipped` und der Hinweis des Zustands gehen an die Spielleitung.
 - Schaden aus einem Zustand gibt keinen zusätzlichen Stress, denn der Zustand bringt seinen eigenen mit (F-32, Hayes S. 108).
 
 ## Festlegungen
 
-Die Engine liest die gewählte Option jeder Festlegung aus dem Zustand (`rulings`), sonst gilt der Standard aus `data/rules/rulings.json`. Umschaltbar sind in diesem Bereich F-09 (Vorratswurf mit Talent), F-17 (Nightmares) und F-47 (The Long Haul und Push). Zu jeder umschaltbaren Festlegung gibt es Tests für Standard und Alternative.
+Die Engine liest die gewählte Option jeder Festlegung aus dem Zustand (`rulings`), sonst gilt der Standard aus `data/rules/rulings.json`. Umschaltbar sind in diesem Bereich F-09 (Vorratswurf mit Talent), F-17 (Nightmares), F-47 (The Long Haul und Push) und F-48 (Panik bei Broken). Regelwerte wie die Höchstzahl der Helfer stehen in `data/rules/constants.json`. Zu jeder umschaltbaren Festlegung gibt es Tests für Standard und Alternative.
 
 ## Was noch fehlt
 
@@ -66,7 +68,7 @@ Die Engine liest die gewählte Option jeder Festlegung aus dem Zustand (`rulings
 | --- | --- |
 | Konten, Teams, Speichern, echte Zufallsquelle, Würfeln in der Oberfläche | 2 |
 | Talente als eigene Aktion (Analysis, Pull Rank, Personal Safety) | 2 |
-| Initiative, Aktionen pro Runde, Broken im Kampf, Waffen, Magazin, Death Rolls mit Fristen | 3 |
+| Initiative, Aktionen pro Runde, Waffen, leeres Magazin nach Facehugger (S. 61, 96; F-38), Death Rolls mit Fristen | 3 |
 | Ruhe pro Turn und Schicht (F-16), Banter, Calming Presence, Counselor, Zeitmodell mit Schichtmarker | 4 |
 | Effekte auf Schiffe und alle an Bord, Fähigkeiten von Modulen | 5 |
 | Raumkampf-Panik | 6 |
