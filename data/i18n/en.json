@@ -101,7 +101,7 @@
   "intercoms_disabled.desc": "No communication within the ship.",
   "intercoms_disabled.hint": "Talking only to people in the same area.",
   "life_support_offline.name": "Life Support Offline",
-  "life_support_offline.desc": "Everyone aboard without a pressure suit is Freezing and rolls STAMINA every Shift.",
+  "life_support_offline.desc": "Everyone aboard not wearing a vacuum-proof suit is Freezing and rolls STAMINA every Shift.",
   "F-01.name": "Trauma roll after the session",
   "F-01.on_fail": "Trauma on a failed roll",
   "F-02.name": "Displacement drive malfunction",
@@ -145,6 +145,6 @@
   "F-17.as_printed": "Nightmare on a successful roll (as printed)",
   "F-17.on_fail": "Nightmare on a failed roll",
   "F-18.name": "Life support offline: which suit protects",
-  "F-18.vacuum_suits": "Any suit that protects in a vacuum",
+  "F-18.vacuum_suits": "Any vacuum-proof suit, if worn",
   "F-18.pressure_suit_only": "Only the IRC Mk.35 Pressure Suit"
 }

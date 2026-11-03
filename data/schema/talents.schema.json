@@ -515,10 +515,13 @@
       ]
     },
     "Gear": {
-      "description": "Gear that exempts a character from an effect.",
-      "type": "string",
-      "enum": [
-        "pressure_suit"
+      "description": "Gear that exempts a character from an effect while it is worn.",
+      "oneOf": [
+        {
+          "description": "Any suit that protects in a vacuum; the book says \"pressure suit\"\n[p. 198]. Which items count is ruling F-18.",
+          "type": "string",
+          "const": "vacuum_suit"
+        }
       ]
     },
     "HintTier": {

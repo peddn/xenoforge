@@ -83,7 +83,7 @@
           "target": "aboard",
           "condition": "freezing",
           "cold": "sub_zero",
-          "unless_wearing": ["pressure_suit"]
+          "unless_wearing": ["vacuum_suit"]
         }
       ]
     }

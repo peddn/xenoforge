@@ -101,7 +101,7 @@
   "intercoms_disabled.desc": "Keine Kommunikation innerhalb des Schiffs.",
   "intercoms_disabled.hint": "Sprechen nur mit Personen im selben Bereich.",
   "life_support_offline.name": "Lebenserhaltung ausgefallen",
-  "life_support_offline.desc": "Alle an Bord ohne Druckanzug sind unterkühlt und würfeln jede Schicht auf AUSDAUER.",
+  "life_support_offline.desc": "Alle an Bord, die keinen vakuumfesten Anzug tragen, sind unterkühlt und würfeln jede Schicht auf AUSDAUER.",
   "F-01.name": "Trauma-Probe nach der Sitzung",
   "F-01.on_fail": "Trauma bei misslungener Probe",
   "F-02.name": "Störung des Überlichtantriebs",
@@ -145,6 +145,6 @@
   "F-17.as_printed": "Albtraum bei gelungener Probe (wie gedruckt)",
   "F-17.on_fail": "Albtraum bei misslungener Probe",
   "F-18.name": "Lebenserhaltung ausgefallen: welcher Anzug schützt",
-  "F-18.vacuum_suits": "Jeder Anzug, der im Vakuum schützt",
+  "F-18.vacuum_suits": "Jeder vakuumfeste Anzug, sofern getragen",
   "F-18.pressure_suit_only": "Nur der IRC Mk.35 Pressure Suit"
 }

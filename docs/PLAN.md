@@ -62,7 +62,7 @@ Die Korrekturen an der Sternenkarte betreffen die App nicht.
 | Vorratswurf mit Calm Breather / Light Eater [S. 34, 78] | Offen, ob „max. 6 Würfel“ vor oder nach „−2 Würfel“ gilt | Würfel = max(1, min(Vorrat, 6) − 2) |
 | Dunkelheit [S. 83, 95] | Zone „Dark“ (−2) wird als schwach beleuchtet beschrieben; die Fernkampftabelle kennt „Dim light“ −1 und „Darkness“ −2 | Lichtstufe einmal wählen; Zone „Dark“ zählt als Darkness −2, nie doppelt |
 
-Den vollständigen Katalog baut Phase 0 aus den Abschnitten „Ambiguities“ der Spezifikation auf.
+Die übrigen Unklarheiten stehen in den Abschnitten „Ambiguities“ der Spezifikation. Sie kommen phasenweise in den Katalog: Jeder Phasenplan legt die Punkte seines Bereichs mit einem Vorschlag zur Entscheidung vor.
 
 ## 3. Rollen und Rechte
 
@@ -808,7 +808,7 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 | Sprache | Deutsch und Englisch, pro Person umschaltbar |
 | Repo | [peddn/xenoforge](https://github.com/peddn/xenoforge), öffentlich; alle Zahlenwerte aus dem Buch, Beschreibungen in eigenen Worten mit Seitenverweis |
 | Regelbasis | Grundregelwerk 1. Auflage 2019 mit den offiziellen Errata |
-| Regelfragen | Festgelegt in Abschnitt 2 |
+| Regelfragen | Festgelegt in Abschnitt 2 und im Katalog; weitere Unklarheiten entscheidet jede Phase für ihren Bereich |
 | Sichtbarkeit | Spieler sehen nur den eigenen Bogen; Würfe und Ereignisse stehen im gemeinsamen Protokoll |
 | Verdeckte Würfe | Nur für NSC und Kreaturen; Spieler würfeln immer offen, weil sie über den Push entscheiden |
 | Teams | Ein Team ist die ganze Spielrunde (Kampagne oder Szenario); Charaktere gehören den Spielern, die Spielleitung ordnet sie zu |
@@ -821,4 +821,4 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 
 Offen:
 
-Derzeit keine. Nächster Schritt ist Phase 0, nach Zustimmung.
+Derzeit keine. Phase 0 ist abgeschlossen (PR #1). Nächster Schritt ist der Plan für Phase 1.

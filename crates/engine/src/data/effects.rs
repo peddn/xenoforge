@@ -172,11 +172,13 @@ pub enum Cold {
     DeepSpace,
 }
 
-/// Gear that exempts a character from an effect.
+/// Gear that exempts a character from an effect while it is worn.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Gear {
-    PressureSuit,
+    /// Any suit that protects in a vacuum; the book says "pressure suit"
+    /// [p. 198]. Which items count is ruling F-18.
+    VacuumSuit,
 }
 
 /// What a replacement effect replaces.
