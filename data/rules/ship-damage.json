@@ -1,0 +1,91 @@
+{
+  "$schema": "../schema/ship-damage.schema.json",
+  "entries": [
+    {
+      "id": "artificial_gravity_malfunction",
+      "page": 198,
+      "table": "minor",
+      "roll": { "from": 16, "to": 16 },
+      "system": "artificial_gravity",
+      "repair": [
+        { "skill": "heavy_machinery", "count": 1 },
+        { "skill": "comtech", "count": 1 }
+      ],
+      "effects": [
+        {
+          "kind": "trigger",
+          "target": "aboard",
+          "on": { "action": "run" },
+          "then": [
+            {
+              "op": "roll",
+              "roll": { "skill": "mobility" },
+              "on_fail": [{ "op": "hint", "text": "artificial_gravity_malfunction.run_failed" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coffee_maker_malfunction",
+      "page": 198,
+      "table": "minor",
+      "roll": { "from": 24, "to": 24 },
+      "system": "galley",
+      "repair": [{ "skill": "heavy_machinery", "count": 1 }],
+      "effects": [
+        { "kind": "hint", "text": "coffee_maker_malfunction.hint", "tier": "info" }
+      ]
+    },
+    {
+      "id": "displacement_drive_malfunction",
+      "page": 198,
+      "table": "minor",
+      "roll": { "from": 35, "to": 35 },
+      "system": "displacement_drive",
+      "repair": [
+        { "skill": "heavy_machinery", "count": 1 },
+        { "skill": "comtech", "count": 1 }
+      ],
+      "effects": [
+        { "kind": "modifier", "applies_to": { "ship_stats": ["ftl_rating"] }, "change": { "multiply": 2 } }
+      ],
+      "ruling": {
+        "id": "F-02",
+        "alternatives": {
+          "halve": [
+            { "kind": "modifier", "applies_to": { "ship_stats": ["ftl_rating"] }, "change": { "divide": 2 } }
+          ]
+        }
+      }
+    },
+    {
+      "id": "intercoms_disabled",
+      "page": 198,
+      "table": "minor",
+      "roll": { "from": 45, "to": 45 },
+      "system": "intercom",
+      "repair": [{ "skill": "comtech", "count": 1 }],
+      "effects": [
+        { "kind": "hint", "text": "intercoms_disabled.hint", "tier": "hint" }
+      ]
+    },
+    {
+      "id": "life_support_offline",
+      "page": 198,
+      "table": "minor",
+      "roll": { "from": 51, "to": 51 },
+      "system": "life_support",
+      "repair": [{ "skill": "heavy_machinery", "count": 1 }],
+      "effects": [
+        {
+          "kind": "condition",
+          "target": "aboard",
+          "condition": "freezing",
+          "cold": "sub_zero",
+          "unless_wearing": ["pressure_suit"]
+        }
+      ]
+    }
+  ]
+}

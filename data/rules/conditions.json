@@ -1,0 +1,29 @@
+{
+  "$schema": "../schema/conditions.schema.json",
+  "entries": [
+    {
+      "id": "freezing",
+      "page": 107,
+      "effects": [
+        { "kind": "restriction", "blocks": "health_recovery" },
+        { "kind": "restriction", "blocks": "stress_relief" },
+        {
+          "kind": "periodic",
+          "every": { "by_cold": { "above_freezing": "day", "sub_zero": "shift", "deep_space": "turn" } },
+          "then": [
+            {
+              "op": "roll",
+              "roll": { "skill": "stamina" },
+              "on_fail": [
+                { "op": "damage", "amount": 1 },
+                { "op": "stress", "delta": 1 }
+              ]
+            }
+          ]
+        },
+        { "kind": "hint", "text": "freezing.broken", "tier": "hint" }
+      ],
+      "ends": "warm"
+    }
+  ]
+}

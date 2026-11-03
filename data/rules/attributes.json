@@ -1,0 +1,9 @@
+{
+  "$schema": "../schema/attributes.schema.json",
+  "entries": [
+    { "id": "strength", "page": 27 },
+    { "id": "agility", "page": 27 },
+    { "id": "wits", "page": 27 },
+    { "id": "empathy", "page": 27 }
+  ]
+}

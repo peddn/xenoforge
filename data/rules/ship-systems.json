@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema/ship-systems.schema.json",
+  "entries": [
+    { "id": "displacement_drive", "page": 170, "category": "core" },
+    { "id": "galley", "page": 171, "category": "module" },
+    {
+      "id": "docking_umbilical",
+      "page": 171,
+      "category": "module",
+      "effects": [
+        { "kind": "capability", "grants": "dock" }
+      ]
+    },
+    { "id": "artificial_gravity", "page": 198, "category": "other" },
+    { "id": "intercom", "page": 198, "category": "other" },
+    { "id": "life_support", "page": 198, "category": "other" }
+  ]
+}

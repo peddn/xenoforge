@@ -1,0 +1,26 @@
+{
+  "$schema": "../schema/talents.schema.json",
+  "entries": [
+    {
+      "id": "the_long_haul",
+      "page": 76,
+      "career": "roughneck",
+      "effects": [
+        {
+          "kind": "replacement",
+          "replaces": "facehuggers_in_roll",
+          "with": "ignore",
+          "uses": { "count": 1, "per": "act_or_session" },
+          "optional": true
+        }
+      ]
+    },
+    {
+      "id": "nerves_of_steel",
+      "page": 78,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "rolls": ["panic"] }, "change": { "add": -2 } }
+      ]
+    }
+  ]
+}

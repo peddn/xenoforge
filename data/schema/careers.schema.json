@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataFile",
+  "description": "A file in `data/rules`.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "description": "Path to the JSON Schema of this file, for editors.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Career"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "entries"
+  ],
+  "$defs": {
+    "Career": {
+      "description": "A career [p. 38–55]. Phase 0 only holds what the probe data needs.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "key_attribute": {
+          "type": "string"
+        },
+        "page": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "page",
+        "key_attribute"
+      ]
+    }
+  }
+}

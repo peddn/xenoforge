@@ -1,0 +1,1188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataFile",
+  "description": "A file in `data/rules`.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "description": "Path to the JSON Schema of this file, for editors.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CriticalInjury"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "entries"
+  ],
+  "$defs": {
+    "ActionSlot": {
+      "description": "Which action is lost.",
+      "type": "string",
+      "enum": [
+        "slow"
+      ]
+    },
+    "Blocked": {
+      "description": "Something a restriction or block op forbids.",
+      "oneOf": [
+        {
+          "description": "An action from `actions.json`.",
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "action"
+          ]
+        },
+        {
+          "description": "Relieving stress [p. 104].",
+          "type": "string",
+          "const": "stress_relief"
+        },
+        {
+          "description": "Recovering Health [p. 98].",
+          "type": "string",
+          "const": "health_recovery"
+        }
+      ]
+    },
+    "Change": {
+      "description": "How a modifier changes a value.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "add": {
+              "type": "integer",
+              "format": "int8",
+              "maximum": 127,
+              "minimum": -128
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "add"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "multiply": {
+              "type": "integer",
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "multiply"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "divide": {
+              "type": "integer",
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "divide"
+          ]
+        }
+      ]
+    },
+    "Chooser": {
+      "description": "Who chooses.",
+      "type": "string",
+      "enum": [
+        "gm"
+      ]
+    },
+    "Cold": {
+      "description": "How cold it is [p. 107].",
+      "type": "string",
+      "enum": [
+        "above_freezing",
+        "sub_zero",
+        "deep_space"
+      ]
+    },
+    "ColdIntervals": {
+      "description": "Roll intervals for Freezing [p. 107].",
+      "type": "object",
+      "properties": {
+        "above_freezing": {
+          "$ref": "#/$defs/Unit"
+        },
+        "deep_space": {
+          "$ref": "#/$defs/Unit"
+        },
+        "sub_zero": {
+          "$ref": "#/$defs/Unit"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "above_freezing",
+        "sub_zero",
+        "deep_space"
+      ]
+    },
+    "CriticalInjury": {
+      "description": "A row of the critical injury table [p. 100].",
+      "type": "object",
+      "properties": {
+        "d66": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          }
+        },
+        "fatal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Fatal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "healing": {
+          "$ref": "#/$defs/Healing"
+        },
+        "id": {
+          "type": "string"
+        },
+        "instant_death": {
+          "description": "Kills outright; no Death Roll [p. 99].",
+          "type": "boolean"
+        },
+        "on_apply": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Op"
+          }
+        },
+        "page": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "page",
+        "d66",
+        "healing"
+      ]
+    },
+    "Effect": {
+      "description": "A continuous effect (plan section 4.4).",
+      "oneOf": [
+        {
+          "description": "Changes the dice pool of rolls or a ship stat.",
+          "type": "object",
+          "properties": {
+            "applies_to": {
+              "$ref": "#/$defs/ModTarget"
+            },
+            "change": {
+              "$ref": "#/$defs/Change"
+            },
+            "gm_only": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "const": "modifier"
+            },
+            "lasts": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Lasts"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/Target"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "applies_to",
+            "change"
+          ]
+        },
+        {
+          "description": "Forbids an action or a kind of recovery.",
+          "type": "object",
+          "properties": {
+            "blocks": {
+              "$ref": "#/$defs/Blocked"
+            },
+            "gm_only": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "const": "restriction"
+            },
+            "lasts": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Lasts"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/Target"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "blocks"
+          ]
+        },
+        {
+          "description": "Runs operations whenever an event happens.",
+          "type": "object",
+          "properties": {
+            "gm_only": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "const": "trigger"
+            },
+            "lasts": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Lasts"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "on": {
+              "$ref": "#/$defs/TriggerEvent"
+            },
+            "target": {
+              "$ref": "#/$defs/Target"
+            },
+            "then": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Op"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "on",
+            "then"
+          ]
+        },
+        {
+          "description": "Runs operations on every step of a time unit.",
+          "type": "object",
+          "properties": {
+            "every": {
+              "$ref": "#/$defs/Interval"
+            },
+            "gm_only": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "const": "periodic"
+            },
+            "lasts": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Lasts"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/Target"
+            },
+            "then": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Op"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "every",
+            "then"
+          ]
+        },
+        {
+          "description": "Replaces an outcome (\"instead\").",
+          "type": "object",
+          "properties": {
+            "gm_only": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "const": "replacement"
+            },
+            "lasts": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Lasts"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "optional": {
+              "description": "The player decides whether to use it.",
+              "type": "boolean"
+            },
+            "replaces": {
+              "$ref": "#/$defs/Replaceable"
+            },
+            "target": {
+              "$ref": "#/$defs/Target"
+            },
+            "uses": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Uses"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "with": {
+              "$ref": "#/$defs/ReplaceWith"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "replaces",
+            "with"
+          ]
+        },
+        {
+          "description": "Puts a condition from `conditions.json` on the target.",
+          "type": "object",
+          "properties": {
+            "cold": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Cold"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "condition": {
+              "type": "string"
+            },
+            "gm_only": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "const": "condition"
+            },
+            "lasts": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Lasts"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/Target"
+            },
+            "unless_wearing": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Gear"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "condition"
+          ]
+        },
+        {
+          "description": "Makes an action possible while the source works.",
+          "type": "object",
+          "properties": {
+            "gm_only": {
+              "type": "boolean"
+            },
+            "grants": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "capability"
+            },
+            "lasts": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Lasts"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/Target"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "grants"
+          ]
+        },
+        {
+          "description": "Shows a note; the game master acts on it.",
+          "type": "object",
+          "properties": {
+            "gm_only": {
+              "type": "boolean"
+            },
+            "kind": {
+              "type": "string",
+              "const": "hint"
+            },
+            "lasts": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Lasts"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/Target"
+            },
+            "text": {
+              "description": "Translation key of the note.",
+              "type": "string"
+            },
+            "tier": {
+              "$ref": "#/$defs/HintTier"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "text",
+            "tier"
+          ]
+        }
+      ]
+    },
+    "EndEvent": {
+      "description": "An event that ends an effect.",
+      "oneOf": [
+        {
+          "description": "Panic stops: COMMAND roll by another, Broken, or one Turn passes [p. 104].",
+          "type": "string",
+          "const": "panic_stops"
+        },
+        {
+          "description": "The healing time of a critical injury has run out [p. 101].",
+          "type": "string",
+          "const": "healed"
+        },
+        {
+          "description": "A successful MEDICAL AID roll was made on the character [p. 100].",
+          "type": "string",
+          "const": "medical_aid"
+        },
+        {
+          "description": "The damaged ship system is repaired [p. 200].",
+          "type": "string",
+          "const": "repaired"
+        },
+        {
+          "description": "The character is warm again [p. 107].",
+          "type": "string",
+          "const": "warm"
+        },
+        {
+          "description": "The next change of day (Night to Morning).",
+          "type": "string",
+          "const": "day_change"
+        }
+      ]
+    },
+    "Fatal": {
+      "description": "A fatal critical injury needs a Death Roll when the time limit runs\nout [p. 99].",
+      "type": "object",
+      "properties": {
+        "medical_aid_modifier": {
+          "description": "Modification to the MEDICAL AID roll that saves the character.",
+          "type": "integer",
+          "format": "int8",
+          "default": 0,
+          "maximum": 127,
+          "minimum": -128
+        },
+        "time_limit": {
+          "description": "One step of this unit.",
+          "$ref": "#/$defs/Unit"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "time_limit"
+      ]
+    },
+    "Gear": {
+      "description": "Gear that exempts a character from an effect.",
+      "type": "string",
+      "enum": [
+        "pressure_suit"
+      ]
+    },
+    "Healing": {
+      "description": "Healing time of a critical injury [p. 100–101]. It is also the default\nduration of the injury's effects.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "permanent"
+          ]
+        },
+        {
+          "description": "No healing time; the effects are instant.",
+          "type": "string",
+          "const": "none"
+        },
+        {
+          "description": "A number of days rolled with this many D6.",
+          "type": "object",
+          "properties": {
+            "days_d6": {
+              "type": "integer",
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "days_d6"
+          ]
+        },
+        {
+          "description": "Until a MEDICAL AID roll is made.",
+          "type": "string",
+          "const": "until_medical_aid"
+        }
+      ]
+    },
+    "HintTier": {
+      "description": "How a hint is shown in the overview (plan section 7.4).",
+      "oneOf": [
+        {
+          "description": "The game master has to act on it.",
+          "type": "string",
+          "const": "hint"
+        },
+        {
+          "description": "No game consequence.",
+          "type": "string",
+          "const": "info"
+        }
+      ]
+    },
+    "Interval": {
+      "description": "How often a periodic effect fires.",
+      "oneOf": [
+        {
+          "description": "Every step of this unit.",
+          "type": "object",
+          "properties": {
+            "step": {
+              "$ref": "#/$defs/Unit"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "step"
+          ]
+        },
+        {
+          "description": "Depends on how cold it is.",
+          "type": "object",
+          "properties": {
+            "by_cold": {
+              "$ref": "#/$defs/ColdIntervals"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "by_cold"
+          ]
+        }
+      ]
+    },
+    "Lasts": {
+      "description": "How long an effect lasts.",
+      "oneOf": [
+        {
+          "description": "Only the one-shot operations happen; nothing continues.",
+          "type": "string",
+          "const": "instant"
+        },
+        {
+          "description": "A number of steps of one time unit.",
+          "type": "object",
+          "properties": {
+            "steps": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "format": "uint8",
+                  "maximum": 255,
+                  "minimum": 0
+                },
+                "unit": {
+                  "$ref": "#/$defs/Unit"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "unit",
+                "count"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "steps"
+          ]
+        },
+        {
+          "description": "Until an event happens.",
+          "type": "object",
+          "properties": {
+            "until": {
+              "$ref": "#/$defs/EndEvent"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "until"
+          ]
+        },
+        {
+          "description": "For good.",
+          "type": "string",
+          "const": "permanent"
+        },
+        {
+          "description": "As long as the source exists (talent, installed module).",
+          "type": "string",
+          "const": "while_source"
+        }
+      ]
+    },
+    "ModTarget": {
+      "description": "What a modifier applies to. At least one list must be filled.",
+      "type": "object",
+      "properties": {
+        "based_on": {
+          "description": "Skill rolls based on these attributes.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rolls": {
+          "description": "Rolls that are not skill rolls.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RollKind"
+          }
+        },
+        "ship_stats": {
+          "description": "Ship stats.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ShipStat"
+          }
+        },
+        "skills": {
+          "description": "Skill rolls with these skills.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Op": {
+      "description": "A one-shot operation.",
+      "oneOf": [
+        {
+          "description": "Changes the STRESS LEVEL.",
+          "type": "object",
+          "properties": {
+            "delta": {
+              "type": "integer",
+              "format": "int8",
+              "maximum": 127,
+              "minimum": -128
+            },
+            "op": {
+              "type": "string",
+              "const": "stress"
+            },
+            "who": {
+              "$ref": "#/$defs/Who"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "delta"
+          ]
+        },
+        {
+          "description": "Deals damage that ignores armor.",
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "integer",
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0
+            },
+            "op": {
+              "type": "string",
+              "const": "damage"
+            },
+            "who": {
+              "$ref": "#/$defs/Who"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "amount"
+          ]
+        },
+        {
+          "description": "Makes a roll and branches on the result.",
+          "type": "object",
+          "properties": {
+            "on_fail": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Op"
+              }
+            },
+            "on_success": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Op"
+              }
+            },
+            "op": {
+              "type": "string",
+              "const": "roll"
+            },
+            "roll": {
+              "$ref": "#/$defs/RollSpec"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "roll"
+          ]
+        },
+        {
+          "description": "Makes a Panic Roll.",
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "panic_roll"
+            },
+            "who": {
+              "$ref": "#/$defs/Who"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op"
+          ]
+        },
+        {
+          "description": "The next action of this kind is lost.",
+          "type": "object",
+          "properties": {
+            "action": {
+              "$ref": "#/$defs/ActionSlot"
+            },
+            "op": {
+              "type": "string",
+              "const": "lose_next_action"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "action"
+          ]
+        },
+        {
+          "description": "Drops a weapon or other important item.",
+          "type": "object",
+          "properties": {
+            "chosen_by": {
+              "$ref": "#/$defs/Chooser"
+            },
+            "op": {
+              "type": "string",
+              "const": "drop_item"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "chosen_by"
+          ]
+        },
+        {
+          "description": "Blocks something for a while.",
+          "type": "object",
+          "properties": {
+            "blocks": {
+              "$ref": "#/$defs/Blocked"
+            },
+            "lasts": {
+              "$ref": "#/$defs/Lasts"
+            },
+            "op": {
+              "type": "string",
+              "const": "block"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "blocks",
+            "lasts"
+          ]
+        },
+        {
+          "description": "Asks the player or game master a yes/no question.",
+          "type": "object",
+          "properties": {
+            "on_no": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Op"
+              }
+            },
+            "op": {
+              "type": "string",
+              "const": "ask"
+            },
+            "question": {
+              "description": "Translation key of the question.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "question",
+            "on_no"
+          ]
+        },
+        {
+          "description": "Shows a note.",
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "hint"
+            },
+            "text": {
+              "description": "Translation key of the note.",
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "text"
+          ]
+        },
+        {
+          "description": "Calls a named function in the engine for a one-off rule.",
+          "type": "object",
+          "properties": {
+            "handler": {
+              "type": "string"
+            },
+            "op": {
+              "type": "string",
+              "const": "special"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "handler"
+          ]
+        }
+      ]
+    },
+    "ReplaceWith": {
+      "description": "What happens instead.",
+      "type": "string",
+      "enum": [
+        "ignore"
+      ]
+    },
+    "Replaceable": {
+      "description": "What a replacement effect replaces.",
+      "oneOf": [
+        {
+          "description": "All facehugger results (ones on Stress Dice) of a single roll.",
+          "type": "string",
+          "const": "facehuggers_in_roll"
+        }
+      ]
+    },
+    "RollKind": {
+      "description": "Kinds of rolls that are not skill rolls.",
+      "type": "string",
+      "enum": [
+        "panic"
+      ]
+    },
+    "RollSpec": {
+      "description": "A roll made by an operation.",
+      "oneOf": [
+        {
+          "description": "A skill roll: attribute + skill (+ Stress Dice).",
+          "type": "object",
+          "properties": {
+            "skill": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "skill"
+          ]
+        },
+        {
+          "description": "An attribute roll without skill.",
+          "type": "object",
+          "properties": {
+            "attribute": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "attribute"
+          ]
+        }
+      ]
+    },
+    "ShipStat": {
+      "description": "Ship stats [p. 167].",
+      "type": "string",
+      "enum": [
+        "ftl_rating",
+        "signature",
+        "thrusters",
+        "hull",
+        "armor"
+      ]
+    },
+    "Target": {
+      "description": "Who or what a continuous effect works on.",
+      "oneOf": [
+        {
+          "description": "The character, creature or ship that carries the source.",
+          "type": "string",
+          "const": "bearer"
+        },
+        {
+          "description": "The ship itself (stats, actions).",
+          "type": "string",
+          "const": "ship"
+        },
+        {
+          "description": "Everyone aboard the ship.",
+          "type": "string",
+          "const": "aboard"
+        }
+      ]
+    },
+    "TriggerEvent": {
+      "description": "The event a trigger listens to.",
+      "oneOf": [
+        {
+          "description": "The bearer makes a skill roll with one of these skills.",
+          "type": "object",
+          "properties": {
+            "skill_roll": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "skill_roll"
+          ]
+        },
+        {
+          "description": "The bearer performs this action.",
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "action"
+          ]
+        },
+        {
+          "description": "The bearer sleeps.",
+          "type": "string",
+          "const": "sleep"
+        }
+      ]
+    },
+    "Unit": {
+      "description": "A step of game time (plan section 9.1).",
+      "type": "string",
+      "enum": [
+        "round",
+        "turn",
+        "shift",
+        "day"
+      ]
+    },
+    "UsePeriod": {
+      "description": "The period a limited use refers to.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "session"
+          ]
+        },
+        {
+          "description": "Once per Act in Cinematic play, once per session in Campaign play.",
+          "type": "string",
+          "const": "act_or_session"
+        }
+      ]
+    },
+    "Uses": {
+      "description": "A limit on how often something can be used.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "per": {
+          "$ref": "#/$defs/UsePeriod"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "per"
+      ]
+    },
+    "Who": {
+      "description": "Who a one-shot operation affects. Groups that depend on where people\nare (range, hearing, seeing) are proposed by the app and confirmed by\nthe game master, because the app does not track positions.",
+      "type": "string",
+      "enum": [
+        "bearer",
+        "friendly_pcs_short_range",
+        "friendly_who_hear",
+        "friendly_who_see",
+        "friendly_who_witness",
+        "aboard"
+      ]
+    }
+  }
+}

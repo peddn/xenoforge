@@ -1,0 +1,118 @@
+{
+  "$schema": "../schema/panic.schema.json",
+  "entries": [
+    {
+      "id": "keeping_it_together",
+      "page": 105,
+      "roll": { "from": 1, "to": 6 },
+      "lasts": "instant"
+    },
+    {
+      "id": "nervous_twitch",
+      "page": 105,
+      "roll": { "from": 7, "to": 7 },
+      "on_apply": [
+        { "op": "stress", "delta": 1 },
+        { "op": "stress", "delta": 1, "who": "friendly_pcs_short_range" }
+      ],
+      "lasts": "instant"
+    },
+    {
+      "id": "tremble",
+      "page": 105,
+      "roll": { "from": 8, "to": 8 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["agility"] }, "change": { "add": -2 } }
+      ],
+      "lasts": { "until": "panic_stops" }
+    },
+    {
+      "id": "drop_item",
+      "page": 105,
+      "roll": { "from": 9, "to": 9 },
+      "on_apply": [
+        { "op": "drop_item", "chosen_by": "gm" },
+        { "op": "stress", "delta": 1 }
+      ],
+      "lasts": "instant"
+    },
+    {
+      "id": "freeze",
+      "page": 105,
+      "roll": { "from": 10, "to": 10 },
+      "cancels_action": true,
+      "on_apply": [
+        { "op": "lose_next_action", "action": "slow" },
+        { "op": "stress", "delta": 1 },
+        { "op": "stress", "delta": 1, "who": "friendly_pcs_short_range" }
+      ],
+      "lasts": { "steps": { "unit": "round", "count": 1 } }
+    },
+    {
+      "id": "seek_cover",
+      "page": 105,
+      "roll": { "from": 11, "to": 11 },
+      "cancels_action": true,
+      "on_apply": [
+        { "op": "stress", "delta": -1 },
+        { "op": "stress", "delta": 1, "who": "friendly_pcs_short_range" }
+      ],
+      "effects": [
+        { "kind": "hint", "text": "seek_cover.hint", "tier": "hint" }
+      ],
+      "lasts": { "steps": { "unit": "round", "count": 1 } }
+    },
+    {
+      "id": "scream",
+      "page": 105,
+      "roll": { "from": 12, "to": 12 },
+      "cancels_action": true,
+      "on_apply": [
+        { "op": "lose_next_action", "action": "slow" },
+        { "op": "stress", "delta": -1 },
+        { "op": "panic_roll", "who": "friendly_who_hear" }
+      ],
+      "lasts": { "steps": { "unit": "round", "count": 1 } }
+    },
+    {
+      "id": "flee",
+      "page": 105,
+      "roll": { "from": 13, "to": 13 },
+      "cancels_action": true,
+      "trauma_check": true,
+      "on_apply": [
+        { "op": "stress", "delta": -1 },
+        { "op": "panic_roll", "who": "friendly_who_see" }
+      ],
+      "effects": [
+        { "kind": "hint", "text": "flee.hint", "tier": "hint" }
+      ],
+      "lasts": { "until": "panic_stops" }
+    },
+    {
+      "id": "berserk",
+      "page": 105,
+      "roll": { "from": 14, "to": 14 },
+      "cancels_action": true,
+      "trauma_check": true,
+      "on_apply": [
+        { "op": "panic_roll", "who": "friendly_who_witness" }
+      ],
+      "effects": [
+        { "kind": "hint", "text": "berserk.hint", "tier": "hint" }
+      ],
+      "lasts": { "until": "panic_stops" }
+    },
+    {
+      "id": "catatonic",
+      "page": 105,
+      "roll": { "from": 15 },
+      "cancels_action": true,
+      "trauma_check": true,
+      "effects": [
+        { "kind": "hint", "text": "catatonic.hint", "tier": "hint" }
+      ],
+      "lasts": { "until": "panic_stops" }
+    }
+  ]
+}
