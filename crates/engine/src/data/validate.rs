@@ -4,7 +4,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-use super::effects::{Blocked, Change, Effect, Lasts, ModTarget, Op, RollSpec, TriggerEvent};
+use super::effects::{
+    Blocked, Change, Effect, Lasts, ModTarget, Modified, Op, ReplaceWith, Replaceable, RollSpec,
+    TriggerEvent,
+};
 use super::model::{DamageTable, RollRange, Ruling, RulingSwitch};
 use super::{Data, Entry, LANGUAGES, Page};
 
@@ -66,6 +69,10 @@ struct Checker<'a> {
     conditions: BTreeSet<&'a str>,
     systems: BTreeSet<&'a str>,
     rulings: BTreeMap<&'a str, &'a Ruling>,
+    /// Panic entries outside the table, which only a replacement reaches.
+    off_table_panic: BTreeSet<&'a str>,
+    /// Panic entries a replacement refers to.
+    used_panic_effects: BTreeSet<String>,
 }
 
 impl<'a> Checker<'a> {
@@ -82,6 +89,13 @@ impl<'a> Checker<'a> {
             conditions: r.conditions.iter().map(|e| e.id.as_str()).collect(),
             systems: r.ship_systems.iter().map(|e| e.id.as_str()).collect(),
             rulings: r.rulings.iter().map(|e| (e.id.as_str(), e)).collect(),
+            off_table_panic: r
+                .panic
+                .iter()
+                .filter(|e| e.roll.is_none())
+                .map(|e| e.id.as_str())
+                .collect(),
+            used_panic_effects: BTreeSet::new(),
         }
     }
 
@@ -216,17 +230,29 @@ impl<'a> Checker<'a> {
         match effect {
             Effect::Modifier {
                 applies_to,
+                modifies,
                 change,
                 lasts,
                 ..
             } => {
                 self.mod_target(at, applies_to);
+                let ship_only = applies_to.skills.is_empty()
+                    && applies_to.based_on.is_empty()
+                    && applies_to.rolls.is_empty();
                 match change {
                     Change::Add(0) => self.problem(at, "adding 0 changes nothing"),
                     Change::Multiply(n) | Change::Divide(n) if *n < 2 => {
                         self.problem(at, "factor must be at least 2")
                     }
+                    Change::Multiply(_) | Change::Divide(_) if !ship_only => {
+                        self.problem(at, "only ship stats can be multiplied or divided")
+                    }
                     _ => {}
+                }
+                if *modifies == Modified::Pushes
+                    && (!applies_to.rolls.is_empty() || !applies_to.ship_stats.is_empty())
+                {
+                    self.problem(at, "only skill rolls can be pushed");
                 }
                 lasts.iter().for_each(|l| self.lasts(at, l));
             }
@@ -256,10 +282,17 @@ impl<'a> Checker<'a> {
                 self.ops(at, owner, then);
                 lasts.iter().for_each(|l| self.lasts(at, l));
             }
-            Effect::Replacement { uses, lasts, .. } => {
+            Effect::Replacement {
+                replaces,
+                with,
+                uses,
+                lasts,
+                ..
+            } => {
                 if uses.is_some_and(|u| u.count == 0) {
                     self.problem(at, "uses must be at least 1");
                 }
+                self.replacement(at, replaces, with);
                 lasts.iter().for_each(|l| self.lasts(at, l));
             }
             Effect::Condition {
@@ -276,6 +309,37 @@ impl<'a> Checker<'a> {
                 self.text_key(at, owner, text);
                 lasts.iter().for_each(|l| self.lasts(at, l));
             }
+        }
+    }
+
+    fn replacement(&mut self, at: &str, replaces: &Replaceable, with: &ReplaceWith) {
+        match (replaces, with) {
+            (Replaceable::FacehuggersInRoll, ReplaceWith::Ignore) => {}
+            (Replaceable::PanicResult { from }, ReplaceWith::PanicEffect(effect)) => {
+                if !(7..=15).contains(from) {
+                    self.problem(at, format!("panic result {from} is not a panic effect"));
+                }
+                if !self.off_table_panic.contains(effect.as_str()) {
+                    self.problem(
+                        at,
+                        format!("\"{effect}\" is not a panic entry outside the table"),
+                    );
+                }
+                self.used_panic_effects.insert(effect.clone());
+            }
+            (Replaceable::Roll(skill), ReplaceWith::Success) => self.reference(at, "skill", skill),
+            (Replaceable::AttributeFor(skill), ReplaceWith::Attribute(attribute)) => {
+                self.reference(at, "skill", skill);
+                self.reference(at, "attribute", attribute);
+            }
+            (Replaceable::Skill(skill), ReplaceWith::Skill(other)) => {
+                self.reference(at, "skill", skill);
+                self.reference(at, "skill", other);
+                if skill == other {
+                    self.problem(at, "a skill cannot replace itself");
+                }
+            }
+            _ => self.problem(at, "replacement and its result do not fit together"),
         }
     }
 
@@ -441,23 +505,36 @@ impl<'a> Checker<'a> {
     /// range [p. 105].
     fn panic_table(&mut self) {
         let data = self.data;
-        let mut rows: Vec<_> = data.rules.panic.iter().collect();
-        rows.sort_by_key(|r| r.roll.from);
+        let mut rows: Vec<_> = data
+            .rules
+            .panic
+            .iter()
+            .filter_map(|r| r.roll.map(|roll| (r, roll)))
+            .collect();
+        rows.sort_by_key(|(_, roll)| roll.from);
         let mut next = 1;
         let last = rows.len().saturating_sub(1);
-        for (i, row) in rows.iter().enumerate() {
+        for (i, (row, roll)) in rows.iter().enumerate() {
             let at = format!("panic/{}", row.id);
-            if row.roll.from != next {
+            if roll.from != next {
                 self.problem(&at, format!("expected the range to start at {next}"));
             }
-            match row.roll.to {
+            match roll.to {
                 Some(to) if i == last => {
                     self.problem(&at, format!("the last range must be open, not end at {to}"))
                 }
-                Some(to) if to < row.roll.from => self.problem(&at, "range ends before it starts"),
+                Some(to) if to < roll.from => self.problem(&at, "range ends before it starts"),
                 Some(to) => next = to + 1,
                 None if i != last => self.problem(&at, "only the last range may be open"),
                 None => {}
+            }
+        }
+        for id in self.off_table_panic.clone() {
+            if !self.used_panic_effects.contains(id) {
+                self.problem(
+                    format!("panic/{id}"),
+                    "entry outside the table is never used",
+                );
             }
         }
     }

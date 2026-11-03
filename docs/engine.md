@@ -1,0 +1,72 @@
+# Regel-Engine
+
+Die Regel-Engine (`crates/engine`) ist eine reine Bibliothek: kein Netz, keine Datenbank, keine Oberfläche. Sie bekommt einen Spielzustand, einen Befehl und eine Würfelquelle und liefert Ereignisse zurück. Gewürfelt wird nur über die Würfelquelle; der Server setzt in Phase 2 eine echte Zufallsquelle ein, Tests nutzen feste Würfe (`ScriptedDice`). Der Plan dazu steht in `docs/PLAN.md`, Abschnitt 4.
+
+```rust
+let engine = Engine::new(RuleData::load(Path::new("data/rules"))?);
+let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
+```
+
+- **Ein Befehl, eine Antwort.** `apply` ändert den Zustand und gibt die Ereignisse zurück. Scheitert der Befehl, bleibt der Zustand unverändert.
+- **Entscheidungen.** Wo das Buch eine Person entscheiden lässt, legt die Engine eine offene Entscheidung (`Pending`) an und meldet sie als Ereignis. Weiter geht es mit `Command::Decide`.
+- **Grundwerte bleiben.** Attribute, Fertigkeiten und Talente ändern sich nie durch Effekte. Jede Frage („welche Modifikationen gelten für diesen Wurf?“) wird jedes Mal neu aus den aktiven Quellen beantwortet, mit Angabe der Quelle (`injury/broken_ribs`).
+- **Speicherbar.** Der ganze Zustand, auch ein halb fertiger Wurf, lässt sich als JSON speichern und laden.
+
+## Befehle
+
+| Befehl | Wirkung | Seite |
+| --- | --- | --- |
+| `roll` | Probe: Fertigkeit, nur Attribut, Death Roll, fester Pool, Vorratswurf, einzelne Stresswürfel | 34, 58–64, 99, 110 |
+| `opposed` | Vergleichender Wurf; nur der Angreifer darf pushen | 64, F-22 |
+| `decide` | Antwort auf eine offene Entscheidung | – |
+| `panic_roll` | Panikwurf auf Ansage der Spielleitung, etwa nach kritischer Verletzung | 104 |
+| `change_stress` | Stress ±N für ausgewählte Charaktere | 211 |
+| `damage` | Erlittener Schaden nach Rüstung; Stress +1; Health 0 heißt Broken | 98, 103, F-33 |
+| `apply` | Trauma, Zustand oder kritische Verletzung anlegen | 100–101, 106–107 |
+| `end` | Ereignis, das Quellen beendet: MEDICAL AID, warm, repariert, geheilt | – |
+| `remove` | Quelle von Hand entfernen (Korrektur) | – |
+| `stop_panic` | Panik von Hand beenden, etwa Berserk, wenn das Ziel Broken ist | F-29 |
+| `step` | Zeitschritt: Runde, Turn oder Schicht, ggf. mit neuem Tag | Plan 9.1 |
+| `sleep` | Diese Charaktere schlafen (für Nightmares) | 101 |
+| `perform_action` | Aktion ausführen: prüft Sperren und Fähigkeiten, löst Auslöser aus | – |
+| `use_signature_item` | Stress −1, einmal pro Akt bzw. Sitzung, gesperrt wie anderer Stressabbau | 104, F-31 |
+| `end_act`, `end_session` | Zähler zurücksetzen; nach der Sitzung die Trauma-Probe | 104 |
+
+## Ablauf einer Fertigkeitsprobe
+
+1. **Pool bauen:** Attribut + Fertigkeit + Modifikationen (Ausrüstung und Schwierigkeit vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit oder bestehen die Probe ohne Wurf (Breakthrough).
+2. **Würfeln.** Grundwürfel zuerst, dann Stresswürfel.
+3. **Facehugger** auf Stresswürfeln: Mit The Long Haul fragt die Engine, ob es eingesetzt wird. Sonst gibt es keinen Push mehr, und es folgt sofort der Panikwurf; ab 10 ist die Aktion abgebrochen (F-44 für 1–9).
+4. **Push oder Story Point anbieten**, solange erlaubt. Ein Push kostet zuerst Stress +1, dann bleiben die 6er liegen, ein neuer Stresswürfel kommt dazu, und der Rest wird neu geworfen (F-20).
+5. **Ergebnis:** ab einer 6 Erfolg, jede weitere 6 ein Stunt; beim vergleichenden Wurf zählt die Differenz, Gleichstand verliert der Angreifer [S. 64, 70]. Danach laufen Auslöser wie Crotch hit, und eine COMMAND-Probe zum Beenden einer Panik wirkt (F-36).
+
+## Panik
+
+- **Wert:** W6 + Stresslevel + Modifikationen (Nerves of Steel −2). Unter 1 zählt als 1–6.
+- **Mehr Panik:** Läuft eine Panik, wird ein niedrigerer Wert auf eine Stufe über dem laufenden angehoben; gleich bleibt gleich (F-23), über 15+ bleibt es Catatonic (F-24). Eine Panik läuft ab 7, bis sie endet, auch wenn ihr Effekt schon vorbei ist (F-25).
+- **Ende:** ein Turn oder eine Schicht vergeht, Broken, eine gelungene COMMAND-Probe eines anderen, die Spielleitung [S. 104].
+- **Ketten:** Wer etwas hört, sieht oder auf kurzer Distanz ist, kennt die App nicht. Sie schlägt alle anderen menschlichen Spielercharaktere vor (F-39), die Spielleitung wählt aus.
+- **Overkill** bietet die Engine ab 11 an; der Wert bleibt für Mehr Panik und die Trauma-Schwelle maßgeblich (F-26, F-30).
+- **Trauma:** Wer in der Sitzung 13+ hatte, würfelt bei `end_session` einmal EMPATHY ohne Stresswürfel und ohne Push (F-27, F-42); misslingt sie, entsteht ein Trauma (F-01).
+
+## Effekte und Zeit
+
+- Aktive Quellen sind Traumata, Zustände, Verletzungen und Sperren aus `block`-Operationen. Talente wirken immer. Ein Zustand innerhalb eines Effekts (`condition`) bringt dessen Effekte mit, außer die Figur trägt passende Ausrüstung.
+- Dauern laufen nur mit den Schritten ihrer Einheit ab (Plan 9.1). Ein Tag zählt als vier Schicht-Schritte; „bis zum nächsten Tag“ endet beim Tageswechsel.
+- Periodische Effekte feuern beim passenden Zeitschritt, Freezing nach Kälte: über null täglich, unter null jede Schicht, im All jeden Turn.
+- Schaden aus einem Zustand gibt keinen zusätzlichen Stress, denn der Zustand bringt seinen eigenen mit (F-32, Hayes S. 108).
+
+## Festlegungen
+
+Die Engine liest die gewählte Option jeder Festlegung aus dem Zustand (`rulings`), sonst gilt der Standard aus `data/rules/rulings.json`. Umschaltbar sind in diesem Bereich F-09 (Vorratswurf mit Talent), F-17 (Nightmares) und F-47 (The Long Haul und Push). Zu jeder umschaltbaren Festlegung gibt es Tests für Standard und Alternative.
+
+## Was noch fehlt
+
+| Was | Phase |
+| --- | --- |
+| Konten, Teams, Speichern, echte Zufallsquelle, Würfeln in der Oberfläche | 2 |
+| Talente als eigene Aktion (Analysis, Pull Rank, Personal Safety) | 2 |
+| Initiative, Aktionen pro Runde, Broken im Kampf, Waffen, Magazin, Death Rolls mit Fristen | 3 |
+| Ruhe pro Turn und Schicht (F-16), Banter, Calming Presence, Counselor, Zeitmodell mit Schichtmarker | 4 |
+| Effekte auf Schiffe und alle an Bord, Fähigkeiten von Modulen | 5 |
+| Raumkampf-Panik | 6 |

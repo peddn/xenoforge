@@ -41,6 +41,35 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-16 | Ruhe über eine Schicht, S. 98, 104, 106 | Stress −1 und Health +1 gibt es pro Turn Ruhe; wie viel eine ganze Schicht bringt, sagt das Buch nicht | Eine ungestörte Schicht Ruhe in Sicherheit: Stress 0 und volle Health, außer bei Broken; eine Schicht Schlaf beendet Exhausted. Die Spielleitung kann die Ruhe stören, dann entfällt beides; automatisch gestört bei einer Probe während der Ruhe oder einem Kampf in dieser Schicht | – |
 | F-17 | Trauma Nightmares, S. 101 | Laut Text kommt der Albtraum, wenn die EMPATHY-Probe **gelingt**; bei der Trauma-Probe (F-01) war dieselbe Logik ein Druckfehler. Ein Erratum dazu ist nicht bekannt | Wie gedruckt: Albtraum bei gelungener Probe, wie bei anderen EMPATHY-Proben, bei denen ein Erfolg heißt, dass einen etwas nicht loslässt | Albtraum bei misslungener Probe |
 | F-18 | Life support offline, S. 198 und 128 | Freezing trifft alle ohne „pressure suit“. Die Ausrüstung kennt den IRC Mk.35 Pressure Suit, aber auch den Mk.50 Compression Suit und weitere Anzüge, die im Vakuum schützen | Jeder vakuumfeste Anzug schützt, aber nur, wenn er getragen wird | nur der Mk.35 Pressure Suit |
+| F-19 | Stresslevel, S. 103 | Kein Maximum genannt, das Minimum 0 nur angedeutet (Spezifikation 02-A1, 01-A4) | Untergrenze 0, keine Obergrenze | – |
+| F-20 | Push nach weggefallenen Stresswürfeln, S. 61, 62 | Hat eine negative Modifikation Stresswürfel weggenommen, ist offen, ob der Push einen Würfel ergänzt oder den Pool neu baut (02-A2) | Genau ein neuer Stresswürfel | – |
+| F-21 | Story Point ohne Würfel, S. 61, 62 | „Keine Chance auf Erfolg“ gegen einen automatischen Erfolg durch Story Point (02-A3) | Nicht erlaubt; die Probe scheitert | – |
+| F-22 | Vergleichender Wurf, S. 64, 104 | Reihenfolge von Push und Panik offen (02-A5) | Beide würfeln, dann darf der Angreifer pushen. Panik des Verteidigers nach den normalen Regeln: ab 10 zählt seine Probe nicht | – |
+| F-23 | Mehr Panik mit gleichem Ergebnis, S. 104 | Nur ein niedrigeres Ergebnis wird gesteigert (02-A7) | Keine Steigerung; derselbe Effekt gilt neu | – |
+| F-24 | Mehr Panik über 15+, S. 104 | Steigerung über das Tabellenende ist offen (02-A7) | Bleibt Catatonic | – |
+| F-25 | Dauer der Panik, S. 104 | Offen, ob sofortige oder einrundige Effekte noch als laufende Panik zählen (02-A7) | Ab 7 läuft die Panik, bis sie endet (COMMAND, Broken, ein Turn), auch wenn der Effekt selbst vorbei ist | – |
+| F-26 | Trauma-Schwelle 13+, S. 104 | Offen, ob der rohe oder der angepasste Wert zählt (02-A8) | Der Endwert nach Nerves of Steel und Steigerung | – |
+| F-27 | Reine Attributproben, S. 99, 101, 104 | Stresswürfel und Push sind für Trauma-, Nightmares- und Depression-Proben nicht geregelt (02-A9, 01-A18) | Keine Stresswürfel, kein Push | – |
+| F-28 | Freeze und Scream nach einer Probe, S. 104, 105 | Offen, ob die abgebrochene Aktion die verlorene langsame Aktion ist (02-A10) | War die abgebrochene Aktion langsam, zählt sie als die verlorene; sonst entfällt die nächste langsame | – |
+| F-29 | Ende von Berserk, S. 104, 105 | „Bis du oder das Ziel Broken ist“ neben den allgemeinen Wegen (02-A11) | Endet, wenn man selbst oder das Ziel Broken ist, und auf den normalen Wegen | – |
+| F-30 | Overkill, S. 74, 104 | Verhältnis zu Mehr Panik und zum Ende der Panik offen (02-A13) | Freiwillig. Gilt als laufender Panikeffekt mit dem gewürfelten Wert; endet auf den normalen Wegen oder wenn alle Feinde in Sicht Broken sind | – |
+| F-31 | Sperren für Stressabbau, S. 104, 106, 107 | Offen, welche Wege eine Sperre betrifft (02-A14) | Gesperrt sind Ruhe, Signature Item, Banter, Calming Presence und Counselor; Medikamente und Panikergebnisse wirken weiter | – |
+| F-32 | Mehrere Stressauslöser zugleich, S. 103, 108 | Offen, ob gleichzeitige Auslöser einzeln zählen (02-A16) | Jeder Grundauslöser gibt +1; Schaden aus einem Zustand zählt nicht extra (Beispiel Hayes) | – |
+| F-33 | Abgefangener Schaden, S. 98, 103 | Offen, ob von Rüstung geschluckter Schaden Stress gibt (02-A17) | Kein Stress; nur tatsächlich erlittener Schaden zählt | – |
+| F-34 | Reichweite von Analysis, S. 77, 103 | S. 77 nennt andere SC auf kurzer Distanz, S. 103 das ganze Team (02-A19) | Andere SC auf kurzer Distanz | – |
+| F-35 | Zweiter Push mit Ersatzattribut, S. 74–79 | Welches Attribut bei Talenten wie Take Control zählt (02-A21, 01-A20) | Das Attribut, mit dem tatsächlich gewürfelt wird | – |
+| F-36 | Panik mit COMMAND beenden, S. 71, 104 | Ob die Probe gelingen muss und wer sie machen darf (02-A25) | Die Probe muss gelingen; normale Probe mit Stress und Push; nicht bei sich selbst | – |
+| F-37 | Story Point und Panik, S. 61, 104 | Ob ein Story Point Panik oder den Abbruch ab 10 aufhebt (02-A30, 01-A5) | Weder der Panikwurf noch der Abbruch werden aufgehoben | – |
+| F-38 | The Long Haul, S. 76 | Folgen ignorierter Facehugger offen (02-A31) | Push wieder erlaubt; das Magazin bleibt voll | – |
+| F-39 | Befreundete Figur, S. 29, 105 | „Friendly character“ neben „friendly PCs“ (02-A32) | Befreundete Spielercharaktere ohne Androiden | – |
+| F-40 | Facehugger bei Würfen ohne Fertigkeit, S. 34, 104, 110 | Vorrat, Strahlung und Ähnliches nutzen Stresswürfel, sind aber keine Fertigkeitsprobe (02-A33) | Keine Panik | – |
+| F-41 | Phobie, S. 101 | „Mehr als eine Runde“ steht kleingeschrieben (02-A36) | Eine Runde (Round) | – |
+| F-42 | Mehrere 13+ in einer Sitzung, S. 104 | Ob jedes Ergebnis eine eigene Probe auslöst (02-A38) | Eine einzige EMPATHY-Probe | – |
+| F-43 | Panik bei NSC, S. 62, 105 | NSC würfeln keine Panik; die Spielleitung entscheidet (02-A39) | Nur von Hand durch die Spielleitung, dazu Stress ±N für ausgewählte Charaktere | – |
+| F-44 | Panik 1–9 nach einer Probe, S. 61, 104 | Nur ab 10 wird die Aktion ausdrücklich abgebrochen (02-A40) | Die Probe behält ihr Ergebnis | – |
+| F-45 | Zweiter Push nach Facehugger, S. 61, 104 | Die Regel ist nur für den ersten Push ausdrücklich (02-A41) | Kein zweiter Push; es folgt der Panikwurf | – |
+| F-46 | Stoic beim Death Roll, S. 79, 99 | Der Death Roll ist eine STAMINA-Probe (01-A26) | Stoic gilt auch beim Death Roll | – |
+| F-47 | The Long Haul und Push, S. 76 | „Alle Facehugger eines Wurfs“: offen, ob ein Push nach dem Einsatz noch zu diesem Wurf gehört | Vorschlag: Das Talent gilt für den Wurf, bei dem es eingesetzt wird; bringt der Push neue Facehugger, zählen sie (**offen**, Rückfrage) | gilt auch für den Push |
 
 ## Entscheidungen zur App
 

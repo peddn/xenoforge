@@ -232,6 +232,9 @@
                 }
               ]
             },
+            "modifies": {
+              "$ref": "#/$defs/Modified"
+            },
             "target": {
               "$ref": "#/$defs/Target"
             }
@@ -783,6 +786,21 @@
       },
       "additionalProperties": false
     },
+    "Modified": {
+      "description": "What a modifier changes on the rolls it applies to.",
+      "oneOf": [
+        {
+          "description": "The dice pool (the result for Panic Rolls, the value for ship stats).",
+          "type": "string",
+          "const": "dice"
+        },
+        {
+          "description": "How often the roll may be pushed [p. 60].",
+          "type": "string",
+          "const": "pushes"
+        }
+      ]
+    },
     "Op": {
       "description": "A one-shot operation.",
       "oneOf": [
@@ -1005,10 +1023,57 @@
       ]
     },
     "ReplaceWith": {
-      "description": "What happens instead.",
-      "type": "string",
-      "enum": [
-        "ignore"
+      "description": "What happens instead. Each kind of `Replaceable` has one matching kind\nhere (checked by the validation).",
+      "oneOf": [
+        {
+          "description": "For `facehuggers_in_roll`: they count as blank.",
+          "type": "string",
+          "const": "ignore"
+        },
+        {
+          "description": "For `panic_result`: this entry of `panic.json`.",
+          "type": "object",
+          "properties": {
+            "panic_effect": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "panic_effect"
+          ]
+        },
+        {
+          "description": "For `roll`: the roll succeeds with one success.",
+          "type": "string",
+          "const": "success"
+        },
+        {
+          "description": "For `attribute_for`: roll with this attribute.",
+          "type": "object",
+          "properties": {
+            "attribute": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "attribute"
+          ]
+        },
+        {
+          "description": "For `skill`: roll with this skill.",
+          "type": "object",
+          "properties": {
+            "skill": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "skill"
+          ]
+        }
       ]
     },
     "Replaceable": {
@@ -1018,14 +1083,93 @@
           "description": "All facehugger results (ones on Stress Dice) of a single roll.",
           "type": "string",
           "const": "facehuggers_in_roll"
+        },
+        {
+          "description": "The effect of a Panic Roll with at least this result.",
+          "type": "object",
+          "properties": {
+            "panic_result": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "integer",
+                  "format": "uint8",
+                  "maximum": 255,
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "from"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "panic_result"
+          ]
+        },
+        {
+          "description": "A whole skill roll with this skill: it is not rolled.",
+          "type": "object",
+          "properties": {
+            "roll": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "roll"
+          ]
+        },
+        {
+          "description": "The attribute of skill rolls with this skill.",
+          "type": "object",
+          "properties": {
+            "attribute_for": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "attribute_for"
+          ]
+        },
+        {
+          "description": "This skill.",
+          "type": "object",
+          "properties": {
+            "skill": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "skill"
+          ]
         }
       ]
     },
     "RollKind": {
       "description": "Kinds of rolls that are not skill rolls.",
-      "type": "string",
-      "enum": [
-        "panic"
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "food_supply",
+            "water_supply",
+            "power_supply"
+          ]
+        },
+        {
+          "description": "Panic Roll; a modifier changes the result [p. 104].",
+          "type": "string",
+          "const": "panic"
+        },
+        {
+          "description": "Supply rolls; a modifier changes the number of Stress Dice [p. 34].",
+          "type": "string",
+          "const": "air_supply"
+        }
       ]
     },
     "RollSpec": {

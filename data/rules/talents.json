@@ -2,17 +2,128 @@
   "$schema": "../schema/talents.schema.json",
   "entries": [
     {
+      "id": "past_the_limit",
+      "page": 74,
+      "career": "colonial_marine",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["strength"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "overkill",
+      "page": 74,
+      "career": "colonial_marine",
+      "effects": [
+        { "kind": "replacement", "replaces": { "panic_result": { "from": 11 } }, "with": { "panic_effect": "overkill_effect" }, "optional": true }
+      ]
+    },
+    {
+      "id": "authority",
+      "page": 74,
+      "career": "colonial_marshal",
+      "effects": [
+        { "kind": "replacement", "replaces": { "skill": "manipulation" }, "with": { "skill": "command" }, "optional": true }
+      ]
+    },
+    {
+      "id": "cunning",
+      "page": 75,
+      "career": "company_agent",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["wits"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "take_control",
+      "page": 75,
+      "career": "company_agent",
+      "effects": [
+        { "kind": "replacement", "replaces": { "attribute_for": "manipulation" }, "with": { "attribute": "wits" }, "optional": true }
+      ]
+    },
+    {
+      "id": "nimble",
+      "page": 75,
+      "career": "kid",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["agility"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "compassion",
+      "page": 75,
+      "career": "medic",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["empathy"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "influence",
+      "page": 76,
+      "career": "officer",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["empathy"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "reckless",
+      "page": 76,
+      "career": "pilot",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["agility"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
       "id": "the_long_haul",
       "page": 76,
       "career": "roughneck",
       "effects": [
-        {
-          "kind": "replacement",
-          "replaces": "facehuggers_in_roll",
-          "with": "ignore",
-          "uses": { "count": 1, "per": "act_or_session" },
-          "optional": true
-        }
+        { "kind": "replacement", "replaces": "facehuggers_in_roll", "with": "ignore", "uses": { "count": 1, "per": "act_or_session" }, "optional": true }
+      ]
+    },
+    {
+      "id": "true_grit",
+      "page": 76,
+      "career": "roughneck",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["strength"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "breakthrough",
+      "page": 77,
+      "career": "scientist",
+      "effects": [
+        { "kind": "replacement", "replaces": { "roll": "observation" }, "with": "success", "uses": { "count": 1, "per": "session" }, "optional": true }
+      ]
+    },
+    {
+      "id": "inquisitive",
+      "page": 77,
+      "career": "scientist",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["wits"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "calm_breather",
+      "page": 78,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "rolls": ["air_supply"] }, "change": { "add": -2 } }
+      ]
+    },
+    {
+      "id": "light_eater",
+      "page": 78,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "rolls": ["food_supply"] }, "change": { "add": -2 } }
+      ]
+    },
+    {
+      "id": "menacing",
+      "page": 78,
+      "effects": [
+        { "kind": "replacement", "replaces": { "attribute_for": "manipulation" }, "with": { "attribute": "strength" }, "optional": true }
       ]
     },
     {
@@ -20,6 +131,13 @@
       "page": 78,
       "effects": [
         { "kind": "modifier", "applies_to": { "rolls": ["panic"] }, "change": { "add": -2 } }
+      ]
+    },
+    {
+      "id": "stoic",
+      "page": 79,
+      "effects": [
+        { "kind": "replacement", "replaces": { "attribute_for": "stamina" }, "with": { "attribute": "wits" }, "optional": true }
       ]
     }
   ]

@@ -9,7 +9,7 @@ data/
 └─ schema/   erzeugte JSON-Schemas (für Editoren und zur Kontrolle)
 ```
 
-Phase 0 enthält nur einen **Probesatz**: genug Einträge, um jedes Feld und jede Effektart einmal zu benutzen. Die vollständige Erfassung folgt mit den Phasen, die die Daten brauchen.
+Die Daten wachsen mit den Phasen. Phase 0 legte einen **Probesatz** an, genug, um jedes Feld und jede Effektart einmal zu benutzen; Phase 1 ergänzte die Talente, die in Würfe und Panik eingreifen. Die übrigen Einträge kommen mit den Phasen, die sie brauchen.
 
 ## Dateien
 
@@ -32,7 +32,7 @@ Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editore
 | `careers.json` | Karrieren | `key_attribute` |
 | `skills.json` | Fertigkeiten | `attribute` |
 | `actions.json` | Aktionen, auf die Effekte verweisen | `kind`: `slow`, `fast`, `space_sensor`, `space_pilot`, `space_gunner`, `space_engineer` |
-| `panic.json` | Paniktabelle | `roll`, `cancels_action` (10+), `trauma_check` (13+), `on_apply`, `effects`, `lasts` |
+| `panic.json` | Paniktabelle und Panikeffekte außerhalb der Tabelle (Overkill) | `roll` (fehlt außerhalb der Tabelle), `cancels_action` (10+), `trauma_check` (13+), `on_apply`, `effects`, `lasts` |
 | `traumas.json` | Dauerhafte Traumata | `d6`, `effects`, `ruling` |
 | `critical-injuries.json` | Kritische Verletzungen | `d66`, `fatal`, `instant_death`, `healing`, `on_apply`, `effects` |
 | `conditions.json` | Zustände wie Freezing | `effects`, `ends` |
@@ -48,7 +48,7 @@ Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editore
 
 ### Würfelbereiche
 
-`roll` ist `{ "from": 16, "to": 16 }`. Ohne `to` ist der Bereich nach oben offen (Panik 15+). Auf D66-Tabellen sind beide Enden D66-Ergebnisse. Die Prüfung verlangt bei der Paniktabelle Lückenlosigkeit ab 1 und ein offenes Ende, bei Schadenstabellen gültige Würfe ohne Überschneidung. Ein Panikwurf unter 1 (möglich mit Nerves of Steel) zählt zum ersten Bereich, denn weniger als „keine Wirkung“ gibt es nicht.
+`roll` ist `{ "from": 16, "to": 16 }`. Ohne `to` ist der Bereich nach oben offen (Panik 15+). Auf D66-Tabellen sind beide Enden D66-Ergebnisse. Die Prüfung verlangt bei der Paniktabelle Lückenlosigkeit ab 1 und ein offenes Ende, bei Schadenstabellen gültige Würfe ohne Überschneidung. Ein Panikwurf unter 1 (möglich mit Nerves of Steel) zählt zum ersten Bereich, denn weniger als „keine Wirkung“ gibt es nicht. Einträge ohne `roll` stehen außerhalb der Tabelle und sind nur über eine Ersetzung erreichbar; die Prüfung verlangt, dass eine sie benutzt.
 
 ### Heilung
 
@@ -82,14 +82,28 @@ Die acht Effektarten:
 
 | `kind` | Wirkung | Felder | Beispiel |
 | --- | --- | --- | --- |
-| `modifier` | ändert Würfelpool oder Schiffswert | `applies_to` (`skills`, `based_on`, `rolls`, `ship_stats`), `change` (`add`, `multiply`, `divide`) | Tremble: −2 auf alles unter AGILITY |
+| `modifier` | ändert Würfelpool, Push-Anzahl oder Schiffswert | `applies_to` (`skills`, `based_on`, `rolls`, `ship_stats`), `modifies` (`dice` oder `pushes`), `change` (`add`, `multiply`, `divide`) | Tremble: −2 auf alles unter AGILITY. Past the Limit: ein Push mehr bei STRENGTH |
 | `restriction` | verbietet etwas | `blocks`: `{ "action": "run" }`, `"stress_relief"`, `"health_recovery"` | Sprained ankle: kein Rennen |
 | `trigger` | Operationen bei einem Ereignis | `on`: `{ "skill_roll": [...] }`, `{ "action": "run" }`, `"sleep"`; `then` | Crotch hit: 1 Schaden bei jeder MOBILITY-Probe |
 | `periodic` | Operationen bei jedem Zeitschritt | `every`: `{ "step": "shift" }` oder `{ "by_cold": {...} }`; `then` | Alcoholism: Frage jede Schicht |
-| `replacement` | ersetzt ein Ergebnis („stattdessen“) | `replaces`, `with`, `uses`, `optional` | The Long Haul: Facehugger eines Wurfs ignorieren |
+| `replacement` | ersetzt etwas („stattdessen“) | `replaces`, `with`, `uses`, `optional` | The Long Haul, Overkill, Breakthrough, Stoic, Authority |
 | `condition` | legt einen Zustand an | `condition`, `cold`, `unless_wearing` | Life support offline: Freezing |
 | `capability` | ermöglicht eine Aktion | `grants` | Docking Umbilical: Andocken |
 | `hint` | Hinweis für die Spielleitung | `text`, `tier`: `hint` (handeln) oder `info` (ohne Spielfolge) | Intercoms disabled |
+
+**Modifikatoren im Einzelnen.** `skills` und `based_on` gelten für Proben mit einer Fertigkeit, auch den Death Roll (eine STAMINA-Probe). Maßgeblich sind Fertigkeit und Attribut, mit denen tatsächlich gewürfelt wird (F-35). `rolls` nennt andere Wurfarten: `panic` (verändert das Ergebnis), `air_supply`, `food_supply`, `water_supply`, `power_supply` (verändern die Zahl der Stresswürfel, mindestens einer, Reihenfolge nach F-09). Multiplizieren und Teilen gibt es nur für Schiffswerte; `pushes` nur für Proben mit Fertigkeit.
+
+**Ersetzungen im Einzelnen.** Zu jeder Art von `replaces` passt genau eine Art von `with`:
+
+| `replaces` | `with` | Bedeutung | Beispiel |
+| --- | --- | --- | --- |
+| `"facehuggers_in_roll"` | `"ignore"` | Facehugger des Wurfs zählen als leer | The Long Haul |
+| `{ "panic_result": { "from": 11 } }` | `{ "panic_effect": "<id>" }` | statt des Paniktabellen-Effekts ab diesem Wert ein Eintrag außerhalb der Tabelle | Overkill |
+| `{ "roll": "<fertigkeit>" }` | `"success"` | die Probe gilt ohne Würfeln als bestanden | Breakthrough |
+| `{ "attribute_for": "<fertigkeit>" }` | `{ "attribute": "<attribut>" }` | anderes Attribut für diese Fertigkeit | Take Control, Menacing, Stoic |
+| `{ "skill": "<fertigkeit>" }` | `{ "skill": "<fertigkeit>" }` | andere Fertigkeit | Authority |
+
+Mit `optional` entscheidet die Person, ob sie die Ersetzung nutzt; `uses` begrenzt das pro Akt oder Sitzung (`act_or_session`: pro Akt im Cinematic-Spiel, pro Sitzung in der Kampagne).
 
 Die Stufen AUTO, HINWEIS und INFO aus dem Plan (Abschnitt 7.4) ergeben sich daraus: Alle Effektarten außer `hint` wendet die App selbst an (AUTO), `hint` erscheint je nach `tier` als HINWEIS oder INFO.
 
@@ -110,7 +124,7 @@ Die Stufen AUTO, HINWEIS und INFO aus dem Plan (Abschnitt 7.4) ergeben sich dara
 
 `who` ist `bearer` (Standard), `friendly_pcs_short_range`, `friendly_who_hear`, `friendly_who_see`, `friendly_who_witness` oder `aboard`. Die App kennt keine Positionen; Gruppen, die von Entfernung, Hören oder Sehen abhängen, schlägt sie vor und die Spielleitung bestätigt.
 
-`special` ist für Regeln, die sich mit dem Vokabular nicht sauber ausdrücken lassen. Jeder Name muss in der Engine existieren (`SPECIAL_HANDLERS`); in Phase 0 gibt es noch keinen.
+`special` ist für Regeln, die sich mit dem Vokabular nicht sauber ausdrücken lassen. Jeder Name muss in der Engine existieren (`SPECIAL_HANDLERS`); bisher gibt es noch keinen.
 
 ### Dauer
 

@@ -752,7 +752,7 @@ Ich schlage sieben Phasen vor, jede mit einer Abnahme, meist einer Testsitzung m
 ```mermaid
 flowchart TD
     p0["Phase 0 · Fundament<br/>Cargo-Workspace, Vite-Projekt, CI,<br/>Regeldaten mit Schema inkl. Effektformat,<br/>Errata und Festlegungen<br/>Abnahme: alle Regeldaten bestehen die Prüfung"]
-    p1["Phase 1 · Regel-Engine<br/>Alle Wurfarten, Push, Stress, Paniktabellen,<br/>Effekt-System mit Ereignissen und Zustandsprüfung<br/>Abnahme: alle Buchbeispiele und ihre Effekte als Tests grün"]
+    p1["Phase 1 · Regel-Engine<br/>Würfe außer Initiative, Push, Stress, Panik,<br/>Effekt-System mit Ereignissen und Zustandsprüfung<br/>Abnahme: alle Buchbeispiele und ihre Effekte als Tests grün"]
     p2["Phase 2 · Teams und Charaktere<br/>Konten, Teams, Rollen, Echtzeit, Protokoll, Würfeln;<br/>alle Erschaffungswege, Bogen, Ausrüstung;<br/>Terminal-Design als Grundlage aller Seiten<br/>Abnahme: erste Testsitzung mit Proben"]
     p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Turn- und Runden-Phasen<br/>Abnahme: Hope's Last Day komplett spielbar"]
     p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Story Points<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
@@ -765,6 +765,8 @@ flowchart TD
     p4 -.-> p7
     p6 -.-> p7
 ```
+
+Initiative entsteht mit dem Kampf in Phase 3, die Raumkampf-Paniktabelle mit dem Raumkampf in Phase 6, weil beide ohne diese Zusammenhänge nichts zu tun haben. Die Regel-Engine kennt in Phase 1 nur den Zeitschritt als Befehl; das Zeitmodell mit Schichtmarker und Phasen baut Phase 4 darauf auf.
 
 Die Reihenfolge folgt den Abhängigkeiten: Ohne Regel-Engine keine Proben, ohne Proben kein Kampf, ohne Kampfregeln kein Raumkampf. Ab Phase 3 ist das Werkzeug am echten Tisch brauchbar, weil Hope's Last Day als Cinematic-Szenario samt vorgefertigten Charakteren vollständig im Buch steht. Das Lagebild der Spielleitung (3.1) wächst mit: Crew ab Phase 2, Kampf ab Phase 3, Zeit ab Phase 4, Schiff ab Phase 5.
 

@@ -2,12 +2,13 @@
 
 Begleit-App für das ALIEN-Rollenspiel (Free League, Grundregelwerk 1. Auflage). Spielleitung und Spieler verwalten Charaktere, würfeln per Klick, führen Kämpfe, bauen Schiffe, spielen Raumkämpfe und lassen die Spielzeit mitlaufen. Karte und Figuren bleiben auf dem Tisch.
 
-**Stand:** Phase 0, Fundament: Projektgerüst, Datenformat der Regeln mit Probedaten, automatische Prüfungen. Spielen lässt sich damit noch nichts.
+**Stand:** Phase 1, Regel-Engine: Würfe, Push, Stress, Panik und das Effekt-System als getestete Bibliothek. Eine Oberfläche zum Spielen kommt mit Phase 2.
 
 - [Projektplan](docs/PLAN.md)
 - [Regel-Spezifikation mit Seitenangaben](docs/rules/)
 - [Errata und Festlegungen](docs/rules/00-errata-und-festlegungen.md)
 - [Datenformat der Regeldaten](docs/datenformat.md)
+- [Regel-Engine](docs/engine.md)
 
 **Technik:** Rust-Server (axum, sqlx, SQLite) und Vue 3 mit Pinia und Vue Router in JavaScript.
 

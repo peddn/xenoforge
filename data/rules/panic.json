@@ -113,6 +113,18 @@
         { "kind": "hint", "text": "catatonic.hint", "tier": "hint" }
       ],
       "lasts": { "until": "panic_stops" }
+    },
+    {
+      "id": "overkill_effect",
+      "page": 104,
+      "cancels_action": true,
+      "on_apply": [
+        { "op": "panic_roll", "who": "friendly_pcs_short_range" }
+      ],
+      "effects": [
+        { "kind": "hint", "text": "overkill_effect.hint", "tier": "hint" }
+      ],
+      "lasts": { "until": "panic_stops" }
     }
   ]
 }

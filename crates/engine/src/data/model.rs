@@ -95,7 +95,10 @@ pub struct RollRange {
 pub struct PanicResult {
     pub id: Id,
     pub page: Page,
-    pub roll: RollRange,
+    /// Row of the Panic table. Effects outside the table, such as Overkill,
+    /// have none and are reached through a replacement [p. 104].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub roll: Option<RollRange>,
     /// A panic action replaces the action the roll came from (10+, p. 104).
     #[serde(default, skip_serializing_if = "is_false")]
     pub cancels_action: bool,
