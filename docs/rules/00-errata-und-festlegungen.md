@@ -37,6 +37,7 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-12 | Air scrubbers offline, S. 198 | Was „danach keine Luft mehr“ bedeutet | Nach einer Schicht beginnt für alle ohne eigene Luft das Ersticken (S. 110); wer einen Anzug trägt, nutzt dessen Air-Vorrat | – |
 | F-13 | Bridge exposed to vacuum, S. 199 | Was „nicht mehr steuerbar“ umfasst | Keine Pilotenaktionen; Sensoren bleiben nutzbar | auch keine Sensoraktionen |
 | F-14 | Großer Komponentenschaden, S. 197 | Neu würfeln bei nicht passendem Ergebnis steht nur beim kleinen Schaden | Auch beim großen Schaden neu würfeln | – |
+| F-15 | Science Lab und Tractor Hitch, S. 171 | Die Schadenstabellen kennen für beide keinen Ausfall | Setzt die Spielleitung sie auf ausgefallen, entfällt nur ihre Funktion: +2 auf OBSERVATION bei Analysis bzw. Schleppen. Alle anderen Ausfälle wirken genau wie der gewählte Eintrag der Schadenstabelle | – |
 
 ## Entscheidungen zur App
 
@@ -46,6 +47,8 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | A-02 | Verdeckte Würfe | Nur für NSC und Kreaturen. Spieler würfeln immer offen, weil sie über den Push entscheiden. |
 | A-03 | Agenden | Nur Spieler und Spielleitung sehen sie. In Campaign gibt die App sie beim Sitzungsabschluss für die gemeinsame XP-Runde frei (S. 31). |
 | A-04 | Teams | Ein Team ist die ganze Spielrunde. Charaktere gehören den Spielern; die Spielleitung ordnet sie ihrem Team zu; ein Charakter ist höchstens in einem Team. |
+| A-05 | Bereiche an Bord | Frei editierbare Orte mit Deck, ohne Entfernungen und ohne Verbindung zu Modulen. Brücke und Reaktorbereich sind markiert, weil das Buch Schäden an sie bindet (S. 170, 198–199). |
+| A-06 | Schiffsstatus | Alle im Team sehen ihn; Spieler ohne Geheimes. Folgen stehen in drei Stufen: AUTO (App wendet an), HINWEIS (Spielleitung setzt um), INFO. |
 
 ## Noch offen
 

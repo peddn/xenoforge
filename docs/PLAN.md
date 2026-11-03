@@ -20,7 +20,7 @@ Beide Spielmodi des Buchs werden unterstützt: **Cinematic** (Einzelszenario in 
 
 Bewusst nicht enthalten:
 
-- Spielfeld, Karte, Positionen und Bewegung. Zone und Reichweite gibt die Person beim Wurf an (z. B. „Ziel auf Medium“), die App rechnet nicht nach.
+- Spielfeld, Karte, Positionen und Bewegung. Zone und Reichweite gibt die Person beim Wurf an (z. B. „Ziel auf Medium“), die App rechnet nicht nach. An Bord kennt die App nur grobe Bereiche wie „Brücke, Deck 1“, ohne Entfernungen (7.5).
 - Regeln aus Erweiterungen, Szenariobänden oder späteren Ausgaben.
 - Wörtlicher Buchtext und Bilder (das Repo ist öffentlich, siehe Abschnitt 2).
 - Sternensystem-, Job- und Begegnungsgeneratoren aus Kapitel 12. Sie kommen später als Ausbaustufe (Abschnitt 12).
@@ -77,6 +77,8 @@ Jede Person hat ein Benutzerkonto. Gespielt wird in **Teams**: Die Spielleitung 
 | Würfe | Würfe für NSC und Kreaturen öffentlich oder verdeckt | Immer offen, denn über den Push entscheidet, wer das Ergebnis sieht [S. 60]. Ergebnisse stehen im gemeinsamen Protokoll |
 | Kampf und Raumkampf | Starten, Reihenfolge führen, Gegner steuern, beenden | Eigene Aktionen ausführen, wenn sie dran sind |
 | Spieluhr | Vorstellen, Szenen umschalten | Sehen |
+| Schiffsstatus | Schäden setzen, Systeme ändern, Bereiche bearbeiten | Sehen, ohne Geheimes |
+| Aufenthaltsort an Bord | Für alle setzen | Für den eigenen Charakter setzen |
 | XP (Campaign) | Fragen nach der Sitzung abschließen, letztes Wort [S. 35] | Antworten vorschlagen, XP zwischen Sitzungen ausgeben [S. 36] |
 | Story Points (Cinematic) | Am Aktende vergeben, ohne Begründung [S. 216] | Ausgeben; sie gehören der **Person**, nicht dem Charakter, max. 3 [S. 383] |
 | Korrekturen | Jeden Wert überschreiben, wird protokolliert | Keine an Ergebnissen |
@@ -88,6 +90,40 @@ Sonderfälle aus dem Buch:
 - **Tod eines Charakters:** Die Spielleitung kann der Person einen übrigen Charakter oder NSC übergeben [S. 101]. Story Points bleiben bei der Person.
 - **NSC folgen vereinfachten Regeln:** Sie pushen nie, haben keinen Stress und würfeln keine Panik. Die Spielleitung würfelt für sie nur, wenn sie direkt auf einen Spielercharakter wirken [S. 62, 105, 214]. Die App bietet NSC-Würfe deshalb nur für solche Aktionen an.
 - **Geheime Notiz an die Spielleitung:** Spieler können der Spielleitung privat schreiben, wie es das Buch für Agenden und Geheimnisse empfiehlt [S. 213].
+
+### 3.1 Lagebild der Spielleitung
+
+Eine Seite zeigt der Spielleitung alles Wichtige auf einen Blick, sortiert nach Dringlichkeit:
+
+1. Was Leben bedroht, dann Einschränkungen, dann Hinweise, dann reine Infos (Stufen AUTO, HINWEIS, INFO aus 7.4).
+2. Wer ist wo, mit Sprechgruppen.
+3. Werte der Crew: Health, Stress, Panik, Zustände.
+4. Was demnächst abläuft, zum Beispiel Notreparaturen oder Timer.
+5. Offene Reparaturen mit Proben und Ersatzteilen.
+
+Das Lagebild liest nur vorhandene Daten und rechnet nichts selbst. Es wächst mit den Phasen: Crew ab Phase 2, Kampf ab Phase 3, Zeit ab Phase 4, Schiff ab Phase 5. Spieler sehen den Schiffsstatus ebenfalls, aber ohne Geheimes wie versteckte Kreaturen, geheime Timer oder NSC-Werte.
+
+```
+┌─ LAGE · LYSSA ──────────────────────────── TURN 14 · SCHICHT 2 · TAG 3 ┐
+│ ▲▲ LEBENSERHALTUNG AUS   OHNE DRUCKANZUG: FREEZING, STAMINA/SCHICHT AUTO│
+│ ▲▲ REAKTORLECK           REAKTORBEREICH: 1 RAD PRO SCHICHT         AUTO│
+│ ▲  BORDSPRECHANLAGE AUS  SPRECHEN NUR IM BEREICH, BORDCOMPUTER  HINWEIS│
+│                          NUR AM TERMINAL                               │
+│ ▲  LEITERN BESCHÄDIGT    DECKWECHSEL NUR MIT MOBILITY-PROBE        AUTO│
+│ ·  KAFFEEMASCHINE AUS                                              INFO│
+├─ WER IST WO ─────────────────────────────────────────── SPRECHGRUPPE ─┤
+│ DECK 1  BRÜCKE         ORTIZ (CAPTAIN) · KAPLAN (PILOT)            A  │
+│ DECK 2  MASCHINENRAUM  REYES (ENGINEER)  ☢ 2 RADS                   B  │
+│ DECK 2  LADERAUM       NAKAMURA · [DRONE, NUR SPIELLEITUNG]         C  │
+│ FUNK    REYES ↔ NAKAMURA (EIGENE FUNKGERÄTE)                          │
+├─ CREW ─────────────────────────────────────────────────────────────────┤
+│ ORTIZ  HEALTH 3/4  STRESS 2        KAPLAN  HEALTH 4/4  STRESS 4 PANIK 8│
+├─ LÄUFT AB ─────────────────────────────────────────────────────────────┤
+│ ANDOCKBUCHT NOTREPARIERT   NOCH 1 SCHICHT                              │
+├─ REPARATUR ────────────────────────────────────────────────────────────┤
+│ LEBENSERHALTUNG   HEAVY MACHINERY · 1 TEIL MECHANISCH (AN BORD: 3)     │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
 ## 4. Regel-Engine
 
@@ -359,15 +395,71 @@ Diese Schiffe halten die Bauregeln selbst nicht ein. Kein Preis ergibt sich aus 
 
 ### 7.3 Das Schiff im Spiel
 
-Ein Schiff gehört der Gruppe. Es hat einen Bogen mit allen Feldern des Original-Schiffsbogens [S. 388]: Werte, Module, Bewaffnung, Upgrades, Schaden, Komponentenschäden, Logbuch. Dazu kommt der laufende Zustand:
+Ein Schiff gehört dem Team. Es hat einen Bogen mit allen Feldern des Original-Schiffsbogens [S. 388]: Werte, Module, Bewaffnung, Upgrades, Schaden, Komponentenschäden, Logbuch. Dazu kommt der laufende Zustand:
 
-- **Rumpfschaden** und **Komponentenschäden** mit Reparaturstand. Rumpf: HEAVY MACHINERY, ein Wurf pro Schicht, jeder Erfolg −1 Schaden. Komponenten: die Proben laut Tabelle, ein Ersatzteil pro Probe, verbraucht bei Erfolg [S. 200].
+- **Rumpfschaden** und **Komponentenschäden** mit Reparaturstand, gezeigt im Schiffsstatus (7.4). Rumpf: HEAVY MACHINERY, ein Wurf pro Schicht, jeder Erfolg −1 Schaden. Komponenten: die Proben laut Tabelle, ein Ersatzteil pro Probe, verbraucht bei Erfolg [S. 200].
 - **Ersatzteile** mechanisch (ca. $100.000) und elektronisch (ca. $200.000); Ausschlachten von Wracks [S. 200].
 - **Munition** für Raketen, Minen und Atomwaffen.
 - **Betriebszustand:** Transponder, Sensoren und Antrieb an oder aus, Schlepplast (FTL verdoppelt), Überladung des Antriebs (FTL −1 für eine Woche, Risiko bis zur Explosion) [S. 167, 171, 190].
 - **Wöchentliche Wartung:** eine HEAVY-MACHINERY- und eine COMTECH-Probe, je eine Schicht. Misslingt eine oder fehlt sie, gibt es kleinen Komponentenschaden (W66). Die Spieluhr erinnert daran [S. 179].
 - **Reisen:** FTL-Tage = FTL-Rating × Parsec. Die App rechnet Ankunft, Hyperschlaf (macht ohne Hydr8tion Dehydrated), NDD-Würfe für Wache und Begegnungswürfe vor und nach dem Sprung (Abschnitt 9) [S. 151, 167, 351].
 - **Landung:** nur mit Planetfall Capacity, bis zu drei PILOTING-Proben mit steigendem Risiko [S. 167].
+
+### 7.4 Schiffsstatus
+
+Der Schiffsstatus zeigt jedes System des Schiffs mit seinem Zustand und dessen Folgen. Alle im Team sehen ihn, Spieler ohne Geheimes; ändern kann ihn nur die Spielleitung.
+
+**Systeme:** die Kernkomponenten, die eingebauten Module, die Bewaffnung und die Systeme, die nur in den Schadenstabellen vorkommen: Schwerkraft, Lebenserhaltung, Leitern, Bordsprechanlage, Navigation, Instrumente, Hauptschleuse, Kühlung, Abfall. Jedes System ist OK, beschädigt, ausgefallen, notdürftig repariert (mit Ablaufzeit) oder zerstört.
+
+**Schäden kommen nur aus dem Buch.** Jeder Eintrag der beiden Schadenstabellen ist ein Datensatz mit betroffenem System, Bedingung, Wirkung und Reparaturproben [S. 198–199]. Die Bedingung entscheidet, ob der Eintrag zum Schiff passt, etwa Medlab-Schaden nur mit Medlab; sonst wird neu gewürfelt [S. 197, F-14]. Ein Schaden entsteht durch:
+
+- einen Treffer im Raumkampf (8.4);
+- die wöchentliche Wartung, die Landung, das Überladen des Antriebs oder die Raumkampf-Panik „Maximum Overload“ [S. 167, 179, 201];
+- die Spielleitung, die von Hand einen Eintrag aus der Tabelle wählt.
+
+In jedem Fall gilt genau die Wirkung aus dem Buch; die App erfindet keine eigene. Bauteile ohne Eintrag:
+
+| Bauteil | Bei Ausfall durch die Spielleitung |
+| --- | --- |
+| Science Lab | Der Bonus +2 auf OBSERVATION beim Talent Analysis entfällt [S. 171, F-15] |
+| Tractor Hitch | Schleppen ist nicht möglich [S. 171, F-15] |
+| Vehicle Bay, Corporate Suite, Salvage Crane; Cargo Bay und Hangar als Raum | Nur Anzeige mit Notiz; die Schadenseinträge zu Cargo Bay und Hangar treffen den Inhalt |
+| Armor | Kann nicht ausfallen; ändert sich nur durch Upgrades |
+
+**Folgen in drei Stufen:**
+
+| Stufe | Bedeutung | Beispiele |
+| --- | --- | --- |
+| AUTO | Die App wendet die Folge an | Schwerkraft aus: Rennen verlangt eine MOBILITY-Probe. Lebenserhaltung aus: Freezing für alle ohne Druckanzug. Sensor failure: kein Target Lock. Andockbucht beschädigt: kein Dock |
+| HINWEIS | Die Spielleitung setzt die Folge um | Bordsprechanlage aus: Sprechen nur im selben Bereich; eigene Funkgeräte wie in der M3 Personnel Armor gehen weiter; der Bordcomputer ist nur am Terminal erreichbar [S. 127, 130, 198] |
+| INFO | Keine Spielfolge | Kaffeemaschine, Abfall |
+
+Folgen für Charaktere laufen über das Effekt-System (4.4), Folgen für das Schiff sperren oder ändern Aktionen und Werte. Betroffen sind alle an Bord, ein Bereich (7.5), ein zufälliger Bereich oder ein zufälliges Crewmitglied. Bei Folgen für einen Bereich schlägt die App die Betroffenen vor, und die Spielleitung bestätigt mit einem Klick; die App wendet nichts still an.
+
+**Reparatur:** Proben laut Eintrag, eine pro Schicht, ein Ersatzteil pro Probe. Eine Notreparatur im Raumkampf hält eine Schicht, danach fällt das System wieder aus [S. 196, 200].
+
+**Zustände des ganzen Schiffs:** Rumpfschaden gegen Hull, Disabled, zerstört; Sensoren oder Antrieb abgeschaltet; Transponder an oder aus; angedockt; Schlepplast; Überladung des Antriebs; Reaktorüberlastung mit Countdown [S. 167, 171, 190, 193, 196–197].
+
+### 7.5 Bereiche und Decks
+
+Bereiche sind Orte, an denen sich Charaktere an Bord aufhalten, etwa „Brücke, Deck 1“ oder „Messe, Deck 2“. Mit den Modulen haben sie nichts zu tun; ein Modul kann auch unerreichbar eingebaut sein.
+
+- **Editierbar:** Die Spielleitung legt Bereiche an, benennt sie um, löscht sie und ändert ihr Deck. Wird ein Bereich gelöscht, steht bei allen darin „Ort unbekannt“.
+- **Zwei Markierungen,** jede höchstens einmal pro Schiff: **Brücke**, auf der Captain und Pilot sitzen [S. 170], und **Reaktorbereich** [S. 198–199]. Ein neues Schiff startet nur mit diesen beiden Bereichen auf Deck 1.
+- **Aufenthaltsort:** Spielercharaktere, NSC und Kreaturen an Bord haben einen Bereich. Spieler setzen den Ort ihres eigenen Charakters, die Spielleitung jeden Ort. Kreaturen sieht nur die Spielleitung.
+
+Wofür die App die Bereiche nutzt:
+
+| Ereignis | Betroffen | Seite |
+| --- | --- | --- |
+| Brücke im Vakuum (groß 9) | alle auf der Brücke | 199 |
+| Reaktorleck (klein 53–54), Reaktorbruch (groß 10) | Reaktorbereich; beim Bruch zusätzlich schwache Strahlung im ganzen Schiff | 198–199 |
+| Abteil dekomprimiert (klein 26–31) | ein zufälliger Bereich | 198 |
+| Leitern beschädigt (klein 46) | Deckwechsel verlangt eine MOBILITY-Probe | 198 |
+| Bordsprechanlage aus (klein 45) | Sprechgruppen nach Bereichen, dazu eigene Funkgeräte | 198 |
+| Raumkampf-Panik 7 und 11–12 | befreundete Spielercharaktere im selben Abteil | 201 |
+
+Grenzen: Bereiche haben keine Entfernungen und keine Bewegungsregeln außer dem Deckwechsel; die Zonen im Personenkampf bleiben auf dem Tisch. Bereiche gibt es nur auf Schiffen. Später, ohne Priorität: eine Schiffskarte pro Deck als hochgeladenes Bild, auf der Bereiche hervorgehoben werden.
 
 ## 8. Raumkampf
 
@@ -421,11 +513,11 @@ Nach den Pilotenaktionen bewegen sich alle Schiffe um ihre Geschwindigkeit aufei
 3. **Panzerung:** Würfel = Armor, gegen Railguns die Hälfte, aufgerundet [S. 176, 197].
 4. **Ein einzelner Treffer** ab der Hull zerstört das Schiff. Ab der halben Hull, aufgerundet, gibt es großen Komponentenschaden (2W6), sonst kleinen (W66) [S. 197–199].
 5. **Summe der Treffer** ab der Hull: Das Schiff ist **Disabled**. Antrieb und Waffen fallen aus, das ganze Schiff dekomprimiert explosiv, es ist aber reparierbar [S. 197].
-6. **Komponentenschaden wirkt sofort:** Sensor failure sperrt Target Lock, Engine failure sperrt Pilotenaktionen, Thruster damage senkt Thrusters um 2. Crew injury trifft ein zufälliges Crewmitglied mit sechs Würfeln; das geht als normaler Schaden auf dessen Bogen [S. 198–199].
+6. **Komponentenschaden wirkt sofort über den Schiffsstatus (7.4):** Sensor failure sperrt Target Lock, Engine failure sperrt Pilotenaktionen, Thruster damage senkt Thrusters um 2. Crew injury trifft ein zufälliges Crewmitglied mit sechs Würfeln; das geht als normaler Schaden auf dessen Bogen [S. 198–199].
 
 ### 8.5 Stress, Panik und Entern
 
-- Panic Rolls nutzen im Raumkampf die **eigene Raumkampf-Paniktabelle**. Bei 15+ (Maximum Overload) beschädigt der Charakter seine Station: der Sensor Operator die Sensoren, der Pilot den Antrieb, der Gunner eine Waffe, der Engineer den Reaktor. Stress abbauen ist während des Raumkampfs nicht möglich [S. 193, 201].
+- Panic Rolls nutzen im Raumkampf die **eigene Raumkampf-Paniktabelle**. Bei 15+ (Maximum Overload) beschädigt der Charakter seine Station: der Sensor Operator die Sensoren, der Pilot den Antrieb, der Gunner eine Waffe, der Engineer den Reaktor. Stress abbauen ist während des Raumkampfs nicht möglich [S. 193, 201]. „Im selben Abteil“ heißt in der App: im selben Bereich (7.5).
 - **Entern:** Dock und Open Airlock führen in einen Personenkampf in Runden. Der Raumkampf ruht, bis die Spielleitung ihn fortsetzt [S. 196–197].
 - **Ende:** Die Spielleitung beendet den Raumkampf, etwa wenn ein Schiff zerstört oder Disabled ist, die Entfernung über acht Zonen steigt oder das Entern entschieden ist. Eine eigene Endregel hat das Buch nicht.
 
@@ -498,6 +590,7 @@ Das Modell trennt **Regeldaten** aus dem Buch, die versioniert im Repo liegen un
 | Kreaturen | Werteblock, Sonderfähigkeiten, W6-Angriffstabelle mit Eintragstyp, Lebenszyklus |
 | NSC-Vorlagen | Typische NSC und Szenario-NSC |
 | Schiffsteile | 4 Klassen, 14 Modultypen, 12 Bewaffnungen, 9 Upgrades, 5 Mainframes, 6 Buchschiffe |
+| Schiffssysteme und Schäden | Katalog der Systeme; jeder Eintrag der beiden Schadenstabellen mit System, Bedingung, Wirkung, Stufe (AUTO, HINWEIS, INFO) und Reparaturproben; Funktionen von Science Lab und Tractor Hitch (F-15) |
 | Szenarien | Vorgefertigte Charaktere und NSC für Hope's Last Day |
 | Regelentscheidungen | Katalog der Widersprüche und Lücken mit Standard und Alternative |
 
@@ -512,7 +605,10 @@ Das Modell trennt **Regeldaten** aus dem Buch, die versioniert im Repo liegen un
 | Gegenstand im Besitz | Katalogeintrag oder frei, Ort, Magazin, Reserve-Magazine, Power, Dosen, aktuelle Armor (Säure senkt sie) | Charakter, Team oder Schiff |
 | Kreatur im Spiel | Typ, Health, Speed, Karten, Zustand nach 0 Health, vorgemerkte Folgeangriffe, Griffe, Feuer und Säure | Szene |
 | Szene / Kampf | Teilnehmer, Initiativkarten, aktuelle Kampfrunde, Aktionsbudget je Teilnehmer, offene Reaktionsfenster | Team |
-| Schiff | Entwurf (Klasse, Module, Bewaffnung, Upgrades) und Laufzeit (Schaden, Komponentenschäden, Ersatzteile, Munition, Energiezustand, Logbuch) | Team |
+| Schiff | Entwurf (Klasse, Module, Bewaffnung, Upgrades) und Laufzeit (Schaden, Ersatzteile, Munition, Energiezustand, Logbuch) | Team |
+| Systemzustand | System, Zustand, aktiver Schadenseintrag, Reparaturstand, Notreparatur bis, Notiz | Schiff |
+| Bereich | Name, Deck, Markierung (Brücke, Reaktorbereich oder keine) | Schiff |
+| Aufenthaltsort | Schiff und Bereich oder „unbekannt“ | Charakter, NSC, Kreatur |
 | Raumkampf | Seiten, Zonenposition und Geschwindigkeit je Schiff, Erfassungen, Phase, geheime Ansagen, Crewzuteilung | Team |
 | Spieluhr | Kampfrunde, Turn, Schicht, Tag, aktueller Modus | Team |
 | Timer | Auslöser, fällig bei, Wiederholung, Sichtbarkeit, Bezug | Charakter, Kreatur, Schiff |
@@ -613,9 +709,9 @@ flowchart TD
     p2["Phase 2 · Teams und Charaktere<br/>Konten, Teams, Rollen, Echtzeit, Protokoll, Würfeln;<br/>alle Erschaffungswege, Bogen, Ausrüstung;<br/>Terminal-Design als Grundlage aller Seiten<br/>Abnahme: erste Testsitzung mit Proben"]
     p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Uhr in Runden und Turns<br/>Abnahme: Hope's Last Day komplett spielbar"]
     p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Story Points<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
-    p5["Phase 5 · Schiffe<br/>Designer, sechs Buchschiffe, Schiffsbogen,<br/>Wartung, Reparatur, FTL-Reisen<br/>Abnahme: Buchschiffe laden, Eigenbau prüft"]
+    p5["Phase 5 · Schiffe<br/>Designer, sechs Buchschiffe, Schiffsbogen,<br/>Schiffsstatus, Bereiche und Decks,<br/>Wartung, Reparatur, FTL-Reisen<br/>Abnahme: Buchschiffe laden, Eigenbau prüft,<br/>jeder Schadenseintrag wirkt wie im Buch"]
     p6["Phase 6 · Raumkampf<br/>Positionen, vier Phasen, geheime Ansagen,<br/>Schiffsschaden, Raumkampf-Panik, Entern<br/>Abnahme: Beispiel S. 202–203 nachspielbar"]
-    p7["Optional · Ausbau<br/>Generatoren für Sternensysteme, Jobs und Begegnungen;<br/>Druckansicht der Bögen"]
+    p7["Später · Ausbau<br/>Generatoren für Sternensysteme, Jobs und Begegnungen;<br/>Schiffskarte mit hervorgehobenen Bereichen;<br/>Druckansicht der Bögen"]
     p0 --> p1 --> p2 --> p3 --> p4
     p2 --> p5 --> p6
     p3 --> p6
@@ -623,7 +719,7 @@ flowchart TD
     p6 -.-> p7
 ```
 
-Die Reihenfolge folgt den Abhängigkeiten: Ohne Regel-Engine keine Proben, ohne Proben kein Kampf, ohne Kampfregeln kein Raumkampf. Ab Phase 3 ist das Werkzeug am echten Tisch brauchbar, weil Hope's Last Day als Cinematic-Szenario samt vorgefertigten Charakteren vollständig im Buch steht.
+Die Reihenfolge folgt den Abhängigkeiten: Ohne Regel-Engine keine Proben, ohne Proben kein Kampf, ohne Kampfregeln kein Raumkampf. Ab Phase 3 ist das Werkzeug am echten Tisch brauchbar, weil Hope's Last Day als Cinematic-Szenario samt vorgefertigten Charakteren vollständig im Buch steht. Das Lagebild der Spielleitung (3.1) wächst mit: Crew ab Phase 2, Kampf ab Phase 3, Zeit ab Phase 4, Schiff ab Phase 5.
 
 ## 13. Teststrategie
 
@@ -670,8 +766,12 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 | Verdeckte Würfe | Nur für NSC und Kreaturen; Spieler würfeln immer offen, weil sie über den Push entscheiden |
 | Teams | Ein Team ist die ganze Spielrunde (Kampagne oder Szenario); Charaktere gehören den Spielern, die Spielleitung ordnet sie zu |
 | Gestaltung | Terminal-Stil der Filmcomputer für die ganze App |
-| Generatoren | Sternensystem-, Job- und Begegnungsgeneratoren aus Kapitel 12 kommen später (Ausbau nach Phase 4 und 6) |
+| Schiffsstatus | Alle Systeme mit Zustand und Folgen (AUTO, HINWEIS, INFO); Spieler sehen ihn ohne Geheimes (7.4) |
+| Schiffsschäden | Nur Einträge aus dem Buch, auch beim Setzen von Hand; Science Lab und Tractor Hitch verlieren bei Ausfall nur ihre Funktion (F-15) |
+| Bereiche | Frei editierbare Orte mit Deck; Brücke und Reaktorbereich markiert; keine Verbindung zu Modulen (7.5) |
+| Lagebild | Eine Übersichtsseite für die Spielleitung (3.1) |
+| Später | Generatoren aus Kapitel 12; Schiffskarte pro Deck mit hervorgehobenen Bereichen; Druckansicht der Bögen |
 
 Offen:
 
-- [ ] **Schiffsstatus, Bereiche und Lagebild für die Spielleitung:** Vorschlag in Arbeit.
+Derzeit keine. Nächster Schritt ist Phase 0, nach Zustimmung.
