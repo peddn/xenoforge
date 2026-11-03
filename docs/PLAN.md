@@ -4,7 +4,7 @@ Begleit-App für das ALIEN RPG (Free League, Grundregelwerk 1. Auflage). Stand: 
 
 ## 1. Ziel und Rahmen
 
-Die App begleitet eine ALIEN-RPG-Runde am Tisch. Charakterbögen, Würfe, Kämpfe, Schiffe und die Spielzeit laufen digital, Karte und Figuren bleiben auf dem Tisch. Grundsatz: **Die App rechnet, die Spielleitung entscheidet.** Jedes automatische Ergebnis lässt sich von der Spielleitung korrigieren, und jede Korrektur wird protokolliert.
+Die App begleitet eine ALIEN-RPG-Spielrunde am Tisch. Charakterbögen, Würfe, Kämpfe, Schiffe und die Spielzeit laufen digital, Karte und Figuren bleiben auf dem Tisch. Grundsatz: **Die App rechnet, die Spielleitung entscheidet.** Jedes automatische Ergebnis lässt sich von der Spielleitung korrigieren, und jede Korrektur wird protokolliert.
 
 | Modul | Wer nutzt es | Kern |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ Bewusst nicht enthalten:
 - Spielfeld, Karte, Positionen und Bewegung. Zone und Reichweite gibt die Person beim Wurf an (z. B. „Ziel auf Medium“), die App rechnet nicht nach.
 - Regeln aus Erweiterungen, Szenariobänden oder späteren Ausgaben.
 - Wörtlicher Buchtext und Bilder (das Repo ist öffentlich, siehe Abschnitt 2).
-- Sternensystem- und Job-Generatoren aus Kapitel 12. Sie sind als optionale Ausbaustufe vorgemerkt (Abschnitt 12).
+- Sternensystem-, Job- und Begegnungsgeneratoren aus Kapitel 12. Sie kommen später als Ausbaustufe (Abschnitt 12).
 
 ## 2. Regelgrundlage
 
@@ -47,7 +47,7 @@ Verbindlich ist ausschließlich das **ALIEN RPG Core Rulebook, Free League, 1. A
 
 Die Korrekturen an der Sternenkarte betreffen die App nicht.
 
-**Widersprüche und Lücken.** Darüber hinaus hat die Auswertung über 200 Stellen gefunden, an denen das Buch sich widerspricht, etwas offen lässt oder der Spielleitung die Entscheidung gibt. Dafür gibt es einen **Regelentscheidungs-Katalog**: Jede Stelle hat eine ID, die Seite, einen Standard und, wo sinnvoll, eine Alternative, die die Spielleitung pro Runde umschalten kann. Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Bereits festgelegt:
+**Widersprüche und Lücken.** Darüber hinaus hat die Auswertung über 200 Stellen gefunden, an denen das Buch sich widerspricht, etwas offen lässt oder der Spielleitung die Entscheidung gibt. Dafür gibt es einen **Regelentscheidungs-Katalog**: Jede Stelle hat eine ID, die Seite, einen Standard und, wo sinnvoll, eine Alternative, die die Spielleitung pro Team umschalten kann. Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Bereits festgelegt:
 
 | Stelle | Problem im Buch | Festlegung |
 | --- | --- | --- |
@@ -66,11 +66,11 @@ Den vollständigen Katalog baut Phase 0 aus den Abschnitten „Ambiguities“ de
 
 ## 3. Rollen und Rechte
 
-Jede Person hat ein Benutzerkonto; die Rolle hängt an der **Runde**, nicht am Konto. Wer in einer Runde Spielleitung (im Buch „Game Mother“) ist, kann in einer anderen Spieler sein. Eine Runde ist entweder ein **Szenario** (Cinematic) oder eine **Kampagne** (Campaign) und bündelt Mitglieder, Charaktere, NSC, Schiffe, Spieluhr und Protokoll. Beitritt per Einladungslink.
+Jede Person hat ein Benutzerkonto. Gespielt wird in **Teams**: Die Spielleitung (im Buch „Game Mother“) legt ein Team an, lädt Spieler per Einladungslink ein und ordnet ihm Charaktere zu. Ein Team ist entweder ein **Szenario** (Cinematic) oder eine **Kampagne** (Campaign) und bündelt Mitglieder, Charaktere, NSC, Schiffe, Spieluhr und Protokoll. Die Rolle hängt am Team, nicht am Konto: Wer in einem Team Spielleitung ist, kann in einem anderen Spieler sein. Den Begriff „Team“ nutzt der Plan auch, damit er nicht mit der Kampfrunde verwechselt wird.
 
 | Bereich | Spielleitung | Spieler |
 | --- | --- | --- |
-| Charaktere | Alle sehen und ändern | Eigene erschaffen, sehen, im Spiel nutzen; die Bögen der anderen sehen sie nicht |
+| Charaktere | Im eigenen Team alle sehen und ändern; Charaktere der Mitglieder dem Team zuordnen oder aus ihm lösen | Eigene Charaktere jederzeit anlegen und verwalten, auch ohne Team; die Bögen der anderen sehen sie nicht |
 | Persönliche Agenda | Alle sehen; in Cinematic pro Akt neu verteilen [S. 31, 216] | Nur die eigene sehen [S. 213]; in Campaign gibt die App alle Agenden beim Sitzungsabschluss für die gemeinsame XP-Runde frei [S. 31] |
 | Verdeckter Android | Weiß Bescheid | Nur der eigene Charakter; die Enthüllung löst bei Anwesenden Stress aus [S. 103] |
 | NSC und Kreaturen | Anlegen, Werte sehen, würfeln | Sehen nur Namen und Wirkungen, keine Werte |
@@ -156,6 +156,13 @@ Vieles im Spiel ist ein Modifikator mit Ablaufzeit: Tremble bis die Panik endet,
 ## 5. Charaktermanager
 
 Der Charaktermanager deckt alle sieben Wege ab, auf denen im Buch Charaktere entstehen. Er prüft jeden Schritt gegen die Regeln und hält den Bogen danach im Spiel aktuell. Zufallstabellen für Charaktere gibt es im Buch nicht; gewürfelt werden nur Startgeld und Mengen wie „W6 Dosen“ [S. 26, 39–55].
+
+### 5.0 Besitz und Teams
+
+- **Ein Charakter gehört der Person, die ihn angelegt hat.** Spieler legen Charaktere in ihrer eigenen Sammlung an und verwalten sie dort, auch ohne Team.
+- **Die Spielleitung ordnet Charaktere ihrem Team zu.** Zur Auswahl stehen die Charaktere der Team-Mitglieder. Die Spielleitung kann einen Charakter auch wieder aus dem Team lösen; sein Stand (Health, Stress, XP, Ausrüstung) bleibt dabei erhalten.
+- **Höchstens ein Team gleichzeitig.** Sonst würden Health, Stress und XP doppelt geführt.
+- **Vorgefertigte Szenario-Charaktere und NSC** legt die Spielleitung an. Vorgefertigte Charaktere gibt sie Spielern zum Spielen; die Spielleitung bleibt Eigentümerin.
 
 ### 5.1 Erschaffungswege
 
@@ -478,7 +485,7 @@ Wie viele Runden einen Turn ergeben, legt das Buch nicht fest. Die App rechnet d
 
 ## 10. Datenmodell
 
-Das Modell trennt **Regeldaten** aus dem Buch, die versioniert im Repo liegen und zur Laufzeit nur gelesen werden, von **Spieldaten** der Runden in der Datenbank. Jede Änderung an Spieldaten läuft als Befehl durch die Regel-Engine und erzeugt einen Eintrag im Protokoll. Damit kann die Spielleitung den letzten Schritt rückgängig machen.
+Das Modell trennt **Regeldaten** aus dem Buch, die versioniert im Repo liegen und zur Laufzeit nur gelesen werden, von **Spieldaten** der Teams in der Datenbank. Jede Änderung an Spieldaten läuft als Befehl durch die Regel-Engine und erzeugt einen Eintrag im Protokoll. Damit kann die Spielleitung den letzten Schritt rückgängig machen.
 
 ### 10.1 Regeldaten (aus dem Buch, mit Seitenangabe)
 
@@ -499,17 +506,17 @@ Das Modell trennt **Regeldaten** aus dem Buch, die versioniert im Repo liegen un
 | Objekt | Wichtige Felder | gehört zu |
 | --- | --- | --- |
 | Konto | Name, Login, Sprache | – |
-| Runde | Modus (Cinematic oder Campaign), Rahmen, aktive Regelentscheidungen, Akt oder Sitzung | – |
-| Mitgliedschaft | Rolle, Story Points (gehören der Person, max. 3) | Konto + Runde |
-| Charakter | Typ (Spielercharakter oder NSC), Android ja oder nein (auch verdeckt), Karriere, Attribute, Fertigkeiten, Talente, Health, Stresslevel, Rads (vorübergehend und dauerhaft), Zustände, Verletzungen, Traumata, Effekte, Vorräte, XP, Agenda (privat), Buddy, Rival, Geldbuchungen, bereits gesehene Kreaturen | Runde, Besitzer |
-| Gegenstand im Besitz | Katalogeintrag oder frei, Ort, Magazin, Reserve-Magazine, Power, Dosen, aktuelle Armor (Säure senkt sie) | Charakter, Gruppe oder Schiff |
+| Team | Modus (Cinematic oder Campaign), Rahmen, aktive Regelentscheidungen, Akt oder Sitzung | – |
+| Mitgliedschaft | Rolle, Story Points (gehören der Person, max. 3) | Konto + Team |
+| Charakter | Typ (Spielercharakter oder NSC), Android ja oder nein (auch verdeckt), Karriere, Attribute, Fertigkeiten, Talente, Health, Stresslevel, Rads (vorübergehend und dauerhaft), Zustände, Verletzungen, Traumata, Effekte, Vorräte, XP, Agenda (privat), Buddy, Rival, Geldbuchungen, bereits gesehene Kreaturen | Besitzer (Konto); höchstens ein Team |
+| Gegenstand im Besitz | Katalogeintrag oder frei, Ort, Magazin, Reserve-Magazine, Power, Dosen, aktuelle Armor (Säure senkt sie) | Charakter, Team oder Schiff |
 | Kreatur im Spiel | Typ, Health, Speed, Karten, Zustand nach 0 Health, vorgemerkte Folgeangriffe, Griffe, Feuer und Säure | Szene |
-| Szene / Kampf | Teilnehmer, Initiativkarten, Runde, Aktionsbudget je Teilnehmer, offene Reaktionsfenster | Runde |
-| Schiff | Entwurf (Klasse, Module, Bewaffnung, Upgrades) und Laufzeit (Schaden, Komponentenschäden, Ersatzteile, Munition, Energiezustand, Logbuch) | Runde oder Gruppe |
-| Raumkampf | Seiten, Zonenposition und Geschwindigkeit je Schiff, Erfassungen, Phase, geheime Ansagen, Crewzuteilung | Runde |
-| Spieluhr | Runde, Turn, Schicht, Tag, aktueller Modus | Runde |
+| Szene / Kampf | Teilnehmer, Initiativkarten, aktuelle Kampfrunde, Aktionsbudget je Teilnehmer, offene Reaktionsfenster | Team |
+| Schiff | Entwurf (Klasse, Module, Bewaffnung, Upgrades) und Laufzeit (Schaden, Komponentenschäden, Ersatzteile, Munition, Energiezustand, Logbuch) | Team |
+| Raumkampf | Seiten, Zonenposition und Geschwindigkeit je Schiff, Erfassungen, Phase, geheime Ansagen, Crewzuteilung | Team |
+| Spieluhr | Kampfrunde, Turn, Schicht, Tag, aktueller Modus | Team |
 | Timer | Auslöser, fällig bei, Wiederholung, Sichtbarkeit, Bezug | Charakter, Kreatur, Schiff |
-| Protokoll | Jeder Wurf mit allen Würfeln, Modifikationen und Entscheidungen; jede Korrektur mit vorher und nachher; Sichtbarkeit | Runde |
+| Protokoll | Jeder Wurf mit allen Würfeln, Modifikationen und Entscheidungen; jede Korrektur mit vorher und nachher; Sichtbarkeit | Team |
 
 Texte im Modell, also Namen, Effekte und Beschreibungen, liegen als Schlüssel für Deutsch und Englisch vor (Abschnitt 11). Regelbegriffe behalten in beiden Sprachen auf Wunsch die englischen Namen des Buchs.
 
@@ -575,7 +582,7 @@ xenoforge/
 
 1. **Regel-Engine als eigenständige Bibliothek** ohne Abhängigkeit von Oberfläche, Netz oder Datenbank. Nur so lässt sie sich vollständig gegen die Buchbeispiele testen.
 2. **Der Server würfelt** mit einer kryptografisch sicheren Zufallsquelle. Clients schicken nur Befehle wie „Probe COMTECH mit Bewegungsmelder“.
-3. **Echtzeit:** Jedes Ereignis erreicht alle Teilnehmenden der Runde ohne Neuladen. Nach einem Verbindungsabbruch holt sich der Client den aktuellen Stand.
+3. **Echtzeit:** Jedes Ereignis erreicht alle Teilnehmenden des Teams ohne Neuladen. Nach einem Verbindungsabbruch holt sich der Client den aktuellen Stand.
 4. **Sichtbarkeit wird auf dem Server gefiltert.** Agenden, verdeckte Androiden, NSC-Werte und geheime Timer verlassen den Server nur an Berechtigte. Was ein Spieler-Browser nie bekommt, kann auch niemand in den Entwicklerwerkzeugen nachlesen.
 5. **Regeldaten als Dateien im Repo** mit Schema, das beim Start und in den Tests geprüft wird.
 6. **Zweisprachig von Anfang an:** Alle Oberflächentexte und alle Texte der Regeldaten als Übersetzungsschlüssel für Deutsch und Englisch. Umschaltbar pro Person, mit der Option, Regelbegriffe wie im Buch englisch zu lassen.
@@ -585,8 +592,15 @@ xenoforge/
 
 - **Ein Programm:** Das Rust-Binary liefert API, WebSocket und die gebaute Oberfläche aus. Es läuft als systemd-Dienst hinter einem Reverse Proxy mit HTTPS, ohne Docker.
 - **Datenbank:** SQLite-Datei neben dem Programm, täglich gesichert. Wollt ihr später mehrere Gruppen oder einen eigenen Datenbankserver, steht PostgreSQL offen; dafür werden die SQL-Abfragen von Anfang an möglichst standardnah geschrieben.
-- **Anmeldung:** Konto mit Passwort, Beitritt zu Runden per Einladungslink.
+- **Anmeldung:** Konto mit Passwort, Beitritt zu Teams per Einladungslink.
 - **Aktualisieren:** Regeldaten und Code kommen gemeinsam aus dem Repo; Datenbankmigrationen laufen beim Start.
+
+### 11.5 Gestaltung
+
+Die ganze App sieht aus wie die Bordcomputer der Filme: Monospace-Schrift, Grün oder Bernstein auf Schwarz, Statuscodes in Großbuchstaben, sparsam blinkende Warnungen. Es gibt ein einziges Design-System für alle Seiten, kein zweites Design nur für die Schiffsseite. Das Design-System entsteht in Phase 2 als Grundlage.
+
+- **Lesbarkeit:** ausreichender Kontrast, auch auf dem Handy; Farbe trägt nie allein die Bedeutung, dazu kommen immer Text und Symbol.
+- **Keine fremden Marken:** keine Logos oder Grafiken aus den Filmen oder dem Buch, eigene Gestaltung.
 
 ## 12. Umsetzungsphasen
 
@@ -596,7 +610,7 @@ Ich schlage sieben Phasen vor, jede mit einer Abnahme, meist einer Testsitzung m
 flowchart TD
     p0["Phase 0 · Fundament<br/>Cargo-Workspace, Vite-Projekt, CI,<br/>Regeldaten mit Schema, Errata und Festlegungen<br/>Abnahme: alle Regeldaten bestehen die Prüfung"]
     p1["Phase 1 · Regel-Engine<br/>Alle Wurfarten, Push, Stress, Paniktabellen,<br/>Modifikationen, Effekte mit Dauer<br/>Abnahme: alle Buchbeispiele als Tests grün"]
-    p2["Phase 2 · Runden und Charaktere<br/>Konten, Rollen, Echtzeit, Protokoll, Würfeln;<br/>alle Erschaffungswege, Bogen, Ausrüstung<br/>Abnahme: erste Testsitzung mit Proben"]
+    p2["Phase 2 · Teams und Charaktere<br/>Konten, Teams, Rollen, Echtzeit, Protokoll, Würfeln;<br/>alle Erschaffungswege, Bogen, Ausrüstung;<br/>Terminal-Design als Grundlage aller Seiten<br/>Abnahme: erste Testsitzung mit Proben"]
     p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Uhr in Runden und Turns<br/>Abnahme: Hope's Last Day komplett spielbar"]
     p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Story Points<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
     p5["Phase 5 · Schiffe<br/>Designer, sechs Buchschiffe, Schiffsbogen,<br/>Wartung, Reparatur, FTL-Reisen<br/>Abnahme: Buchschiffe laden, Eigenbau prüft"]
@@ -654,8 +668,10 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 | Regelfragen | Festgelegt in Abschnitt 2 |
 | Sichtbarkeit | Spieler sehen nur den eigenen Bogen; Würfe und Ereignisse stehen im gemeinsamen Protokoll |
 | Verdeckte Würfe | Nur für NSC und Kreaturen; Spieler würfeln immer offen, weil sie über den Push entscheiden |
+| Teams | Ein Team ist die ganze Spielrunde (Kampagne oder Szenario); Charaktere gehören den Spielern, die Spielleitung ordnet sie zu |
+| Gestaltung | Terminal-Stil der Filmcomputer für die ganze App |
+| Generatoren | Sternensystem-, Job- und Begegnungsgeneratoren aus Kapitel 12 kommen später (Ausbau nach Phase 4 und 6) |
 
 Offen:
 
-- [ ] **Datenbank:** Passt SQLite für den Start?
-- [ ] **Generatoren:** Sollen Sternensystem-, Job- und Begegnungsgeneratoren aus Kapitel 12 später dazukommen?
+- [ ] **Schiffsstatus, Bereiche und Lagebild für die Spielleitung:** Vorschlag in Arbeit.

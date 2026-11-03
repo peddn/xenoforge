@@ -19,7 +19,7 @@ Free League hat diese Korrekturen zum ersten Druck veröffentlicht. Sie sind im 
 
 ## Festlegungen
 
-Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede Festlegung mit Alternative kann die Spielleitung pro Runde umschalten.
+Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede Festlegung mit Alternative kann die Spielleitung pro Team umschalten.
 
 | ID | Stelle | Problem | Festlegung | Alternative |
 | --- | --- | --- | --- | --- |
@@ -33,6 +33,10 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-08 | Motor starten, S. 88 und 113 | Tabelle: langsam; Text: schnell. E-02 nennt nur Ein- und Aussteigen | Langsam wie in der Tabelle | schnell |
 | F-09 | Vorratswurf mit Calm Breather / Light Eater, S. 34, 78 | Offen, ob „max. 6 Würfel“ vor oder nach „−2 Würfel“ gilt | Würfel = max(1, min(Vorrat, 6) − 2) | max(1, min(6, Vorrat − 2)) |
 | F-10 | Dunkelheit, S. 83 und 95 | Zone „Dark“ (−2) gilt als schwach beleuchtet; die Fernkampftabelle kennt „Dim light“ −1 und „Darkness“ −2 | Lichtstufe einmal pro Schuss wählen; Zone „Dark“ zählt als Darkness −2, nie doppelt | – |
+| F-11 | Instrument malfunction, S. 198 | „Proben auf dem Schiff −1“: alle Proben an Bord oder nur mit Schiffssystemen? | Nur Proben mit Schiffssystemen (Raumkampf, Navigation, Schiffssensoren), nicht z. B. eine Pistole an Bord | alle PILOTING-, RANGED-COMBAT- und COMTECH-Proben an Bord |
+| F-12 | Air scrubbers offline, S. 198 | Was „danach keine Luft mehr“ bedeutet | Nach einer Schicht beginnt für alle ohne eigene Luft das Ersticken (S. 110); wer einen Anzug trägt, nutzt dessen Air-Vorrat | – |
+| F-13 | Bridge exposed to vacuum, S. 199 | Was „nicht mehr steuerbar“ umfasst | Keine Pilotenaktionen; Sensoren bleiben nutzbar | auch keine Sensoraktionen |
+| F-14 | Großer Komponentenschaden, S. 197 | Neu würfeln bei nicht passendem Ergebnis steht nur beim kleinen Schaden | Auch beim großen Schaden neu würfeln | – |
 
 ## Entscheidungen zur App
 
@@ -41,6 +45,7 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | A-01 | Sichtbarkeit | Spieler sehen nur den eigenen Charakterbogen. Würfe und Ereignisse stehen im gemeinsamen Protokoll. |
 | A-02 | Verdeckte Würfe | Nur für NSC und Kreaturen. Spieler würfeln immer offen, weil sie über den Push entscheiden. |
 | A-03 | Agenden | Nur Spieler und Spielleitung sehen sie. In Campaign gibt die App sie beim Sitzungsabschluss für die gemeinsame XP-Runde frei (S. 31). |
+| A-04 | Teams | Ein Team ist die ganze Spielrunde. Charaktere gehören den Spielern; die Spielleitung ordnet sie ihrem Team zu; ein Charakter ist höchstens in einem Team. |
 
 ## Noch offen
 

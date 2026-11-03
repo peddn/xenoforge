@@ -2,6 +2,11 @@
 
 Begleit-App für das ALIEN RPG (Free League, Grundregelwerk 1. Auflage 2019). Der Plan steht in `docs/PLAN.md`, die Regeln in `docs/rules/`.
 
+## Arbeitsweise
+
+- Vor jeder Umsetzung den Plan und die Vorschläge zeigen und auf Zustimmung warten.
+- Bei jedem Vorschlag, auch bei Wünschen des Nutzers, vorher abschätzen: Wie viel Komplexität kommt dazu? Entstehen Parallelentwicklungen oder doppelte Mechanismen? Wächst die Codebasis unnötig? Die Abschätzung gehört mit in den Vorschlag, dazu Alternativen und eine Empfehlung.
+
 ## Regeltreue
 
 - Die Regeln müssen exakt dem Buch folgen. Quelle ist `docs/rules/`; `docs/rules/00-errata-und-festlegungen.md` geht vor.
