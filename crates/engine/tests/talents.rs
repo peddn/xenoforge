@@ -168,6 +168,18 @@ fn pull_rank_needs_a_target() {
         ));
     }
     assert_eq!(stress(&t, "o"), 0, "a refused order costs nothing");
+    assert!(matches!(
+        t.try_run(act("o", "pull_rank_order", Some("nobody")), &[]),
+        Err(RuleError::UnknownActor(_))
+    ));
+    // Other actions take no target.
+    let mut t = Table::new(Mode::Campaign)
+        .with("a", pc().attr("wits", 2).talent("investigator"))
+        .with("b", pc());
+    assert!(matches!(
+        t.try_run(act("a", "investigate", Some("b")), &[]),
+        Err(RuleError::NotAllowed(_))
+    ));
 }
 
 /// COMMAND against MANIPULATION, then stress +1 (F-56) [p. 76].

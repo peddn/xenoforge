@@ -103,6 +103,9 @@ pub struct Action {
     pub id: Id,
     pub page: Page,
     pub kind: ActionKind,
+    /// Aimed at another character, e.g. the order of Pull Rank [p. 76].
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub target: bool,
 }
 
 /// A range of results on a table. Without `to` the range is open

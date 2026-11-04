@@ -38,6 +38,10 @@
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0
+        },
+        "target": {
+          "description": "Aimed at another character, e.g. the order of Pull Rank [p. 76].",
+          "type": "boolean"
         }
       },
       "additionalProperties": false,

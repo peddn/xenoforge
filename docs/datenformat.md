@@ -32,7 +32,7 @@ Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editore
 | `attributes.json` | Attribute | – |
 | `careers.json` | Karrieren | `key_attribute`, `key_skills` (drei), `talents` (die drei Karrieretalente), `cash` (`dice` W6 mal `times` Dollar), `names` (Namensvorschläge wie im Buch), `looks`, `items`, `agendas` (Vorschläge für Aussehen, Signature Item und Agenda; Texte unter `<karriere>.look.<id>`, `.item.<id>`, `.agenda.<id>`, A-11) |
 | `skills.json` | Fertigkeiten | `attribute` |
-| `actions.json` | Aktionen, auf die Effekte verweisen | `kind`: `slow`, `fast`, `turn` (dauert einen Turn oder länger, außerhalb der Runden), `space_sensor`, `space_pilot`, `space_gunner`, `space_engineer` |
+| `actions.json` | Aktionen, auf die Effekte verweisen | `kind`: `slow`, `fast`, `turn` (dauert einen Turn oder länger, außerhalb der Runden), `space_sensor`, `space_pilot`, `space_gunner`, `space_engineer`; `target`, wenn die Aktion auf einen anderen Charakter zielt (Pull Rank) |
 | `panic.json` | Paniktabelle und Panikeffekte außerhalb der Tabelle (Overkill) | `roll` (fehlt außerhalb der Tabelle), `cancels_action` (10+), `trauma_check` (13+), `on_apply`, `effects`, `lasts` |
 | `traumas.json` | Dauerhafte Traumata | `d6`, `effects`, `ruling` |
 | `critical-injuries.json` | Kritische Verletzungen | `d66`, `fatal`, `instant_death`, `healing`, `on_apply`, `effects` |

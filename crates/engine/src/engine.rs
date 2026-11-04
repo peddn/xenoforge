@@ -989,15 +989,11 @@ impl<'a> Ctx<'a> {
     /// operation. An android pays no stress; the game master gets a note
     /// (F-55).
     fn pull_rank(&mut self, actor: &str) -> Result<()> {
+        // perform_action has checked the target.
         let target = self
             .action_target
             .clone()
             .ok_or_else(|| RuleError::NotAllowed("Pull Rank needs a target".into()))?;
-        if target == actor {
-            return Err(RuleError::NotAllowed(
-                "Pull Rank works on someone else".into(),
-            ));
-        }
         let defender = self.actor(&target)?;
         let mut resist = RollRequest::skill(&target, "manipulation");
         if defender.talents.contains("hothead") {
@@ -1327,8 +1323,30 @@ impl<'a> Ctx<'a> {
     // ---- actions, signature item, sessions -----------------------------------
 
     fn perform_action(&mut self, actor: &str, action: Id) -> Result<()> {
-        if !self.engine.rules.actions.iter().any(|a| a.id == action) {
+        let Some(entry) = self.engine.rules.actions.iter().find(|a| a.id == action) else {
             return Err(RuleError::UnknownEntry(action));
+        };
+        // A target only where the action aims at someone else.
+        match (&self.action_target, entry.target) {
+            (None, true) => {
+                return Err(RuleError::NotAllowed(format!(
+                    "\"{action}\" needs a target"
+                )));
+            }
+            (Some(target), true) if target == actor => {
+                return Err(RuleError::NotAllowed(format!(
+                    "\"{action}\" aims at someone else"
+                )));
+            }
+            (Some(_), false) => {
+                return Err(RuleError::NotAllowed(format!(
+                    "\"{action}\" takes no target"
+                )));
+            }
+            (Some(target), true) => {
+                self.actor(target)?;
+            }
+            (None, false) => {}
         }
         let effects = self.effects(actor)?;
         if let Some(by) = active::blocking(&effects, &Blocked::Action(action.clone())) {
