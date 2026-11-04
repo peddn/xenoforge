@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import DecisionList from '@/components/DecisionList.vue'
+import GmBar from '@/components/GmBar.vue'
 import LogList from '@/components/LogList.vue'
 import RollPanel from '@/components/RollPanel.vue'
 import { choiceLabel, modsText, originLabel } from '@/labels'
@@ -223,6 +224,31 @@ describe('log', () => {
     expect(blocks).toHaveLength(3)
     expect(blocks[1].findAll('.log-entry')).toHaveLength(2)
     expect(blocks[1].find('header').text()).toContain('Mother')
+  })
+})
+
+describe('game master', () => {
+  it('asks before ending the session', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/commands': [] })
+    useTeamStore().view = { id: 5, mode: 'campaign', characters: [] }
+    const wrapper = mount(GmBar, { global: { plugins: [pinia, i18n] } })
+    expect(wrapper.find('[data-test="end-act"]').exists()).toBe(false)
+    await wrapper.get('[data-test="end-session"]').trigger('click')
+    expect(calls).toHaveLength(0)
+    expect(wrapper.text()).toContain('Sitzung wirklich beenden?')
+    await wrapper.get('[data-test="confirm"]').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({ command: { command: 'end_session' } })
+  })
+
+  it('shows the end of a session in the log', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = { id: 5, characters: [] }
+    team.log = [{ id: 1, batch: 1, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'session_ended' } } }]
+    const wrapper = mount(LogList, { global: { plugins: [pinia, i18n] } })
+    expect(wrapper.text()).toContain('Sitzung beendet')
   })
 })
 

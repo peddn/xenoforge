@@ -297,6 +297,8 @@ fn no_trauma_on_success_or_below_thirteen() {
     panic_roll(&mut t, "a", 6); // 12
     let ev = t.run(Command::EndSession, &[]);
     assert!(!has(&ev, |e| matches!(e, Event::TraumaCheck { .. })));
+    // The end of the session is always reported, first.
+    assert_eq!(ev.first(), Some(&Event::SessionEnded));
 }
 
 /// The raised value counts for 13+ (F-26).

@@ -144,7 +144,7 @@ fn signature_item_once_per_act() {
     let mut t = Table::new(Mode::Cinematic).with("a", pc().stress(3));
     signature(&mut t, "a").unwrap();
     assert!(signature(&mut t, "a").is_err());
-    t.run(Command::EndAct, &[]);
+    assert_eq!(t.run(Command::EndAct, &[]), vec![Event::ActEnded]);
     signature(&mut t, "a").unwrap();
     assert_eq!(t.actor("a").stress, 1);
 

@@ -136,7 +136,9 @@
     "endSession": "End session",
     "undo": "Undo",
     "correct": "Correct",
-    "actionsTitle": "Actions: {name}"
+    "actionsTitle": "Actions: {name}",
+    "confirmEndAct": "Really end the Act?",
+    "confirmEndSession": "Really end the session? Panic of 13 or more leads to the trauma roll."
   },
   "cold": {
     "above_freezing": "above freezing",
@@ -206,6 +208,8 @@
     "corrected": "The game master corrects {name}",
     "undone": "Last step undone",
     "successes": "no successes | {n} success | {n} successes",
-    "stunts": "no stunts | {n} stunt | {n} stunts"
+    "stunts": "no stunts | {n} stunt | {n} stunts",
+    "act_ended": "Act ended: signature item and talents usable once per Act are available again.",
+    "session_ended": "Session ended: signature item and talents usable once per session are available again."
   }
 }
