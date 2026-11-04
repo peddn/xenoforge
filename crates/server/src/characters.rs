@@ -11,7 +11,7 @@
 use std::sync::PoisonError;
 
 use axum::extract::{Path, State};
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, Sqlite, Transaction};
@@ -111,6 +111,7 @@ pub fn routes() -> Router<AppState> {
         .route("/", get(list).post(create))
         .route("/{id}", get(read).put(update).delete(remove))
         .route("/{id}/finish", post(finish))
+        .route("/{id}/relations", put(relations))
 }
 
 pub fn from_row(row: &sqlx::sqlite::SqliteRow) -> ApiResult<Character> {
@@ -155,6 +156,18 @@ fn check_name(name: &str) -> ApiResult<String> {
     } else {
         Err(ApiError::bad_request("the name needs 1 to 60 characters"))
     }
+}
+
+/// The longest sheet text, in characters.
+const TEXT_MAX: usize = 4000;
+
+fn check_texts(texts: &[&str]) -> ApiResult<()> {
+    if texts.iter().any(|t| t.chars().count() > TEXT_MAX) {
+        return Err(ApiError::bad_request(format!(
+            "a text has at most {TEXT_MAX} characters"
+        )));
+    }
+    Ok(())
 }
 
 /// A draft may have no name yet.
@@ -267,9 +280,9 @@ async fn read(
 
 /// A draft takes the wizard's state; the engine builds the actor from it
 /// and names the problems. Otherwise name and sheet texts can always be
-/// edited, the agenda too (F-54); buddy and rival only within a team. The
-/// values that count for the rules only on a free character, by a game
-/// master account, outside a team (A-09, plan 5.0).
+/// edited, the agenda too (F-54); buddy and rival have their own route.
+/// The values that count for the rules only on a free character, by a
+/// game master account, outside a team (A-09, plan 5.0).
 async fn update(
     State(state): State<AppState>,
     user: User,
@@ -281,7 +294,16 @@ async fn update(
     let _guard = state.lock.lock().await;
     let mut character = owned(&state, &user, id).await?;
     if character.data.status == Status::Draft {
-        let draft = body.data.draft.unwrap_or_default();
+        let draft = body
+            .data
+            .draft
+            .ok_or_else(|| ApiError::bad_request("a draft is saved as data.draft"))?;
+        check_texts(&[
+            &draft.appearance,
+            &draft.agenda,
+            &draft.signature_item,
+            draft.talent_param.as_deref().unwrap_or_default(),
+        ])?;
         character.name = draft_name(&draft.name)?;
         character.data.actor = state.engine.creation_actor(&draft);
         character.data.draft = Some(draft);
@@ -291,7 +313,12 @@ async fn update(
         return Ok(Json(character.checked(&state)));
     }
     let new = body.data.sheet;
-    check_relations(&state, &character, new.buddy, new.rival).await?;
+    check_texts(&[
+        &new.appearance,
+        &new.agenda,
+        &new.signature_item,
+        &new.notes,
+    ])?;
     character.name = check_name(&body.name)?;
     let free = character.data.status == Status::Free && user.role == Role::Gm;
     let sheet = &mut character.data.sheet;
@@ -299,8 +326,6 @@ async fn update(
     sheet.agenda = new.agenda;
     sheet.signature_item = new.signature_item;
     sheet.notes = new.notes;
-    sheet.buddy = new.buddy;
-    sheet.rival = new.rival;
     if free {
         if let Some(career) = &new.career {
             if !state.engine.rules().careers.iter().any(|c| &c.id == career) {
@@ -337,16 +362,39 @@ async fn update(
     Ok(Json(character))
 }
 
+#[derive(Deserialize)]
+struct Relations {
+    buddy: Option<i64>,
+    rival: Option<i64>,
+}
+
 /// Buddy and rival: other player characters of the same team, not the
-/// same one; both are optional (F-52) [p. 31].
+/// same one; both are optional (F-52) [p. 31]. A route of their own, so
+/// saving texts never touches them.
+async fn relations(
+    State(state): State<AppState>,
+    user: User,
+    Path(id): Path<i64>,
+    Json(body): Json<Relations>,
+) -> ApiResult<Json<Character>> {
+    let _guard = state.lock.lock().await;
+    let mut character = owned(&state, &user, id).await?;
+    check_relations(&state, &character, body.buddy, body.rival).await?;
+    character.data.sheet.buddy = body.buddy;
+    character.data.sheet.rival = body.rival;
+    let mut tx = begin_write(&state.pool).await?;
+    save(&mut tx, &character).await?;
+    tx.commit().await?;
+    Ok(Json(character))
+}
+
 async fn check_relations(
     state: &AppState,
     character: &Character,
     buddy: Option<i64>,
     rival: Option<i64>,
 ) -> ApiResult<()> {
-    let sheet = &character.data.sheet;
-    if (buddy, rival) == (sheet.buddy, sheet.rival) {
+    if (buddy, rival) == (None, None) {
         return Ok(());
     }
     let Some(team) = character.team_id else {

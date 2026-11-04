@@ -529,7 +529,7 @@ describe('sheet and talents', () => {
 
   it('lets the owner choose buddy and rival in the team (F-52)', async () => {
     const { pinia, i18n } = setup()
-    const calls = mockApi({ 'PUT /characters/3': {}, 'GET /teams/5': { id: 5, characters: [] } })
+    const calls = mockApi({ 'PUT /characters/3/relations': {}, 'GET /teams/5': { id: 5, characters: [] } })
     useAuthStore().user = { id: 2, name: 'Gina', role: 'player' }
     useTeamStore().view = { id: 5, is_gm: false, characters: [gorman, charlize] }
     const wrapper = mount(SheetDialog, { props: { character: gorman }, global: { plugins: [pinia, i18n] } })
@@ -537,10 +537,7 @@ describe('sheet and talents', () => {
     await wrapper.get('[data-test="rival"]').findAll('option')[0].setSelected()
     await wrapper.get('[data-test="save-relations"]').trigger('click')
     await flushPromises()
-    expect(calls[0].body).toEqual({
-      name: 'Gorman',
-      data: { sheet: { career: 'officer', agenda: 'Bring them home.', buddy: 9, rival: null } },
-    })
+    expect(calls[0]).toEqual({ method: 'PUT', path: '/characters/3/relations', body: { buddy: 9, rival: null } })
   })
 
   it('offers situational talents with their situation and talent actions with a target (A-10)', async () => {

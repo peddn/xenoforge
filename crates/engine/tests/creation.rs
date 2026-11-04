@@ -53,6 +53,12 @@ fn book_p28_nat_is_complete() {
     assert_eq!(actor.attribute("strength"), 5);
     assert_eq!(actor.skill_level("heavy_machinery"), 3);
     assert!(actor.talents.contains("true_grit"));
+    let mut named = nat();
+    named.talent_param = Some("Cheyenne".into());
+    assert!(
+        t.engine.creation_actor(&named).talent_params.is_empty(),
+        "True Grit names nothing"
+    );
     assert_eq!(
         (actor.health, actor.stress),
         (5, 0),

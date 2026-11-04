@@ -206,15 +206,16 @@ function perform(action) {
     </p>
     <div
       v-if="talentActions.length"
-      class="flex flex-wrap items-end gap-2 border-t border-dashed border-line pt-3"
+      class="grid gap-2 border-t border-dashed border-line pt-3"
     >
-      <span class="w-full text-sm text-dim uppercase">{{ t('roll.talentActions') }}</span>
+      <span class="text-sm text-dim uppercase">{{ t('roll.talentActions') }}</span>
       <XField
         v-if="talentActions.some((a) => a.action.target)"
         :label="t('roll.target')"
       >
         <select
           v-model="target"
+          class="justify-self-start"
           data-test="target"
         >
           <option
@@ -226,15 +227,21 @@ function perform(action) {
           </option>
         </select>
       </XField>
-      <XButton
+      <div
         v-for="{ talent, action } in talentActions"
         :key="action.id"
-        :disabled="action.target && target == null"
-        :data-test="`action-${action.id}`"
-        @click="perform(action)"
+        class="grid gap-1"
       >
-        {{ rules.name(talent) }}: {{ rules.name(action.id) }}
-      </XButton>
+        <XButton
+          class="justify-self-start"
+          :disabled="action.target && target == null"
+          :data-test="`action-${action.id}`"
+          @click="perform(action)"
+        >
+          {{ rules.name(talent) }}: {{ rules.name(action.id) }}
+        </XButton>
+        <span class="text-sm text-dim">{{ rules.text(`${talent}.desc`) }} ({{ t('wizard.page', { page: action.page }) }})</span>
+      </div>
     </div>
     <p
       v-if="error"

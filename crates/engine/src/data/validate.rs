@@ -555,8 +555,6 @@ impl<'a> Checker<'a> {
         }
     }
 
-    /// The panic table starts at 1, has no gaps and ends with an open
-    /// range [p. 105].
     /// A career: its key values, its three talents and its suggestions
     /// [p. 38–55].
     fn career(&mut self, career: &crate::data::model::Career) {
@@ -599,6 +597,8 @@ impl<'a> Checker<'a> {
         }
     }
 
+    /// The panic table starts at 1, has no gaps and ends with an open
+    /// range [p. 105].
     fn panic_table(&mut self) {
         let data = self.data;
         let mut rows: Vec<_> = data

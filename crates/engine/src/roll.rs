@@ -410,6 +410,17 @@ impl Ctx<'_> {
         // (A-10) count once skill and attribute are settled.
         let mut automatic = false;
         let mut situational = Vec::new();
+        // Each talent counts once.
+        if let Some(twice) = request
+            .talents
+            .iter()
+            .enumerate()
+            .find_map(|(i, t)| request.talents[..i].contains(t).then_some(t))
+        {
+            return Err(RuleError::NotAllowed(format!(
+                "\"{twice}\" is chosen twice"
+            )));
+        }
         for talent in &request.talents {
             let actor_id = actor_id.as_deref().unwrap_or_default();
             let Some(a) = &actor else {

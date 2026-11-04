@@ -249,8 +249,9 @@ impl Engine {
         }
         if let Some(talent) = &draft.talent {
             actor.talents.insert(talent.clone());
+            let named = self.talent(talent).is_some_and(|t| t.parameter.is_some());
             if let Some(param) = draft.talent_param.as_deref().map(str::trim) {
-                if !param.is_empty() {
+                if named && !param.is_empty() {
                     actor
                         .talent_params
                         .insert(talent.clone(), vec![param.to_owned()]);

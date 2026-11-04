@@ -781,6 +781,14 @@ async fn creation_wizard() {
     assert_eq!(draft["data"]["status"], "draft");
     assert_eq!(draft["problems"][0]["code"], "career_missing");
 
+    let (status, _) = player
+        .call(
+            "PUT",
+            &format!("/api/characters/{id}"),
+            Some(json!({ "name": "Nat" })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "a draft needs data.draft");
     let mut half = nat();
     half["skills"]["medical_aid"] = json!(0);
     let saved = player
@@ -885,8 +893,8 @@ async fn buddy_and_rival() {
             Some(json!({ "character": burke })),
         )
         .await;
-    let relations = |buddy: Value, rival: Value| json!({ "name": "Charlize", "data": { "sheet": { "buddy": buddy, "rival": rival } } });
-    let path = format!("/api/characters/{charlize}");
+    let relations = |buddy: Value, rival: Value| json!({ "buddy": buddy, "rival": rival });
+    let path = format!("/api/characters/{charlize}/relations");
     for (buddy, rival) in [
         (json!(burke), json!(burke)),
         (json!(charlize), Value::Null),
@@ -900,6 +908,14 @@ async fn buddy_and_rival() {
     player
         .ok("PUT", &path, Some(relations(Value::Null, json!(burke))))
         .await;
+    // Saving texts leaves buddy and rival alone.
+    player
+        .ok(
+            "PUT",
+            &format!("/api/characters/{charlize}"),
+            Some(json!({ "name": "Charlize", "data": { "sheet": { "agenda": "Get home." } } })),
+        )
+        .await;
     let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
     let sheet = view["characters"]
         .as_array()
@@ -909,6 +925,7 @@ async fn buddy_and_rival() {
         .unwrap()["sheet"]
         .clone();
     assert_eq!(sheet["rival"], burke, "the game master sees the sheet");
+    assert_eq!(sheet["agenda"], "Get home.");
 
     other
         .ok(
@@ -917,7 +934,9 @@ async fn buddy_and_rival() {
             None,
         )
         .await;
-    let sheet = player.ok("GET", &path, None).await;
+    let sheet = player
+        .ok("GET", &format!("/api/characters/{charlize}"), None)
+        .await;
     assert!(sheet["data"]["sheet"]["rival"].is_null());
 }
 

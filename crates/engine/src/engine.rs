@@ -487,7 +487,6 @@ impl Engine {
         effects.iter().collect()
     }
 
-    /// The period a talent's limited use refers to.
     /// Whether a talent gives a bonus only in a situation the person ticks
     /// (A-10).
     pub(crate) fn has_situation(&self, talent: &str) -> bool {
@@ -498,6 +497,7 @@ impl Engine {
         })
     }
 
+    /// The period a talent's limited use refers to.
     fn use_period(&self, talent: &str) -> Option<UsePeriod> {
         self.talent(talent)?.effects.iter().find_map(|e| match e {
             Effect::Replacement { uses: Some(u), .. } => Some(u.per),

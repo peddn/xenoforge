@@ -71,7 +71,7 @@ Ein Charakter hat einen Status:
 - **Fertig:** Die Werte ändern sich nur im Spiel. Name, Aussehen, Agenda (F-54), Signature Item und Notizen bleiben frei.
 - **Frei:** Nur Spielleitungskonten legen frei an, für vorgefertigte Charaktere und Szenarien; nur sie bearbeiten außerhalb eines Teams auch die Werte und die Karriere. Charaktere von vor dem Assistenten gelten als frei.
 
-Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung. Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt der Besitzer im Team: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
+Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung. Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt der Besitzer im Team über einen eigenen Pfad, damit Speichern der Texte sie nie berührt: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Texte haben höchstens 4000 Zeichen. Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
 
 ### Rückgängig
 
@@ -115,6 +115,7 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `GET /characters/{id}` | – | Charakter |
 | `PUT /characters/{id}` | Entwurf: `{ data: { draft } }`; sonst `{ name, data: { sheet, actor } }` | Charakter, beim Entwurf mit `problems`; Werte nur bei freien Charakteren der Spielleitung außerhalb eines Teams |
 | `POST /characters/{id}/finish` | – | fertiger Charakter mit `start_cash`; 400, solange es Probleme gibt |
+| `PUT /characters/{id}/relations` | `{ buddy, rival }`, Ids oder `null` | Charakter; nur im Team (F-52) |
 | `DELETE /characters/{id}` | – | nur außerhalb eines Teams, sonst 409 |
 
 ### Teams

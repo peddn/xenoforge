@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, toRaw } from 'vue'
+import { computed, ref, toRaw, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import ActorEditor from '@/components/ActorEditor.vue'
@@ -30,15 +30,24 @@ const error = ref('')
 
 const own = computed(() => props.character.owner_id === auth.user?.id)
 const others = computed(() => team.view.characters.filter((c) => c.id !== props.character.id))
-const buddy = ref(props.character.sheet?.buddy ?? null)
-const rival = ref(props.character.sheet?.rival ?? null)
+const buddy = ref(null)
+const rival = ref(null)
+// Follows the stored choice, not every refresh of the team: the key is
+// plain text, so it changes only with the values.
+watch(
+  () => JSON.stringify([props.character.sheet?.buddy ?? null, props.character.sheet?.rival ?? null]),
+  (stored) => {
+    const [b, r] = JSON.parse(stored)
+    buddy.value = b
+    rival.value = r
+  },
+  { immediate: true },
+)
 
-// The server takes the whole sheet; only buddy and rival change here.
 async function saveRelations() {
   error.value = ''
   try {
-    const sheet = { ...props.character.sheet, buddy: buddy.value ?? null, rival: rival.value ?? null }
-    await put(`/characters/${props.character.id}`, { name: props.character.name, data: { sheet } })
+    await put(`/characters/${props.character.id}/relations`, { buddy: buddy.value ?? null, rival: rival.value ?? null })
     await team.refresh()
   } catch (e) {
     error.value = e.message

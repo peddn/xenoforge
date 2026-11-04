@@ -69,6 +69,13 @@ fn situational_talent_must_fit() {
         t.try_run(Command::Roll { request }, &[]),
         Err(RuleError::NotAllowed(_))
     ));
+    // Ticked twice it still counts once: the roll is refused.
+    let mut request = RollRequest::skill("a", "mobility");
+    request.talents = vec!["stealthy".into(), "stealthy".into()];
+    assert!(matches!(
+        t.try_run(Command::Roll { request }, &[]),
+        Err(RuleError::NotAllowed(_))
+    ));
 }
 
 /// Rolls asked for by a talent offer situational talents too (A-10).

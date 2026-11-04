@@ -105,8 +105,11 @@ function addLook(text) {
   draft.value.appearance = now ? `${now}, ${text}` : text
 }
 
+// One save at a time, so the server keeps the last draft; a change during
+// a save is sent right after it.
 let timer = null
-let sequence = 0
+let inFlight = false
+let again = false
 watch(
   draft,
   () => {
@@ -126,17 +129,28 @@ onUnmounted(() => {
 
 async function save() {
   timer = null
-  const mine = ++sequence
+  if (inFlight) {
+    again = true
+    return
+  }
+  inFlight = true
   try {
     const saved = await characters.saveDraft(props.character.id, draft.value)
-    if (mine !== sequence) return
-    problems.value = saved.problems ?? []
-    actor.value = saved.data.actor
+    if (!again) {
+      problems.value = saved.problems ?? []
+      actor.value = saved.data.actor
+    }
     error.value = ''
   } catch (e) {
-    if (mine === sequence) error.value = e.message
+    error.value = e.message
   } finally {
-    if (mine === sequence && !timer) saving.value = false
+    inFlight = false
+    if (again) {
+      again = false
+      save()
+    } else if (!timer) {
+      saving.value = false
+    }
   }
 }
 
