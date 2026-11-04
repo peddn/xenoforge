@@ -16,7 +16,10 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use axum::http::StatusCode;
+use axum::extract::Request;
+use axum::http::{HeaderValue, StatusCode, header};
+use axum::middleware::{self, Next};
+use axum::response::Response;
 use axum::{Json, Router, routing::get};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
@@ -125,7 +128,30 @@ pub fn router(state: AppState, static_dir: &Path, data_dir: &Path) -> Router {
     Router::new()
         .nest("/api", api)
         .fallback_service(frontend)
+        .layer(middleware::from_fn(cache_control))
         .layer(TraceLayer::new_for_http())
+}
+
+/// How long browsers keep files. Built files under `/assets/` carry a hash
+/// in their name and never change. The page itself and the rule data are
+/// checked on every load, so a new build shows up after a normal reload.
+/// API answers stay as they are.
+async fn cache_control(request: Request, next: Next) -> Response {
+    let path = request.uri().path();
+    let value = if path.starts_with("/assets/") {
+        Some("public, max-age=31536000, immutable")
+    } else if path.starts_with("/api/") && !path.starts_with("/api/data/") {
+        None
+    } else {
+        Some("no-cache")
+    };
+    let mut response = next.run(request).await;
+    if let Some(value) = value {
+        response
+            .headers_mut()
+            .insert(header::CACHE_CONTROL, HeaderValue::from_static(value));
+    }
+    response
 }
 
 /// A transaction that writes: it takes SQLite's write lock at once, so a

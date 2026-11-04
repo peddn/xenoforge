@@ -136,7 +136,9 @@
     "endSession": "Sitzung beenden",
     "undo": "Rückgängig",
     "correct": "Korrigieren",
-    "actionsTitle": "Aktionen: {name}"
+    "actionsTitle": "Aktionen: {name}",
+    "confirmEndAct": "Akt wirklich beenden?",
+    "confirmEndSession": "Sitzung wirklich beenden? Nach Panik ab 13 folgt die Trauma-Probe."
   },
   "cold": {
     "above_freezing": "über null",
@@ -206,6 +208,8 @@
     "corrected": "Die Spielleitung korrigiert {name}",
     "undone": "Letzter Schritt zurückgenommen",
     "successes": "kein Erfolg | {n} Erfolg | {n} Erfolge",
-    "stunts": "kein Stunt | {n} Stunt | {n} Stunts"
+    "stunts": "kein Stunt | {n} Stunt | {n} Stunts",
+    "act_ended": "Akt beendet: Signature Item und Talente mit Einsatz pro Akt sind wieder verfügbar.",
+    "session_ended": "Sitzung beendet: Signature Item und Talente mit Einsatz pro Sitzung sind wieder verfügbar."
   }
 }

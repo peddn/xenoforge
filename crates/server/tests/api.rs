@@ -31,6 +31,8 @@ async fn server(name: &str) -> Server {
         "<!doctype html><title>index</title>",
     )
     .unwrap();
+    std::fs::create_dir_all(dir.join("assets")).unwrap();
+    std::fs::write(dir.join("assets/index-abc123.js"), "// built").unwrap();
     let config = Config {
         database: dir.join("test.db"),
         static_dir: dir.clone(),
@@ -189,6 +191,32 @@ async fn health_and_frontend() {
     assert_eq!(response.status(), StatusCode::OK);
     let rules = client.ok("GET", "/api/data/rules/skills.json", None).await;
     assert_eq!(rules["entries"].as_array().unwrap().len(), 12);
+
+    // The page and the rule data are checked on every load; built files
+    // with a hash in their name are kept.
+    for (path, expected) in [
+        ("/", Some("no-cache")),
+        ("/teams/3", Some("no-cache")),
+        ("/api/data/rules/skills.json", Some("no-cache")),
+        (
+            "/assets/index-abc123.js",
+            Some("public, max-age=31536000, immutable"),
+        ),
+        ("/api/health", None),
+    ] {
+        let response = server
+            .app
+            .clone()
+            .oneshot(Request::get(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{path}");
+        let cache = response
+            .headers()
+            .get(header::CACHE_CONTROL)
+            .map(|v| v.to_str().unwrap());
+        assert_eq!(cache, expected, "{path}");
+    }
 }
 
 #[tokio::test]

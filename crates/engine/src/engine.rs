@@ -240,6 +240,11 @@ pub enum Event {
         dice: Vec<Die>,
         trauma: Option<Id>,
     },
+    /// An Act ended: uses per Act are free again [p. 76, 104].
+    ActEnded,
+    /// A game session ended: uses per session are free again, trauma
+    /// checks follow [p. 76, 77, 104].
+    SessionEnded,
     SignatureItemUsed {
         actor: ActorId,
     },
@@ -644,6 +649,7 @@ impl<'a> Ctx<'a> {
                         "Acts exist only in Cinematic play".into(),
                     ));
                 }
+                self.emit(Event::ActEnded);
                 self.reset_uses(false);
                 Ok(())
             }
@@ -1310,6 +1316,7 @@ impl<'a> Ctx<'a> {
     /// End of a game session: trauma checks [p. 104; F-01, F-26, F-27,
     /// F-42], then all uses reset.
     fn end_session(&mut self) -> Result<()> {
+        self.emit(Event::SessionEnded);
         let checks: Vec<ActorId> = self
             .state
             .actors
