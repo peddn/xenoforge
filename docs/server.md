@@ -20,7 +20,7 @@ Browser ── HTTP (JSON) ──▶ axum ──▶ Engine (rein)
 - Anmeldung über ein Cookie `xf_session` (HttpOnly, SameSite=Lax, auf Wunsch Secure). Im Cookie steht ein zufälliges Token; die Datenbank kennt nur dessen SHA-256. Eine Sitzung gilt 30 Tage.
 - **Teams legt nur die Spielleitung an.** Sie kann ein Team ohne Spieler vorbereiten und eigene Charaktere hineinnehmen. Andere Spielleitungen sehen das Team nicht.
 - **Spieler treten über einen Einladungslink bei** und bringen dabei einen ihrer freien Charaktere mit. Ein Charakter ist in höchstens einem Team. Die Spielleitung kann den Link erneuern; der alte gilt dann nicht mehr.
-- Die Spielleitung kann Charaktere aus dem Team nehmen. Hat ein Spieler danach keinen Charakter mehr im Team, sieht er es nicht mehr; ein offener Ereignisstrom endet und muss sich neu anmelden.
+- Die Spielleitung kann Charaktere aus dem Team nehmen, und ein Spieler kann mit seinem eigenen Charakter austreten. Hat ein Spieler danach keinen Charakter mehr im Team, sieht er es nicht mehr; ein offener Ereignisstrom endet und muss sich neu anmelden.
 - Wer weder Spielleitung noch Mitglied ist, bekommt für das Team `404`, nicht `403`: Es soll nicht einmal erkennbar sein, dass es das Team gibt.
 
 ### Wer darf welchen Befehl
@@ -117,8 +117,8 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `GET /teams/{id}` | Team | – | Ansicht des Teams, gefiltert nach Rolle |
 | `POST /teams/{id}/invite` | Spielleitung | – | neues Einladungs-Token |
 | `POST /teams/{id}/characters` | Spielleitung | `{ character }` | eigenen Charakter hinzufügen |
-| `PUT /teams/{id}/characters/{c}` | Spielleitung | `{ actor }` | Werte korrigieren |
-| `DELETE /teams/{id}/characters/{c}` | Spielleitung | – | Charakter aus dem Team nehmen |
+| `PUT /teams/{id}/characters/{c}` | Spielleitung | `{ actor, note? }` | Werte korrigieren |
+| `DELETE /teams/{id}/characters/{c}` | Spielleitung oder Besitzer | – | Charakter aus dem Team nehmen bzw. austreten |
 | `GET /join/{token}` | angemeldet | – | Team, Spielleitung, Modus |
 | `POST /join/{token}` | angemeldet | `{ character }` | Beitritt mit freiem Charakter |
 
@@ -126,14 +126,14 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 
 | Methode und Pfad | Inhalt | Antwort |
 | --- | --- | --- |
-| `POST /teams/{id}/commands` | `{ command }`, ein Engine-Befehl | neue Protokolleinträge, soweit sichtbar |
+| `POST /teams/{id}/commands` | `{ command, note? }`, ein Engine-Befehl und auf Wunsch eine Notiz | neue Protokolleinträge, soweit sichtbar |
 | `POST /teams/{id}/preview` | Wurfanfrage wie in `roll` | Würfelzahl und Modifikatoren, ohne zu würfeln |
 | `POST /teams/{id}/undo` | – | Eintrag `undone` |
 | `GET /teams/{id}/events` | `Last-Event-ID` oder `?after=<id>` | Server-Sent Events, je Eintrag `{ id, batch, visible_to, by, at, entry }` |
 
 Offene Entscheidungen (`pending` in der Ansicht des Teams) bringen bei einem Wurf den bisherigen Stand mit (`roll`): Fertigkeit oder Attribut, Würfel, Erfolge und übrige Pushes. Die Erfolge zählt die Engine.
 
-Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `character_joined`, `character_removed`, `corrected`, `undone`. Alle Einträge eines Befehls tragen in `batch` die Nummer des ersten; die Oberfläche zeigt sie als einen Block.
+Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `character_joined`, `character_removed` (durch die Spielleitung), `character_left` (der Spieler tritt aus), `corrected`, `undone`. Alle Einträge eines Befehls tragen in `batch` die Nummer des ersten; die Oberfläche zeigt sie als einen Block. Eine Notiz zum Befehl (`note`, höchstens 200 Zeichen) steht am ersten Eintrag; sie ist für alle sichtbar wie der Befehl selbst.
 
 ### Regeldaten
 

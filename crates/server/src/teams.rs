@@ -284,7 +284,7 @@ async fn bring(
         character: character.id,
         name: character.name.clone(),
     };
-    let stored = log::append(&mut tx, team.id, user, vec![entry]).await?;
+    let stored = log::append(&mut tx, team.id, user, vec![entry], None).await?;
     tx.commit().await?;
     log::publish(state, &stored);
     Ok(stored)
@@ -301,6 +301,8 @@ async fn add_own(
     Ok(Json(bring(&state, &team, &user, body.character).await?))
 }
 
+/// The game master takes a character out of the team, or a player takes
+/// their own character out and so leaves (A-04).
 async fn remove(
     State(state): State<AppState>,
     user: User,
@@ -309,10 +311,16 @@ async fn remove(
     // Lock first: the team document must not change between reading and
     // writing it back.
     let _guard = state.lock.lock().await;
-    let mut team = gm_team(&state, &user, id).await?;
+    let mut team = game::load_team(&state.pool, id).await?;
+    let is_gm = game::access(&state.pool, &team, &user).await?;
     let mut character = characters::load(&state.pool, character_id).await?;
     if character.team_id != Some(id) {
         return Err(ApiError::not_found("character"));
+    }
+    if !is_gm && character.owner_id != user.id {
+        return Err(ApiError::forbidden(
+            "only the game master or the owner can do that",
+        ));
     }
     let mut tx = begin_write(&state.pool).await?;
     character.team_id = None;
@@ -339,11 +347,18 @@ async fn remove(
         .bind(id)
         .execute(&mut *tx)
         .await?;
-    let entry = Entry::CharacterRemoved {
-        character: character.id,
-        name: character.name.clone(),
+    let entry = if is_gm {
+        Entry::CharacterRemoved {
+            character: character.id,
+            name: character.name.clone(),
+        }
+    } else {
+        Entry::CharacterLeft {
+            character: character.id,
+            name: character.name.clone(),
+        }
     };
-    let stored = log::append(&mut tx, id, &user, vec![entry]).await?;
+    let stored = log::append(&mut tx, id, &user, vec![entry], None).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))

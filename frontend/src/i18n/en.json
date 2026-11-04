@@ -28,7 +28,8 @@
     "confirm": "Confirm",
     "remove": "Remove",
     "add": "Add",
-    "close": "Close"
+    "close": "Close",
+    "note": "Reason (optional)"
   },
   "home": {
     "characters": "My characters",
@@ -167,9 +168,11 @@
     "log": "Log",
     "removeCharacter": "Remove from team",
     "goneTitle": "No longer in the team",
-    "gone": "Your character was taken out of the team.",
+    "gone": "You no longer have a character in this team.",
     "back": "Back to the overview",
-    "removeConfirm": "Really take {name} out of the team?"
+    "removeConfirm": "Really take {name} out of the team?",
+    "leave": "Leave the team",
+    "leaveConfirm": "Leave the team with {name}?"
   },
   "outcome": {
     "success": "Success",
@@ -214,6 +217,8 @@
     "successes": "no successes | {n} success | {n} successes",
     "stunts": "no stunts | {n} stunt | {n} stunts",
     "act_ended": "Act ended: signature item and talents usable once per Act are available again.",
-    "session_ended": "Session ended: signature item and talents usable once per session are available again."
+    "session_ended": "Session ended: signature item and talents usable once per session are available again.",
+    "character_left": "{name} leaves the team",
+    "note": "“{note}”"
   }
 }

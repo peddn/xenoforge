@@ -19,7 +19,7 @@ use tokio_stream::wrappers::BroadcastStream;
 use xenoforge_engine::Event;
 
 use crate::auth::User;
-use crate::error::ApiResult;
+use crate::error::{ApiError, ApiResult};
 use crate::game;
 use crate::{AppState, now};
 
@@ -35,7 +35,13 @@ pub enum Entry {
         character: i64,
         name: String,
     },
+    /// The game master took the character out of the team.
     CharacterRemoved {
+        character: i64,
+        name: String,
+    },
+    /// The player took their character out of the team.
+    CharacterLeft {
         character: i64,
         name: String,
     },
@@ -61,6 +67,10 @@ pub struct Stored {
     pub visible_to: String,
     /// Name of the person whose command caused it.
     pub by: Option<String>,
+    /// Why the command was given, in the person's words; on the first
+    /// entry of the command.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
     pub at: i64,
     pub entry: Entry,
 }
@@ -72,7 +82,23 @@ struct Payload {
     /// entries have none either and stand alone.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     batch: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    note: Option<String>,
     entry: Entry,
+}
+
+/// How long a note may be, in characters.
+const NOTE_MAX: usize = 200;
+
+/// A note as sent: trimmed, empty means none, at most `NOTE_MAX` characters.
+pub fn note(text: Option<String>) -> ApiResult<Option<String>> {
+    let text = text.map(|t| t.trim().to_owned()).filter(|t| !t.is_empty());
+    if text.as_ref().is_some_and(|t| t.chars().count() > NOTE_MAX) {
+        return Err(ApiError::bad_request(format!(
+            "a note has at most {NOTE_MAX} characters"
+        )));
+    }
+    Ok(text)
 }
 
 /// Hints for the game master only stay with the game master; the rest is
@@ -90,12 +116,13 @@ pub fn visible(stored: &Stored, is_gm: bool) -> bool {
     is_gm || stored.visible_to == "all"
 }
 
-/// Writes entries in the open transaction.
+/// Writes entries in the open transaction; the note goes with the first.
 pub async fn append(
     tx: &mut Transaction<'_, Sqlite>,
     team_id: i64,
     user: &User,
     entries: Vec<Entry>,
+    mut note: Option<String>,
 ) -> ApiResult<Vec<Stored>> {
     let mut stored: Vec<Stored> = Vec::with_capacity(entries.len());
     let at = now();
@@ -104,6 +131,7 @@ pub async fn append(
         let payload = Payload {
             by: Some(user.name.clone()),
             batch: stored.first().map(|first| first.id),
+            note: note.take(),
             entry,
         };
         let id = sqlx::query(
@@ -123,6 +151,7 @@ pub async fn append(
             team_id,
             visible_to,
             by: payload.by,
+            note: payload.note,
             at,
             entry: payload.entry,
         });
@@ -187,6 +216,7 @@ async fn events(
             team_id: row.get("team_id"),
             visible_to: row.get("visible_to"),
             by: payload.by,
+            note: payload.note,
             at: row.get("created_at"),
             entry: payload.entry,
         });
@@ -214,7 +244,10 @@ async fn events(
             std::future::ready(ready)
         })
         .flat_map(|stored| {
-            let leaves = matches!(stored.entry, Entry::CharacterRemoved { .. });
+            let leaves = matches!(
+                stored.entry,
+                Entry::CharacterRemoved { .. } | Entry::CharacterLeft { .. }
+            );
             stream::iter(std::iter::once(Some(stored)).chain(leaves.then_some(None)))
         })
         .take_while(|item| std::future::ready(item.is_some()))
