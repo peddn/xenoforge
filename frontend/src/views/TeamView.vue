@@ -89,66 +89,72 @@ async function addOwn() {
 </script>
 
 <template>
-  <template v-if="team.view">
-    <XPanel :title="team.view.name">
-      <template #actions>
-        <XStatus
-          :tone="team.connected ? 'ok' : 'warn'"
-          :text="t(team.connected ? 'team.live' : 'team.offline')"
-        />
-      </template>
-      <p class="text-dim">
-        {{ t(`mode.${team.view.mode}`) }} · {{ t('team.gm') }}: {{ team.view.gm.name }}
-      </p>
-      <template v-if="team.view.is_gm">
-        <div class="flex flex-wrap items-center gap-2">
-          <XField :label="t('team.invite')">
-            <input
-              class="w-[40ch] max-w-full"
-              readonly
-              :value="inviteLink"
-              data-test="invite"
-              @focus="$event.target.select()"
-            >
-          </XField>
-          <XButton
-            variant="quiet"
-            @click="team.newInvite()"
-          >
-            {{ t('team.newInvite') }}
-          </XButton>
-          <template v-if="freeOwn.length">
-            <XField :label="t('team.addOwn')">
-              <select v-model="ownChoice">
-                <option
-                  v-for="c in freeOwn"
-                  :key="c.id"
-                  :value="c.id"
-                >
-                  {{ c.name }}
-                </option>
-              </select>
+  <!-- Wide screens: team and crew on the left, the log on the right from top
+       to bottom; phones: all one below the other. The decision bar is fixed
+       at the bottom edge, so the log leaves room for it. -->
+  <div
+    v-if="team.view"
+    class="grid items-start gap-3 lg:grid-cols-2"
+    :class="{ 'pb-16': team.decisions.length }"
+  >
+    <div class="grid min-w-0 content-start gap-3">
+      <XPanel :title="team.view.name">
+        <template #actions>
+          <XStatus
+            :tone="team.connected ? 'ok' : 'warn'"
+            :text="t(team.connected ? 'team.live' : 'team.offline')"
+          />
+        </template>
+        <p class="text-dim">
+          {{ t(`mode.${team.view.mode}`) }} · {{ t('team.gm') }}: {{ team.view.gm.name }}
+        </p>
+        <template v-if="team.view.is_gm">
+          <div class="flex flex-wrap items-center gap-2">
+            <XField :label="t('team.invite')">
+              <input
+                class="w-[40ch] max-w-full"
+                readonly
+                :value="inviteLink"
+                data-test="invite"
+                @focus="$event.target.select()"
+              >
             </XField>
             <XButton
-              :disabled="!ownChoice"
-              @click="addOwn"
+              variant="quiet"
+              @click="team.newInvite()"
             >
-              {{ t('common.add') }}
+              {{ t('team.newInvite') }}
             </XButton>
-          </template>
-        </div>
-        <GmBar />
-      </template>
-      <p
-        v-if="error"
-        class="text-red"
-        role="alert"
-      >
-        {{ error }}
-      </p>
-    </XPanel>
-
-    <div class="grid cols-auto items-start gap-3">
+            <template v-if="freeOwn.length">
+              <XField :label="t('team.addOwn')">
+                <select v-model="ownChoice">
+                  <option
+                    v-for="c in freeOwn"
+                    :key="c.id"
+                    :value="c.id"
+                  >
+                    {{ c.name }}
+                  </option>
+                </select>
+              </XField>
+              <XButton
+                :disabled="!ownChoice"
+                @click="addOwn"
+              >
+                {{ t('common.add') }}
+              </XButton>
+            </template>
+          </div>
+          <GmBar />
+        </template>
+        <p
+          v-if="error"
+          class="text-red"
+          role="alert"
+        >
+          {{ error }}
+        </p>
+      </XPanel>
       <XPanel :title="t('team.crew')">
         <CrewList
           @roll="open('roll', $event)"
@@ -156,10 +162,14 @@ async function addOwn() {
           @actions="open('actions', $event)"
         />
       </XPanel>
-      <XPanel :title="t('team.log')">
-        <LogList />
-      </XPanel>
     </div>
+    <XPanel
+      :title="t('team.log')"
+      class="lg:sticky lg:top-4 lg:grid-rows-[auto_minmax(0,1fr)]"
+      :class="team.decisions.length ? 'lg:h-[calc(100dvh-9.5rem)]' : 'lg:h-[calc(100dvh-5.5rem)]'"
+    >
+      <LogList />
+    </XPanel>
 
     <XModal
       v-if="dialog && current"
@@ -187,7 +197,7 @@ async function addOwn() {
     </XModal>
 
     <DecisionBar @open="open('decision', $event)" />
-  </template>
+  </div>
   <XPanel
     v-else-if="team.gone"
     :title="t('team.goneTitle')"

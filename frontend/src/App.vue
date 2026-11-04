@@ -1,9 +1,10 @@
 <script setup>
-import { watch, watchEffect } from 'vue'
+import { ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 import XButton from '@/ui/XButton.vue'
+import XModal from '@/ui/XModal.vue'
 import { LOCALES, saveLocale } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
@@ -12,6 +13,8 @@ const { t, locale } = useI18n()
 const auth = useAuthStore()
 const rules = useRulesStore()
 const router = useRouter()
+// The note that this is an unofficial fan project, behind the ⓘ.
+const about = ref(false)
 
 watchEffect(() => {
   document.documentElement.lang = locale.value
@@ -49,6 +52,15 @@ async function logout() {
           {{ t('auth.logout') }}
         </XButton>
       </template>
+      <XButton
+        variant="quiet"
+        :aria-label="t('about.title')"
+        :title="t('about.title')"
+        data-test="about"
+        @click="about = true"
+      >
+        ⓘ
+      </XButton>
       <nav
         class="flex flex-wrap items-center gap-2"
         :aria-label="t('language.label')"
@@ -68,7 +80,15 @@ async function logout() {
   <main class="mx-auto grid w-full max-w-6xl flex-1 content-start gap-3 p-4">
     <RouterView v-if="rules.loaded" />
   </main>
-  <footer class="border-t border-line px-4 py-2.5 text-xs text-dim">
-    {{ t('app.disclaimer') }}
-  </footer>
+  <XModal
+    v-if="about"
+    :title="t('about.title')"
+    @close="about = false"
+  >
+    <p>{{ t('app.disclaimer') }}</p>
+    <p class="text-dim">
+      {{ t('about.license') }}
+    </p>
+    <a href="https://github.com/peddn/xenoforge">github.com/peddn/xenoforge</a>
+  </XModal>
 </template>
