@@ -49,6 +49,12 @@
     { "id": "F-46", "pages": [79, 99], "options": ["stoic_applies"], "default": "stoic_applies" },
     { "id": "F-47", "pages": [76], "options": ["this_throw", "including_push"], "default": "this_throw" },
     { "id": "F-48", "pages": [98, 104], "options": ["ends_at_once", "runs_on"], "default": "ends_at_once" },
-    { "id": "F-49", "pages": [70, 71, 74], "options": ["command_dice"], "default": "command_dice" }
+    { "id": "F-49", "pages": [70, 71, 74], "options": ["command_dice"], "default": "command_dice" },
+    { "id": "F-50", "pages": [28, 29], "options": ["two_different"], "default": "two_different" },
+    { "id": "F-51", "pages": [28], "options": ["all_points"], "default": "all_points" },
+    { "id": "F-52", "pages": [31], "options": ["optional_distinct"], "default": "optional_distinct" },
+    { "id": "F-53", "pages": [61, 383], "options": ["zero"], "default": "zero" },
+    { "id": "F-54", "pages": [31], "options": ["any_time"], "default": "any_time" },
+    { "id": "F-55", "pages": [29, 75, 76], "options": ["no_stress_hint"], "default": "no_stress_hint" }
   ]
 }

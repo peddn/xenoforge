@@ -72,6 +72,12 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-47 | The Long Haul und Push, S. 76 | „Alle Facehugger eines Wurfs“: offen, ob ein Push nach dem Einsatz noch zu diesem Wurf gehört | Das Talent gilt für den Wurf, bei dem es eingesetzt wird; der Push ist ein neuer Wurf, seine Facehugger zählen | gilt auch für den Push |
 | F-48 | Panik bei Broken, S. 98, 104 | Panik endet, wenn man Broken ist. Eine kritische Verletzung verlangt aber einen Panikwurf, meist wenn man schon Broken ist | Die Panik endet sofort; ihre sofortigen Folgen (Stress, Panikwürfe anderer, 13+) gelten | läuft weiter, bis ein Turn vergeht oder COMMAND sie beendet |
 | F-49 | Authority, S. 70, 71, 74 | Der Colonial Marshal würfelt COMMAND statt MANIPULATION; offen, welche an eine Fertigkeit gebundenen Boni und welche Stunts gelten | Gewürfelt wird COMMAND mit allen Modifikatoren für COMMAND, nicht denen für MANIPULATION (z. B. HoloTab +2, nicht Tape Recorder +1). Sonst bleibt es eine MANIPULATION-Probe: vergleichend gegen MANIPULATION, Verhandlungsposition, Nachgeben mit Gegenleistung oder Angriff, und für Erfolge über den Sieg hinaus die MANIPULATION-Stunts | – |
+| F-50 | Android-Bonus, S. 28, 29 | „+3 auf zwei Attribute“: offen, ob dasselbe Attribut zweimal gewählt werden darf (01-A1) | Zwei verschiedene Attribute, je +3, höchstens 8 | – |
+| F-51 | Punkte bei der Erschaffung, S. 28 | Offen, ob alle 14 Attribut- und 10 Fertigkeitspunkte verteilt sein müssen (01-A3) | Alle Punkte müssen verteilt sein | – |
+| F-52 | Buddy und Rival, S. 31 | Offen, ob beide Pflicht sind; bei zwei SC geht nicht beides (01-A9) | Freiwillig; wenn gesetzt, zwei verschiedene Spielercharaktere desselben Teams | – |
+| F-53 | Story Points zu Beginn, S. 61, 383 | Kein Startwert genannt (01-A6) | Neue Spieler beginnen mit 0, dazu Mitgebrachtes, höchstens 3 | – |
+| F-54 | Agenda in der Kampagne ändern, S. 31 | Keine Regel dazu (01-A8) | Jederzeit änderbar; die Spielleitung sieht sie im Bogen | – |
+| F-55 | Android und Talente mit Stress als Preis, S. 29, 75, 76 | Pull Rank und Personal Safety kosten Stress, den Androiden nicht haben (01-A30) | Kein Stress; die App weist die Spielleitung im Protokoll darauf hin, sie entscheidet über Folgen | – |
 
 ## Entscheidungen zur App
 
@@ -85,6 +91,9 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | A-06 | Schiffsstatus | Alle im Team sehen ihn; Spieler ohne Geheimes. Folgen stehen in drei Stufen: AUTO (App wendet an), HINWEIS (Spielleitung setzt um), INFO. |
 | A-07 | Konten | Jeder kann ein Konto anlegen und wählt dabei Spieler oder Spielleitung. Nur Spielleitungs-Konten legen Teams an, auch ohne Spieler zum Vorbereiten. Rechte gelten nur im eigenen Team; eine Spielleitung sieht nichts aus fremden Teams und kann dort als Spieler mitspielen. Jedes Team hat genau eine Spielleitung. |
 | A-08 | Würfe der Spieler | Die Schwierigkeit legt die Spielleitung fest (S. 63). Spieler würfeln Fertigkeits-, Attribut- und Death-Rolls für ihre eigenen Charaktere, mit Helfern und einem Ausrüstungsbonus, aber ohne Schwierigkeit. Will die Spielleitung eine Schwierigkeit, löst sie den Wurf für den Charakter aus; über Push und Story Point entscheidet weiter der Spieler. Der Server prüft jede Modifikation: Schwierigkeit nur mit einem Wert aus der Tabelle S. 63, Ausrüstung 0 bis `gear_bonus_max` (+3, der höchste Bonus im Buch, S. 128). Mit dem Ausrüstungskatalog (Phase 2c) kommt der Bonus vom Gegenstand. |
+| A-09 | Erschaffung und Übergabe | Spieler erschaffen Charaktere mit dem Assistenten (S. 27–36); erst „Fertigstellen“ macht einen Entwurf spielbar. Die Spielleitung kann zusätzlich frei anlegen, für vorgefertigte Charaktere und Szenarien. Vorgefertigte Charaktere bietet sie im Team zur Wahl an; wer einen wählt, wird Besitzer. Ersatzcharaktere nach Tod oder PvP übergibt sie genauso. |
+| A-10 | Talente mit Lage-Bonus | Talente, die nur in einer bestimmten Lage +2 geben (z. B. Stealthy, Watchful, Zero-G Training), bietet der Würfeldialog zum Ankreuzen an; Spieler entscheiden, ob die Lage zutrifft. Der Bonus steht mit Quelle im Protokoll, die Spielleitung kann rückgängig machen. |
+| A-11 | Vorschläge der Karrieren | Namen, Aussehen-Stichworte und Signature Items wie im Buch (S. 39–55), auf Englisch im Original, auf Deutsch übersetzt. Agenden in eigenen Worten, weil es ganze Sätze sind. |
 
 ## Noch offen
 
