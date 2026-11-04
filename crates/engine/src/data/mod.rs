@@ -48,7 +48,7 @@ macro_rules! simple_entry {
         }
     )*};
 }
-simple_entry!(Attribute, Career, Skill, Action);
+simple_entry!(Constant, Attribute, Career, Skill, Action);
 
 macro_rules! effect_entry {
     ($($ty:ty),*) => {$(
@@ -174,6 +174,7 @@ macro_rules! rule_files {
 }
 
 rule_files! {
+    constants: Constant => "constants",
     attributes: Attribute => "attributes",
     careers: Career => "careers",
     skills: Skill => "skills",

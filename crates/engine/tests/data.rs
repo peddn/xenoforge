@@ -251,3 +251,61 @@ fn unknown_fields_are_rejected() {
     let extra_op = r#"{ "op": "stress", "delta": 1, "reason": "x" }"#;
     assert!(serde_json::from_str::<Op>(extra_op).is_err());
 }
+
+#[test]
+fn finds_replacements_that_do_not_fit() {
+    use xenoforge_engine::data::effects::{ReplaceWith, Replaceable};
+    let problems = problems_after(|d| {
+        let talent = d
+            .rules
+            .talents
+            .iter_mut()
+            .find(|t| t.id == "stoic")
+            .unwrap();
+        if let Effect::Replacement { with, .. } = &mut talent.effects[0] {
+            *with = ReplaceWith::Success;
+        }
+    });
+    assert_found(&problems, "replacement and its result do not fit together");
+
+    let problems = problems_after(|d| {
+        let talent = d
+            .rules
+            .talents
+            .iter_mut()
+            .find(|t| t.id == "overkill")
+            .unwrap();
+        if let Effect::Replacement { replaces, with, .. } = &mut talent.effects[0] {
+            *replaces = Replaceable::PanicResult { from: 11 };
+            *with = ReplaceWith::PanicEffect("flee".into());
+        }
+    });
+    assert_found(&problems, "\"flee\" is not a panic entry outside the table");
+    assert_found(
+        &problems,
+        "panic/overkill_effect: entry outside the table is never used",
+    );
+}
+
+#[test]
+fn finds_pushes_on_rolls_that_cannot_be_pushed() {
+    use xenoforge_engine::data::effects::{Modified, RollKind};
+    let problems = problems_after(|d| {
+        let talent = d
+            .rules
+            .talents
+            .iter_mut()
+            .find(|t| t.id == "nerves_of_steel")
+            .unwrap();
+        if let Effect::Modifier {
+            modifies,
+            applies_to,
+            ..
+        } = &mut talent.effects[0]
+        {
+            *modifies = Modified::Pushes;
+            applies_to.rolls = vec![RollKind::Panic];
+        }
+    });
+    assert_found(&problems, "only skill rolls can be pushed");
+}

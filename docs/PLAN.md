@@ -62,7 +62,7 @@ Die Korrekturen an der Sternenkarte betreffen die App nicht.
 | Vorratswurf mit Calm Breather / Light Eater [S. 34, 78] | Offen, ob „max. 6 Würfel“ vor oder nach „−2 Würfel“ gilt | Würfel = max(1, min(Vorrat, 6) − 2) |
 | Dunkelheit [S. 83, 95] | Zone „Dark“ (−2) wird als schwach beleuchtet beschrieben; die Fernkampftabelle kennt „Dim light“ −1 und „Darkness“ −2 | Lichtstufe einmal wählen; Zone „Dark“ zählt als Darkness −2, nie doppelt |
 
-Den vollständigen Katalog baut Phase 0 aus den Abschnitten „Ambiguities“ der Spezifikation auf.
+Die übrigen Unklarheiten stehen in den Abschnitten „Ambiguities“ der Spezifikation. Sie kommen phasenweise in den Katalog: Jeder Phasenplan legt die Punkte seines Bereichs mit einem Vorschlag zur Entscheidung vor.
 
 ## 3. Rollen und Rechte
 
@@ -752,7 +752,7 @@ Ich schlage sieben Phasen vor, jede mit einer Abnahme, meist einer Testsitzung m
 ```mermaid
 flowchart TD
     p0["Phase 0 · Fundament<br/>Cargo-Workspace, Vite-Projekt, CI,<br/>Regeldaten mit Schema inkl. Effektformat,<br/>Errata und Festlegungen<br/>Abnahme: alle Regeldaten bestehen die Prüfung"]
-    p1["Phase 1 · Regel-Engine<br/>Alle Wurfarten, Push, Stress, Paniktabellen,<br/>Effekt-System mit Ereignissen und Zustandsprüfung<br/>Abnahme: alle Buchbeispiele und ihre Effekte als Tests grün"]
+    p1["Phase 1 · Regel-Engine<br/>Würfe außer Initiative, Push, Stress, Panik,<br/>Effekt-System mit Ereignissen und Zustandsprüfung<br/>Abnahme: alle Buchbeispiele und ihre Effekte als Tests grün"]
     p2["Phase 2 · Teams und Charaktere<br/>Konten, Teams, Rollen, Echtzeit, Protokoll, Würfeln;<br/>alle Erschaffungswege, Bogen, Ausrüstung;<br/>Terminal-Design als Grundlage aller Seiten<br/>Abnahme: erste Testsitzung mit Proben"]
     p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Turn- und Runden-Phasen<br/>Abnahme: Hope's Last Day komplett spielbar"]
     p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Story Points<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
@@ -765,6 +765,8 @@ flowchart TD
     p4 -.-> p7
     p6 -.-> p7
 ```
+
+Initiative entsteht mit dem Kampf in Phase 3, die Raumkampf-Paniktabelle mit dem Raumkampf in Phase 6, weil beide ohne diese Zusammenhänge nichts zu tun haben. Die Regel-Engine kennt in Phase 1 nur den Zeitschritt als Befehl; das Zeitmodell mit Schichtmarker und Phasen baut Phase 4 darauf auf.
 
 Die Reihenfolge folgt den Abhängigkeiten: Ohne Regel-Engine keine Proben, ohne Proben kein Kampf, ohne Kampfregeln kein Raumkampf. Ab Phase 3 ist das Werkzeug am echten Tisch brauchbar, weil Hope's Last Day als Cinematic-Szenario samt vorgefertigten Charakteren vollständig im Buch steht. Das Lagebild der Spielleitung (3.1) wächst mit: Crew ab Phase 2, Kampf ab Phase 3, Zeit ab Phase 4, Schiff ab Phase 5.
 
@@ -808,7 +810,7 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 | Sprache | Deutsch und Englisch, pro Person umschaltbar |
 | Repo | [peddn/xenoforge](https://github.com/peddn/xenoforge), öffentlich; alle Zahlenwerte aus dem Buch, Beschreibungen in eigenen Worten mit Seitenverweis |
 | Regelbasis | Grundregelwerk 1. Auflage 2019 mit den offiziellen Errata |
-| Regelfragen | Festgelegt in Abschnitt 2 |
+| Regelfragen | Festgelegt in Abschnitt 2 und im Katalog; weitere Unklarheiten entscheidet jede Phase für ihren Bereich |
 | Sichtbarkeit | Spieler sehen nur den eigenen Bogen; Würfe und Ereignisse stehen im gemeinsamen Protokoll |
 | Verdeckte Würfe | Nur für NSC und Kreaturen; Spieler würfeln immer offen, weil sie über den Push entscheiden |
 | Teams | Ein Team ist die ganze Spielrunde (Kampagne oder Szenario); Charaktere gehören den Spielern, die Spielleitung ordnet sie zu |
@@ -821,4 +823,4 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 
 Offen:
 
-Derzeit keine. Nächster Schritt ist Phase 0, nach Zustimmung.
+Derzeit keine. Phase 0 ist abgeschlossen (PR #1). Nächster Schritt ist der Plan für Phase 1.

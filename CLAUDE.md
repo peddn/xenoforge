@@ -24,6 +24,7 @@ Begleit-App für das ALIEN RPG (Free League, Grundregelwerk 1. Auflage 2019). De
 - Oberfläche: Vue 3 mit Pinia und Vue Router, **JavaScript, kein TypeScript**, Build mit Vite, Texte über vue-i18n (Deutsch und Englisch).
 - Der Server würfelt; die Oberfläche rechnet keine Regeln selbst.
 - Format der Regeldaten: `docs/datenformat.md`. Die Rust-Typen sind die Quelle, die Schemas in `data/schema/` werden erzeugt.
+- Regel-Engine: `docs/engine.md`. Befehle rein, Ereignisse raus; Entscheidungen der Spieler als offene Entscheidungen, nie still.
 
 ## Befehle
 

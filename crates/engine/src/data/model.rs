@@ -95,7 +95,10 @@ pub struct RollRange {
 pub struct PanicResult {
     pub id: Id,
     pub page: Page,
-    pub roll: RollRange,
+    /// Row of the Panic table. Effects outside the table, such as Overkill,
+    /// have none and are reached through a replacement [p. 104].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub roll: Option<RollRange>,
     /// A panic action replaces the action the roll came from (10+, p. 104).
     #[serde(default, skip_serializing_if = "is_false")]
     pub cancels_action: bool,
@@ -281,6 +284,15 @@ pub struct ShipDamage {
     pub on_apply: Vec<Op>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub effects: Vec<Effect>,
+}
+
+/// A single rule value, such as the most helpers that count [p. 63].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Constant {
+    pub id: Id,
+    pub page: Page,
+    pub value: i16,
 }
 
 /// A ruling from `docs/rules/00-errata-und-festlegungen.md`. The game

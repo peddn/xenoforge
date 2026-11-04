@@ -79,7 +79,24 @@ pub enum Lasts {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum RollKind {
+    /// Panic Roll; a modifier changes the result [p. 104].
     Panic,
+    /// Supply rolls; a modifier changes the number of Stress Dice [p. 34].
+    AirSupply,
+    FoodSupply,
+    WaterSupply,
+    PowerSupply,
+}
+
+/// What a modifier changes on the rolls it applies to.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Modified {
+    /// The dice pool (the result for Panic Rolls, the value for ship stats).
+    #[default]
+    Dice,
+    /// How often the roll may be pushed [p. 60].
+    Pushes,
 }
 
 /// Ship stats [p. 167].
@@ -172,26 +189,48 @@ pub enum Cold {
     DeepSpace,
 }
 
-/// Gear that exempts a character from an effect.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+/// Gear that exempts a character from an effect while it is worn.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum Gear {
-    PressureSuit,
+    /// Any suit that protects in a vacuum; the book says "pressure suit"
+    /// [p. 198]. Which items count is ruling F-18.
+    VacuumSuit,
 }
 
 /// What a replacement effect replaces.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Replaceable {
     /// All facehugger results (ones on Stress Dice) of a single roll.
     FacehuggersInRoll,
+    /// The effect of a Panic Roll with at least this result.
+    PanicResult { from: u8 },
+    /// A whole skill roll with this skill: it is not rolled.
+    Roll(Id),
+    /// The attribute of skill rolls with this skill.
+    AttributeFor(Id),
+    /// This skill.
+    Skill(Id),
 }
 
-/// What happens instead.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+/// What happens instead. Each kind of `Replaceable` has one matching kind
+/// here (checked by the validation).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReplaceWith {
+    /// For `facehuggers_in_roll`: they count as blank.
     Ignore,
+    /// For `panic_result`: this entry of `panic.json`.
+    PanicEffect(Id),
+    /// For `roll`: the roll succeeds with one success.
+    Success,
+    /// For `attribute_for`: roll with this attribute.
+    Attribute(Id),
+    /// For `skill`: roll with this skill.
+    Skill(Id),
 }
 
 /// The period a limited use refers to.
@@ -230,7 +269,13 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
         applies_to: ModTarget,
+        #[serde(default, skip_serializing_if = "is_default")]
+        modifies: Modified,
         change: Change,
+        /// The changed value never goes below this, e.g. "to a minimum of
+        /// one die" [p. 78].
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        at_least: Option<u8>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         lasts: Option<Lasts>,
         #[serde(default, skip_serializing_if = "is_false")]
@@ -354,6 +399,60 @@ impl Effect {
         match self {
             Effect::Trigger { then, .. } | Effect::Periodic { then, .. } => then,
             _ => &[],
+        }
+    }
+
+    /// Fields every effect kind has: target, own duration, visibility.
+    pub fn common(&self) -> (Target, Option<Lasts>, bool) {
+        match self {
+            Effect::Modifier {
+                target,
+                lasts,
+                gm_only,
+                ..
+            }
+            | Effect::Restriction {
+                target,
+                lasts,
+                gm_only,
+                ..
+            }
+            | Effect::Trigger {
+                target,
+                lasts,
+                gm_only,
+                ..
+            }
+            | Effect::Periodic {
+                target,
+                lasts,
+                gm_only,
+                ..
+            }
+            | Effect::Replacement {
+                target,
+                lasts,
+                gm_only,
+                ..
+            }
+            | Effect::Condition {
+                target,
+                lasts,
+                gm_only,
+                ..
+            }
+            | Effect::Capability {
+                target,
+                lasts,
+                gm_only,
+                ..
+            }
+            | Effect::Hint {
+                target,
+                lasts,
+                gm_only,
+                ..
+            } => (*target, *lasts, *gm_only),
         }
     }
 }
