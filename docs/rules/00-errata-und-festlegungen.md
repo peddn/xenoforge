@@ -71,7 +71,7 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-46 | Stoic beim Death Roll, S. 79, 99 | Der Death Roll ist eine STAMINA-Probe (01-A26) | Stoic gilt auch beim Death Roll | – |
 | F-47 | The Long Haul und Push, S. 76 | „Alle Facehugger eines Wurfs“: offen, ob ein Push nach dem Einsatz noch zu diesem Wurf gehört | Das Talent gilt für den Wurf, bei dem es eingesetzt wird; der Push ist ein neuer Wurf, seine Facehugger zählen | gilt auch für den Push |
 | F-48 | Panik bei Broken, S. 98, 104 | Panik endet, wenn man Broken ist. Eine kritische Verletzung verlangt aber einen Panikwurf, meist wenn man schon Broken ist | Die Panik endet sofort; ihre sofortigen Folgen (Stress, Panikwürfe anderer, 13+) gelten | läuft weiter, bis ein Turn vergeht oder COMMAND sie beendet |
-| F-49 | Authority, S. 70, 71, 74 | Der Colonial Marshal würfelt COMMAND statt MANIPULATION; offen, welche an eine Fertigkeit gebundenen Boni und welche Stunts gelten | Die Probe gilt als COMMAND-Probe: alle Modifikatoren für COMMAND zählen, die für MANIPULATION nicht (z. B. HoloTab +2, nicht Tape Recorder +1). Stunts: **offen**, COMMAND hat keine eigenen (S. 71) | – |
+| F-49 | Authority, S. 70, 71, 74 | Der Colonial Marshal würfelt COMMAND statt MANIPULATION; offen, welche an eine Fertigkeit gebundenen Boni und welche Stunts gelten | Gewürfelt wird COMMAND mit allen Modifikatoren für COMMAND, nicht denen für MANIPULATION (z. B. HoloTab +2, nicht Tape Recorder +1). Sonst bleibt es eine MANIPULATION-Probe: vergleichend gegen MANIPULATION, Verhandlungsposition, Nachgeben mit Gegenleistung oder Angriff, und für Erfolge über den Sieg hinaus die MANIPULATION-Stunts | – |
 
 ## Entscheidungen zur App
 

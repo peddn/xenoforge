@@ -250,5 +250,5 @@
   "F-48.ends_at_once": "Endet sofort",
   "F-48.runs_on": "Läuft weiter",
   "F-49.name": "Authority",
-  "F-49.command_roll": "Gilt als COMMAND-Probe"
+  "F-49.command_dice": "COMMAND würfeln, sonst MANIPULATION"
 }

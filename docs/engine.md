@@ -38,7 +38,8 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 2. **Würfeln.** Grundwürfel zuerst, dann Stresswürfel.
 3. **Facehugger** auf Stresswürfeln: Mit The Long Haul fragt die Engine, ob es eingesetzt wird. Sonst gibt es keinen Push mehr, und es folgt sofort der Panikwurf; ab 10 ist die Aktion abgebrochen (F-44 für 1–9).
 4. **Push oder Story Point anbieten**, solange erlaubt. Ein Push kostet zuerst Stress +1, dann bleiben die 6er liegen, ein neuer Stresswürfel kommt dazu, und der Rest wird neu geworfen (F-20).
-5. **Ergebnis:** ab einer 6 Erfolg, jede weitere 6 ein Stunt; beim vergleichenden Wurf zählt die Differenz, Gleichstand verliert der Angreifer [S. 64, 70]. Danach laufen Auslöser wie Crotch hit, und eine COMMAND-Probe zum Beenden einer Panik wirkt (F-36).
+5. **Ersatzfertigkeit:** Mit Authority wird COMMAND gewürfelt, samt den Modifikatoren für COMMAND; die Aktion bleibt die angefragte Fertigkeit (MANIPULATION) mit deren Gegenwurf, Folgen und Stunts (F-49). Die Stunt-Listen selbst kommen mit Phase 2.
+6. **Ergebnis:** ab einer 6 Erfolg, jede weitere 6 ein Stunt; beim vergleichenden Wurf zählt die Differenz, Gleichstand verliert der Angreifer [S. 64, 70]. Danach laufen Auslöser wie Crotch hit, und eine COMMAND-Probe zum Beenden einer Panik wirkt (F-36).
 
 ## Panik
 
