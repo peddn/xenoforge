@@ -2,25 +2,28 @@ use std::path::PathBuf;
 
 use tracing_subscriber::EnvFilter;
 
-/// Address the server listens on, unless `XENOFORGE_ADDR` is set.
-const DEFAULT_ADDR: &str = "127.0.0.1:3000";
-/// Built frontend, unless `XENOFORGE_STATIC` is set.
-const DEFAULT_STATIC: &str = "frontend/dist";
+fn env_or(name: &str, default: &str) -> String {
+    std::env::var(name).unwrap_or_else(|_| default.to_owned())
+}
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .init();
 
-    let addr = std::env::var("XENOFORGE_ADDR").unwrap_or_else(|_| DEFAULT_ADDR.to_owned());
-    let static_dir = PathBuf::from(
-        std::env::var("XENOFORGE_STATIC").unwrap_or_else(|_| DEFAULT_STATIC.to_owned()),
-    );
-
+    let addr = env_or("XENOFORGE_ADDR", "127.0.0.1:3000");
+    let config = xenoforge_server::Config {
+        database: PathBuf::from(env_or("XENOFORGE_DB", "xenoforge.db")),
+        static_dir: PathBuf::from(env_or("XENOFORGE_STATIC", "frontend/dist")),
+        data_dir: PathBuf::from(env_or("XENOFORGE_DATA", "data")),
+        secure_cookies: env_or("XENOFORGE_SECURE_COOKIES", "false") == "true",
+    };
+    let app = xenoforge_server::app(&config).await?;
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     tracing::info!("Xenoforge listening on http://{addr}");
-    axum::serve(listener, xenoforge_server::app(&static_dir)).await
+    axum::serve(listener, app).await?;
+    Ok(())
 }

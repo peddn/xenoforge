@@ -752,3 +752,30 @@ fn broken_characters_cannot_roll_skills() {
     assert!(matches!(err, Err(RuleError::NotAllowed(_))));
     t.roll(RollRequest::new("a", RollKind::Death), &[1, 2, 3, 4]);
 }
+
+/// The preview builds the pool without dice and names fitting talents.
+#[test]
+fn preview_without_dice() {
+    let t = Table::new(Mode::Campaign).with(
+        "a",
+        pc().attr("wits", 3)
+            .attr("empathy", 1)
+            .stress(2)
+            .talent("take_control"),
+    );
+    let preview = t
+        .engine
+        .preview(&t.state, RollRequest::skill("a", "manipulation").helpers(1))
+        .unwrap();
+    assert_eq!((preview.base_dice, preview.stress_dice), (2, 2));
+    assert_eq!(preview.talents, ["take_control"]);
+    let preview = t
+        .engine
+        .preview(
+            &t.state,
+            RollRequest::skill("a", "manipulation").talent("take_control"),
+        )
+        .unwrap();
+    assert_eq!(preview.base_dice, 3);
+    assert!(t.state.pending.is_empty());
+}

@@ -258,20 +258,11 @@ impl Ctx<'_> {
                 });
                 return Ok(());
             }
-            let effects = self.effects(&actor)?;
-            let mut options = Vec::new();
-            for usable in active::replacements(&effects) {
-                let fits = match usable.replaces {
-                    Replaceable::AttributeFor(s) | Replaceable::Skill(s) | Replaceable::Roll(s) => {
-                        s == skill
-                    }
-                    _ => false,
-                };
-                let talent = self.actor(&actor)?.talents.contains(&usable.owner);
-                if fits && talent && self.uses_left(&actor, &usable.owner)? > 0 {
-                    options.push(Choice::UseTalent(usable.owner));
-                }
-            }
+            let mut options: Vec<Choice> = self
+                .fitting_talents(&actor, skill)?
+                .into_iter()
+                .map(Choice::UseTalent)
+                .collect();
             if !options.is_empty() {
                 options.push(Choice::Accept);
                 let pending = self.next_pending();
@@ -280,6 +271,7 @@ impl Ctx<'_> {
                     Pending::StartRoll {
                         request: Box::new(request),
                         then: Some(then),
+                        options: options.clone(),
                     },
                 );
                 self.emit(Event::Decision {
@@ -291,6 +283,26 @@ impl Ctx<'_> {
             }
         }
         self.start_roll_with(request, Role::Single, Some(then))
+    }
+
+    /// Optional talents the actor could use for a roll with this skill:
+    /// another attribute or skill, or Breakthrough.
+    pub(crate) fn fitting_talents(&self, actor: &str, skill: &str) -> Result<Vec<Id>> {
+        let effects = self.effects(actor)?;
+        let mut talents = Vec::new();
+        for usable in active::replacements(&effects) {
+            let fits = match usable.replaces {
+                Replaceable::AttributeFor(s) | Replaceable::Skill(s) | Replaceable::Roll(s) => {
+                    s == skill
+                }
+                _ => false,
+            };
+            let held = self.actor(actor)?.talents.contains(&usable.owner);
+            if fits && held && self.uses_left(actor, &usable.owner)? > 0 {
+                talents.push(usable.owner);
+            }
+        }
+        Ok(talents)
     }
 
     pub(crate) fn start_roll_with(
@@ -322,7 +334,7 @@ impl Ctx<'_> {
 
     /// Builds the pool [p. 58–63]: attribute + skill + modifications, and
     /// Stress Dice equal to the STRESS LEVEL for human PCs' skill rolls.
-    fn build(
+    pub(crate) fn build(
         &mut self,
         request: RollRequest,
         role: Role,

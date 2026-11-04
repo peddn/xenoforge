@@ -74,8 +74,10 @@ pub enum Supply {
     Power,
 }
 
-/// A character or creature with dice to roll.
+/// A character or creature with dice to roll. Missing fields take their
+/// defaults when read from JSON.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Actor {
     pub kind: ActorKind,
     pub android: bool,
@@ -270,6 +272,7 @@ pub enum Pending {
     StartRoll {
         request: Box<crate::roll::RollRequest>,
         then: Option<crate::roll::Continuation>,
+        options: Vec<crate::engine::Choice>,
     },
     /// Use Overkill instead of the panic effect? [p. 104]
     Overkill {
