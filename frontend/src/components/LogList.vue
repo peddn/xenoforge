@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import XDie from '@/ui/XDie.vue'
@@ -108,21 +108,43 @@ const blocks = computed(() => {
   return list
 })
 
+// The log keeps to its newest entry, also when its height changes (the
+// decision bar comes and goes), unless someone scrolled up to read.
+let atBottom = true
+
+function onScroll() {
+  const b = box.value
+  atBottom = b.scrollHeight - b.scrollTop - b.clientHeight < 24
+}
+
+function keepAtBottom() {
+  if (box.value && atBottom) box.value.scrollTop = box.value.scrollHeight
+}
+
 watch(
   () => team.log.length,
   async () => {
     await nextTick()
-    if (box.value) box.value.scrollTop = box.value.scrollHeight
+    keepAtBottom()
   },
 )
+
+let resize = null
+onMounted(() => {
+  if (typeof ResizeObserver === 'undefined') return // test environments
+  resize = new ResizeObserver(keepAtBottom)
+  resize.observe(box.value)
+})
+onUnmounted(() => resize?.disconnect())
 </script>
 
 <template>
   <div
     ref="box"
-    class="grid max-h-[60vh] content-start gap-2 overflow-y-auto"
+    class="grid max-h-[60vh] min-h-0 content-start gap-2 overflow-y-auto lg:max-h-none"
     aria-live="polite"
     data-test="log"
+    @scroll="onScroll"
   >
     <section
       v-for="block in blocks"

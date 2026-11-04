@@ -6,7 +6,8 @@ import { decisionText } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
-// Open decisions, always in view at the bottom of the screen. Each one
+// Open decisions, always in view at the bottom edge of the window, across
+// its whole width. Each one
 // blinks briefly when it appears and then stays highlighted until it is
 // decided; a click opens it.
 const emit = defineEmits(['open'])
@@ -24,7 +25,7 @@ function label(p) {
 <template>
   <div
     v-if="team.decisions.length"
-    class="sticky bottom-2 z-10 flex flex-wrap justify-center gap-2 border border-amber bg-bg px-3 py-2"
+    class="fixed inset-x-0 bottom-0 z-10 flex flex-wrap justify-center gap-2 border-t border-amber bg-bg px-4 py-2"
     data-test="decision-bar"
   >
     <XButton

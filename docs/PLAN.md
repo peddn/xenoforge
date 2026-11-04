@@ -745,9 +745,10 @@ xenoforge/
 Die ganze App sieht aus wie die Bordcomputer der Filme: Monospace-Schrift, Grün oder Bernstein auf Schwarz, Statuscodes in Großbuchstaben, sparsam blinkende Warnungen. Es gibt ein einziges Design-System für alle Seiten, kein zweites Design nur für die Schiffsseite. Es besteht aus einem Tailwind-Theme mit den Farben und der Schrift und aus wenigen Bausteinen (Knopf, Feld, Panel, Status, Würfel, Dialog); alles andere sind Tailwind-Klassen in den Vorlagen. Eine fertige Komponentenbibliothek gibt es nicht, weil sie ein eigenes Aussehen mitbrächte.
 
 - **Lesbarkeit:** ausreichender Kontrast, auch auf dem Handy; Farbe trägt nie allein die Bedeutung, dazu kommen immer Text und Symbol.
+- **Teamseite:** Auf breiten Bildschirmen links Team und Crew, rechts das Protokoll über die volle Fensterhöhe; es bleibt beim neuesten Eintrag, solange niemand zum Nachlesen hochscrollt. Auf dem Handy steht alles untereinander. Der Hinweis zum Fan-Projekt liegt hinter einem ⓘ in der Kopfzeile statt in einem Footer.
 - **Dialoge statt eingeschobener Blöcke:** Würfeln, Bogen und die Aktionen der Spielleitung öffnen sich über der Seite; auf dem Handy füllen sie den Bildschirm. Die Teamseite bleibt dadurch eine ruhige Übersicht aus Crew und Protokoll.
 - **Protokoll in Blöcken:** Alles, was ein Befehl auslöst, steht in einem abgesetzten Block mit Person und Uhrzeit.
-- **Entscheidungen im Blick:** Eine offene Entscheidung öffnet sich als Dialog für die Person, die entscheidet, bei Würfen mit den Würfeln, den Erfolgen und den übrigen Pushes. Bis zur Entscheidung bleibt unten eine Leiste sichtbar; sie blinkt beim Auftauchen kurz und bleibt dann ruhig in Bernstein. Die Spielleitung sieht dort alle offenen Entscheidungen; von selbst öffnen sich bei ihr nur ihre eigenen.
+- **Entscheidungen im Blick:** Eine offene Entscheidung öffnet sich als Dialog für die Person, die entscheidet, bei Würfen mit den Würfeln, den Erfolgen und den übrigen Pushes. Bis zur Entscheidung bleibt am unteren Fensterrand eine Leiste über die ganze Breite sichtbar; sie blinkt beim Auftauchen kurz und bleibt dann ruhig in Bernstein. Die Spielleitung sieht dort alle offenen Entscheidungen; von selbst öffnen sich bei ihr nur ihre eigenen.
 - **Keine fremden Marken:** keine Logos oder Grafiken aus den Filmen oder dem Buch, eigene Gestaltung.
 
 ## 12. Umsetzungsphasen

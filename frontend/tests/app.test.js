@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
+import App from '@/App.vue'
+
 import DecisionBar from '@/components/DecisionBar.vue'
 import DecisionDialog from '@/components/DecisionDialog.vue'
 import GmBar from '@/components/GmBar.vue'
@@ -294,6 +296,20 @@ describe('log', () => {
     expect(blocks).toHaveLength(3)
     expect(blocks[1].findAll('[data-test="log-entry"]')).toHaveLength(2)
     expect(blocks[1].find('header').text()).toContain('Mother')
+  })
+})
+
+describe('app', () => {
+  it('shows the fan project note behind the info symbol', async () => {
+    const { pinia, i18n } = setup()
+    mockApi({})
+    const r = router()
+    r.push('/login')
+    await r.isReady()
+    const wrapper = mount(App, { global: { plugins: [pinia, i18n, r] } })
+    expect(wrapper.text()).not.toContain('Inoffizielles Fan-Projekt')
+    await wrapper.get('[data-test="about"]').trigger('click')
+    expect(wrapper.get('dialog').text()).toContain('Inoffizielles Fan-Projekt')
   })
 })
 
