@@ -28,7 +28,8 @@
     "confirm": "Bestätigen",
     "remove": "Entfernen",
     "add": "Hinzufügen",
-    "close": "Schließen"
+    "close": "Schließen",
+    "note": "Anlass (freiwillig)"
   },
   "home": {
     "characters": "Meine Charaktere",
@@ -167,9 +168,11 @@
     "log": "Protokoll",
     "removeCharacter": "Aus dem Team nehmen",
     "goneTitle": "Nicht mehr im Team",
-    "gone": "Dein Charakter wurde aus dem Team genommen.",
+    "gone": "Du hast keinen Charakter mehr in diesem Team.",
     "back": "Zur Übersicht",
-    "removeConfirm": "{name} wirklich aus dem Team nehmen?"
+    "removeConfirm": "{name} wirklich aus dem Team nehmen?",
+    "leave": "Team verlassen",
+    "leaveConfirm": "Mit {name} das Team verlassen?"
   },
   "outcome": {
     "success": "Erfolg",
@@ -214,6 +217,8 @@
     "successes": "kein Erfolg | {n} Erfolg | {n} Erfolge",
     "stunts": "kein Stunt | {n} Stunt | {n} Stunts",
     "act_ended": "Akt beendet: Signature Item und Talente mit Einsatz pro Akt sind wieder verfügbar.",
-    "session_ended": "Sitzung beendet: Signature Item und Talente mit Einsatz pro Sitzung sind wieder verfügbar."
+    "session_ended": "Sitzung beendet: Signature Item und Talente mit Einsatz pro Sitzung sind wieder verfügbar.",
+    "character_left": "{name} verlässt das Team",
+    "note": "„{note}“"
   }
 }

@@ -22,6 +22,7 @@ const difficulty = ref('difficulty_average')
 const gear = ref(0)
 const helpers = ref(0)
 const talents = ref([])
+const note = ref('')
 const preview = ref(null)
 const error = ref('')
 let timer = null
@@ -64,7 +65,7 @@ watch(
 
 async function roll() {
   try {
-    await team.command({ command: 'roll', request: request.value })
+    await team.command({ command: 'roll', request: request.value }, note.value)
     emit('done')
   } catch (e) {
     error.value = e.message
@@ -132,6 +133,13 @@ async function roll() {
         >
       </XField>
     </div>
+    <XField :label="t('common.note')">
+      <input
+        v-model="note"
+        maxlength="200"
+        data-test="note"
+      >
+    </XField>
     <p
       v-if="!team.view.is_gm"
       class="text-dim"

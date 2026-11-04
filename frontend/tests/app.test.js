@@ -6,7 +6,9 @@ import DecisionBar from '@/components/DecisionBar.vue'
 import DecisionDialog from '@/components/DecisionDialog.vue'
 import GmBar from '@/components/GmBar.vue'
 import LogList from '@/components/LogList.vue'
+import CharacterActions from '@/components/CharacterActions.vue'
 import RollPanel from '@/components/RollPanel.vue'
+import SheetDialog from '@/components/SheetDialog.vue'
 import { choiceLabel, modsText, originLabel } from '@/labels'
 import { guard, routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
@@ -85,8 +87,13 @@ describe('rolling', () => {
     expect(previews[1].body.modifiers).toEqual([{ source: 'gear', value: 2 }])
     await wrapper.get('[data-test="roll-go"]').trigger('click')
     await flushPromises()
-    const roll = calls.find((c) => c.path === '/teams/5/commands')
-    expect(roll.body.command.command).toBe('roll')
+    await wrapper.get('[data-test="note"]').setValue('Tür zum Labor')
+    await wrapper.get('[data-test="roll-go"]').trigger('click')
+    await flushPromises()
+    const rolls = calls.filter((c) => c.path === '/teams/5/commands')
+    expect(rolls[0].body.command.command).toBe('roll')
+    expect(rolls[0].body.note).toBeUndefined()
+    expect(rolls[1].body.note).toBe('Tür zum Labor')
   })
 
   const pushDecision = {
@@ -287,6 +294,63 @@ describe('log', () => {
     expect(blocks).toHaveLength(3)
     expect(blocks[1].findAll('[data-test="log-entry"]')).toHaveLength(2)
     expect(blocks[1].find('header').text()).toContain('Mother')
+  })
+})
+
+describe('team members', () => {
+  const charlize = {
+    id: 9,
+    name: 'Charlize',
+    owner_id: 2,
+    owner_name: 'Gina',
+    actor: { attributes: {}, skills: {}, talents: [], health: 3, stress: 0, sources: [] },
+    health_max: 3,
+    hints: [],
+  }
+
+  it('takes a character out after asking, with a note for actions', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/commands': [], 'DELETE /teams/5/characters/9': [], 'GET /teams/5': {} })
+    useTeamStore().view = { id: 5, is_gm: true, characters: [charlize] }
+    const wrapper = mount(CharacterActions, { props: { character: charlize }, global: { plugins: [pinia, i18n] } })
+    await wrapper.get('[data-test="action-note"]').setValue('Säureblut')
+    await wrapper.findAll('button').find((b) => b.text() === 'Schaden').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({ command: { command: 'damage', actor: '9', amount: 1 }, note: 'Säureblut' })
+    expect(wrapper.get('[data-test="action-note"]').element.value).toBe('')
+
+    await wrapper.get('[data-test="remove"]').trigger('click')
+    expect(calls.some((c) => c.method === 'DELETE')).toBe(false)
+    await wrapper.get('[data-test="confirm"]').trigger('click')
+    await flushPromises()
+    expect(calls.some((c) => c.method === 'DELETE' && c.path === '/teams/5/characters/9')).toBe(true)
+  })
+
+  it('lets the owner leave, not the game master', () => {
+    const { pinia, i18n } = setup()
+    mockApi({})
+    const auth = useAuthStore()
+    const team = useTeamStore()
+    const sheet = () => mount(SheetDialog, { props: { character: charlize }, global: { plugins: [pinia, i18n] } })
+    auth.user = { id: 2, name: 'Gina', role: 'player' }
+    team.view = { id: 5, is_gm: false, characters: [charlize] }
+    expect(sheet().find('[data-test="leave"]').exists()).toBe(true)
+    auth.user = { id: 1, name: 'Mother', role: 'gm' }
+    team.view = { id: 5, is_gm: true, characters: [charlize] }
+    const gm = sheet()
+    expect(gm.find('[data-test="leave"]').exists()).toBe(false)
+    expect(gm.find('[data-test="correct"]').exists()).toBe(true)
+  })
+
+  it('shows the note of a command in the log', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = { id: 5, characters: [] }
+    team.log = [
+      { id: 1, batch: 1, by: 'Mother', at: 0, note: 'Mother prüft die Schleuse', entry: { type: 'engine', event: { event: 'session_ended' } } },
+    ]
+    const wrapper = mount(LogList, { global: { plugins: [pinia, i18n] } })
+    expect(wrapper.get('[data-test="log-note"]').text()).toBe('„Mother prüft die Schleuse“')
   })
 })
 

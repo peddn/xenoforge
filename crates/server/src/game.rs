@@ -279,6 +279,9 @@ pub fn routes() -> Router<AppState> {
 #[derive(Deserialize)]
 struct CommandBody {
     command: Command,
+    /// Why, in the person's words; shown with the command in the log.
+    #[serde(default)]
+    note: Option<String>,
 }
 
 /// Runs an engine command and returns the log entries the user may see.
@@ -291,6 +294,7 @@ async fn command(
     let _guard = state.lock.lock().await;
     let team = load_team(&state.pool, id).await?;
     let is_gm = access(&state.pool, &team, &user).await?;
+    let note = log::note(body.note)?;
     if let Command::Roll { request } = &body.command {
         check_roll(&state.engine, request, is_gm)?;
     }
@@ -316,7 +320,7 @@ async fn command(
         .into_iter()
         .map(|event| Entry::Engine { event })
         .collect();
-    let stored = log::append(&mut tx, id, &user, entries).await?;
+    let stored = log::append(&mut tx, id, &user, entries, note).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(
@@ -390,7 +394,7 @@ async fn undo(
         .bind(row.get::<i64, _>("id"))
         .execute(&mut *tx)
         .await?;
-    let stored = log::append(&mut tx, id, &user, vec![Entry::Undone]).await?;
+    let stored = log::append(&mut tx, id, &user, vec![Entry::Undone], None).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))
@@ -399,6 +403,8 @@ async fn undo(
 #[derive(Deserialize)]
 pub struct Correction {
     actor: Actor,
+    #[serde(default)]
+    note: Option<String>,
 }
 
 /// The game master overwrites a character's values; logged and undoable
@@ -417,6 +423,7 @@ pub async fn correct(
         ));
     }
     characters::check_actor(&state, &body.actor)?;
+    let note = log::note(body.note)?;
     let mut tx = begin_write(&state.pool).await?;
     let characters = team_characters(&mut tx, id).await?;
     let mut character = characters
@@ -431,7 +438,7 @@ pub async fn correct(
         character: character.id,
         name: character.name.clone(),
     };
-    let stored = log::append(&mut tx, id, &user, vec![entry]).await?;
+    let stored = log::append(&mut tx, id, &user, vec![entry], note).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))

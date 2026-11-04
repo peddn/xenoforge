@@ -100,7 +100,7 @@ const blocks = computed(() => {
     const batch = entry.batch ?? entry.id
     let block = list.at(-1)
     if (!block || block.batch !== batch) {
-      block = { batch, by: entry.by, at: time(entry.at), rows: [] }
+      block = { batch, by: entry.by, at: time(entry.at), note: entry.note, rows: [] }
       list.push(block)
     }
     block.rows.push({ id: entry.id, ...describe(entry) })
@@ -133,6 +133,13 @@ watch(
       <header class="text-xs text-dim">
         {{ block.by ?? '' }} · {{ block.at }}
       </header>
+      <p
+        v-if="block.note"
+        class="text-strong"
+        data-test="log-note"
+      >
+        {{ t('log.note', { note: block.note }) }}
+      </p>
       <div
         v-for="row in block.rows"
         :key="row.id"

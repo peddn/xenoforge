@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
-import { get, post, put } from '@/api'
+import { del, get, post, put } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
 // One team at the table: its view, the shared log (Server-Sent Events) and
@@ -84,8 +84,9 @@ export const useTeamStore = defineStore('team', () => {
     connected.value = false
   }
 
-  async function command(command) {
-    return post(`/teams/${view.value.id}/commands`, { command })
+  // `note`: why, in the person's words; shown with the command in the log.
+  async function command(command, note) {
+    return post(`/teams/${view.value.id}/commands`, { command, note: note || undefined })
   }
 
   async function preview(request) {
@@ -96,8 +97,14 @@ export const useTeamStore = defineStore('team', () => {
     return post(`/teams/${view.value.id}/undo`)
   }
 
-  async function correct(characterId, actor) {
-    return put(`/teams/${view.value.id}/characters/${characterId}`, { actor })
+  async function correct(characterId, actor, note) {
+    return put(`/teams/${view.value.id}/characters/${characterId}`, { actor, note: note || undefined })
+  }
+
+  // The game master takes a character out, or a player leaves with theirs.
+  async function removeCharacter(characterId) {
+    await del(`/teams/${view.value.id}/characters/${characterId}`)
+    await refresh()
   }
 
   async function newInvite() {
@@ -105,5 +112,5 @@ export const useTeamStore = defineStore('team', () => {
     await refresh()
   }
 
-  return { view, log, connected, gone, characterNames, decisions, decidesMyself, open, close, refresh, command, preview, undo, correct, newInvite }
+  return { view, log, connected, gone, characterNames, decisions, decidesMyself, open, close, refresh, command, preview, undo, correct, removeCharacter, newInvite }
 })

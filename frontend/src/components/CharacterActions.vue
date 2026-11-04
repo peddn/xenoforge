@@ -3,13 +3,15 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
+import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import { originLabel } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The game master's actions for one character (plan section 3): engine
-// commands by hand.
+// commands by hand, each with an optional note, and taking the character
+// out of the team.
 const props = defineProps({ character: { type: Object, required: true } })
 const { t } = useI18n()
 const rules = useRulesStore()
@@ -19,6 +21,7 @@ const amount = ref(1)
 const sourceKind = ref('trauma')
 const sourceId = ref('')
 const cold = ref('sub_zero')
+const note = ref('')
 const error = ref('')
 
 const actor = computed(() => String(props.character.id))
@@ -33,14 +36,21 @@ const needsCold = computed(() => {
   return (condition?.effects ?? []).some((e) => e.kind === 'periodic' && e.every?.by_cold)
 })
 
-async function run(command) {
+async function attempt(work) {
   error.value = ''
   try {
-    await team.command(command)
+    await work()
   } catch (e) {
     error.value = e.message
   }
 }
+
+// The note belongs to one command and is cleared after it.
+const run = (command) =>
+  attempt(async () => {
+    await team.command(command, note.value)
+    note.value = ''
+  })
 
 function apply() {
   const id = sourceId.value || entries.value[0]?.id
@@ -54,6 +64,13 @@ function apply() {
 
 <template>
   <div class="grid gap-3">
+    <XField :label="t('common.note')">
+      <input
+        v-model="note"
+        maxlength="200"
+        data-test="action-note"
+      >
+    </XField>
     <div class="flex flex-wrap items-center gap-2">
       <XField :label="t('gm.amount')">
         <input
@@ -150,6 +167,15 @@ function apply() {
         </XButton>
       </li>
     </ul>
+    <div class="flex flex-wrap items-center gap-2 border-t border-dashed border-line pt-3">
+      <XConfirm
+        variant="danger"
+        :label="t('team.removeCharacter')"
+        :question="t('team.removeConfirm', { name: character.name })"
+        data-test="remove"
+        @confirm="attempt(() => team.removeCharacter(character.id))"
+      />
+    </div>
     <p
       v-if="error"
       class="text-red"

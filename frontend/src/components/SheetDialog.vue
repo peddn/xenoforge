@@ -4,23 +4,25 @@ import { useI18n } from 'vue-i18n'
 
 import ActorEditor from '@/components/ActorEditor.vue'
 import XButton from '@/ui/XButton.vue'
+import XConfirm from '@/ui/XConfirm.vue'
+import XField from '@/ui/XField.vue'
 import XStatus from '@/ui/XStatus.vue'
-import { del } from '@/api'
 import { originLabel } from '@/labels'
+import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The sheet of a character in the team, for its owner and the game master.
-// The game master can correct values (logged, undoable) and take the
-// character out of the team. The full sheet follows with 2b.
+// The game master can correct values (logged, undoable); the owner can leave
+// the team with the character. The full sheet follows with 2b.
 const props = defineProps({ character: { type: Object, required: true } })
-const emit = defineEmits(['close'])
 const { t } = useI18n()
 const rules = useRulesStore()
 const team = useTeamStore()
 
+const auth = useAuthStore()
 const editing = ref(null)
-const removing = ref(false)
+const note = ref('')
 const error = ref('')
 
 function startCorrection() {
@@ -31,19 +33,18 @@ function startCorrection() {
 async function save() {
   error.value = ''
   try {
-    await team.correct(props.character.id, editing.value)
+    await team.correct(props.character.id, editing.value, note.value)
     editing.value = null
+    note.value = ''
   } catch (e) {
     error.value = e.message
   }
 }
 
-async function remove() {
+async function leave() {
   error.value = ''
   try {
-    await del(`/teams/${team.view.id}/characters/${props.character.id}`)
-    await team.refresh()
-    emit('close')
+    await team.removeCharacter(props.character.id)
   } catch (e) {
     error.value = e.message
   }
@@ -89,10 +90,16 @@ async function remove() {
         disabled
       />
     </div>
-    <ActorEditor
-      v-else
-      v-model="editing"
-    />
+    <template v-else>
+      <ActorEditor v-model="editing" />
+      <XField :label="t('common.note')">
+        <input
+          v-model="note"
+          maxlength="200"
+          data-test="correction-note"
+        >
+      </XField>
+    </template>
     <div
       v-if="team.view.is_gm"
       class="flex flex-wrap items-center gap-2"
@@ -112,37 +119,25 @@ async function remove() {
           {{ t('common.cancel') }}
         </XButton>
       </template>
-      <template v-else>
-        <XButton
-          data-test="correct"
-          @click="startCorrection"
-        >
-          {{ t('gm.correct') }}
-        </XButton>
-        <XButton
-          v-if="!removing"
-          variant="danger"
-          @click="removing = true"
-        >
-          {{ t('team.removeCharacter') }}
-        </XButton>
-        <template v-else>
-          <span>{{ t('team.removeConfirm', { name: character.name }) }}</span>
-          <XButton
-            variant="danger"
-            data-test="remove-confirm"
-            @click="remove"
-          >
-            {{ t('team.removeCharacter') }}
-          </XButton>
-          <XButton
-            variant="quiet"
-            @click="removing = false"
-          >
-            {{ t('common.cancel') }}
-          </XButton>
-        </template>
-      </template>
+      <XButton
+        v-else
+        data-test="correct"
+        @click="startCorrection"
+      >
+        {{ t('gm.correct') }}
+      </XButton>
+    </div>
+    <div
+      v-else-if="character.owner_id === auth.user?.id"
+      class="flex flex-wrap items-center gap-2"
+    >
+      <XConfirm
+        variant="danger"
+        :label="t('team.leave')"
+        :question="t('team.leaveConfirm', { name: character.name })"
+        data-test="leave"
+        @confirm="leave"
+      />
     </div>
     <p
       v-if="error"

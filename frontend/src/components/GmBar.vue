@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
+import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import { useTeamStore } from '@/stores/team'
 
@@ -12,11 +13,8 @@ import { useTeamStore } from '@/stores/team'
 const { t } = useI18n()
 const team = useTeamStore()
 const pool = ref(8)
-const confirming = ref(null) // 'end_act' | 'end_session'
+const note = ref('')
 const error = ref('')
-
-const questions = { end_act: 'gm.confirmEndAct', end_session: 'gm.confirmEndSession' }
-const labels = { end_act: 'gm.endAct', end_session: 'gm.endSession' }
 
 async function attempt(work) {
   error.value = ''
@@ -29,19 +27,17 @@ async function attempt(work) {
 
 const run = (command) => attempt(() => team.command(command))
 
-async function confirm() {
-  const command = confirming.value
-  confirming.value = null
-  await run({ command })
+function rollPool() {
+  attempt(async () => {
+    await team.command({ command: 'roll', request: { actor: null, kind: { fixed_pool: { dice: pool.value } } } }, note.value)
+    note.value = ''
+  })
 }
 </script>
 
 <template>
   <div class="grid gap-3">
-    <div
-      v-if="!confirming"
-      class="flex flex-wrap items-center gap-2"
-    >
+    <div class="flex flex-wrap items-end gap-2">
       <XField :label="t('gm.pool')">
         <input
           v-model.number="pool"
@@ -49,48 +45,37 @@ async function confirm() {
           min="1"
         >
       </XField>
-      <XButton @click="run({ command: 'roll', request: { actor: null, kind: { fixed_pool: { dice: pool } } } })">
+      <XField :label="t('common.note')">
+        <input
+          v-model="note"
+          maxlength="200"
+          data-test="pool-note"
+        >
+      </XField>
+      <XButton @click="rollPool">
         {{ t('gm.rollPool') }}
       </XButton>
-      <XButton
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <XConfirm
         v-if="team.view.mode === 'cinematic'"
+        :label="t('gm.endAct')"
+        :question="t('gm.confirmEndAct')"
         data-test="end-act"
-        @click="confirming = 'end_act'"
-      >
-        {{ t('gm.endAct') }}
-      </XButton>
-      <XButton
+        @confirm="run({ command: 'end_act' })"
+      />
+      <XConfirm
+        :label="t('gm.endSession')"
+        :question="t('gm.confirmEndSession')"
         data-test="end-session"
-        @click="confirming = 'end_session'"
-      >
-        {{ t('gm.endSession') }}
-      </XButton>
+        @confirm="run({ command: 'end_session' })"
+      />
       <XButton
         variant="danger"
         data-test="undo"
         @click="attempt(() => team.undo())"
       >
         {{ t('gm.undo') }}
-      </XButton>
-    </div>
-    <div
-      v-else
-      class="flex flex-wrap items-center gap-2"
-      role="alertdialog"
-    >
-      <span>{{ t(questions[confirming]) }}</span>
-      <XButton
-        variant="primary"
-        data-test="confirm"
-        @click="confirm"
-      >
-        {{ t(labels[confirming]) }}
-      </XButton>
-      <XButton
-        variant="quiet"
-        @click="confirming = null"
-      >
-        {{ t('common.cancel') }}
       </XButton>
     </div>
     <p

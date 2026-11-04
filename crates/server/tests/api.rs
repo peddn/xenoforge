@@ -522,6 +522,79 @@ async fn roll_modifications_follow_a08() {
     assert_eq!(view["characters"][0]["health_max"], 3);
 }
 
+/// A note travels with its command; players can leave with their own
+/// character but not take out anyone else's.
+#[tokio::test]
+async fn notes_and_leaving() {
+    let server = server("leave").await;
+    let (mut gm, mut player, team, character) = table(&server).await;
+    let actor = character.to_string();
+
+    server.dice(&[1, 2, 3, 4, 5, 2]);
+    let (status, entries) = player
+        .call(
+            "POST",
+            &format!("/api/teams/{team}/commands"),
+            Some(json!({
+                "command": { "command": "roll", "request": { "actor": actor, "kind": { "skill": { "skill": "observation" } } } },
+                "note": "  Tür zum Labor aufbrechen  "
+            })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{entries}");
+    let list = entries.as_array().unwrap();
+    assert_eq!(list[0]["note"], "Tür zum Labor aufbrechen");
+    assert!(list[1..].iter().all(|e| e.get("note").is_none()));
+    let (status, _) = gm
+        .call(
+            "POST",
+            &format!("/api/teams/{team}/commands"),
+            Some(json!({ "command": { "command": "end_session" }, "note": "x".repeat(201) })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+
+    // Another player in the team cannot take Charlize out.
+    let mut other = Client::new(&server);
+    other.register("Burke", "player").await;
+    let own = other
+        .character("Burke", json!({ "attributes": { "strength": 3 } }))
+        .await;
+    let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    other
+        .ok(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": own })),
+        )
+        .await;
+    let (status, _) = other
+        .call(
+            "DELETE",
+            &format!("/api/teams/{team}/characters/{character}"),
+            None,
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+
+    // Gina leaves with Charlize.
+    let entries = player
+        .ok(
+            "DELETE",
+            &format!("/api/teams/{team}/characters/{character}"),
+            None,
+        )
+        .await;
+    assert_eq!(entries[0]["entry"]["type"], "character_left");
+    let (status, _) = player
+        .call("GET", &format!("/api/teams/{team}"), None)
+        .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
 /// Corrections and commands can be undone (plan section 3 and 10).
 #[tokio::test]
 async fn correction_and_undo() {

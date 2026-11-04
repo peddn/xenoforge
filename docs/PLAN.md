@@ -221,7 +221,7 @@ Der Charaktermanager deckt alle sieben Wege ab, auf denen im Buch Charaktere ent
 ### 5.0 Besitz und Teams
 
 - **Ein Charakter gehört der Person, die ihn angelegt hat.** Spieler legen Charaktere in ihrer eigenen Sammlung an und verwalten sie dort, auch ohne Team.
-- **Spieler bringen ihre Charaktere ins Team.** Wer über den Einladungslink beitritt, wählt einen seiner freien Charaktere; niemand wird ohne Zustimmung in ein Team geholt. Die Spielleitung kann einen Charakter wieder aus dem Team lösen; sein Stand (Health, Stress, XP, Ausrüstung) bleibt dabei erhalten.
+- **Spieler bringen ihre Charaktere ins Team.** Wer über den Einladungslink beitritt, wählt einen seiner freien Charaktere; niemand wird ohne Zustimmung in ein Team geholt. Die Spielleitung kann einen Charakter wieder aus dem Team lösen, und Spieler können mit ihrem Charakter austreten; sein Stand (Health, Stress, XP, Ausrüstung) bleibt dabei erhalten.
 - **Höchstens ein Team gleichzeitig.** Sonst würden Health, Stress und XP doppelt geführt.
 - **Vorgefertigte Szenario-Charaktere und NSC** legt die Spielleitung an. Vorgefertigte Charaktere gibt sie Spielern zum Spielen; die Spielleitung bleibt Eigentümerin.
 

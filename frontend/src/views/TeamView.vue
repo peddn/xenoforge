@@ -179,7 +179,6 @@ async function addOwn() {
       <SheetDialog
         v-else-if="dialog.kind === 'sheet'"
         :character="current"
-        @close="dialog = null"
       />
       <CharacterActions
         v-else
