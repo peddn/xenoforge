@@ -246,7 +246,17 @@
   "panic_effect_from.name": "Panikeffekt ab",
   "shifts_per_day.name": "Schichten pro Tag",
   "supply_dice_max.name": "Höchstzahl Würfel beim Vorratswurf",
+  "gear_bonus_max.name": "Höchster Ausrüstungsbonus",
   "F-48.name": "Panik bei Broken",
   "F-48.ends_at_once": "Endet sofort",
-  "F-48.runs_on": "Läuft weiter"
+  "F-48.runs_on": "Läuft weiter",
+  "F-49.name": "Authority",
+  "F-49.command_dice": "COMMAND würfeln, sonst MANIPULATION",
+  "difficulty_trivial.name": "Trivial",
+  "difficulty_simple.name": "Einfach",
+  "difficulty_easy.name": "Leicht",
+  "difficulty_average.name": "Durchschnittlich",
+  "difficulty_demanding.name": "Anspruchsvoll",
+  "difficulty_hard.name": "Schwer",
+  "difficulty_formidable.name": "Gewaltig"
 }

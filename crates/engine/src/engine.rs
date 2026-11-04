@@ -249,6 +249,29 @@ pub enum Event {
     },
 }
 
+/// A roll as it would be built, see [`Engine::preview`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Preview {
+    pub skill: Option<Id>,
+    pub attribute: Option<Id>,
+    pub base_dice: u8,
+    pub stress_dice: u8,
+    pub stress_dice_removed: u8,
+    pub modifications: Vec<Modification>,
+    pub max_pushes: u8,
+    /// Optional talents that fit this roll.
+    pub talents: Vec<Id>,
+}
+
+/// Dice for previews: building a pool never throws.
+struct NoDice;
+
+impl Dice for NoDice {
+    fn d6(&mut self) -> u8 {
+        unreachable!("a preview throws no dice")
+    }
+}
+
 /// Why a command was refused. The state is unchanged.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RuleError {
@@ -302,6 +325,57 @@ impl Engine {
         ctx.run_queue()?;
         *state = ctx.state;
         Ok(ctx.events)
+    }
+
+    /// What a roll would look like, without throwing dice: for the roll
+    /// dialog, so the interface never computes rules itself.
+    pub fn preview(&self, state: &GameState, request: RollRequest) -> Result<Preview> {
+        let mut dice = NoDice;
+        let mut ctx = Ctx {
+            engine: self,
+            state: state.clone(),
+            dice: &mut dice,
+            events: Vec::new(),
+            queue: VecDeque::new(),
+        };
+        let talents = match (&request.actor, &request.kind) {
+            (Some(actor), crate::roll::RollKind::Skill { skill }) => {
+                ctx.fitting_talents(actor, skill)?
+            }
+            (Some(actor), crate::roll::RollKind::Death) => ctx.fitting_talents(actor, "stamina")?,
+            (
+                _,
+                crate::roll::RollKind::Supply { .. } | crate::roll::RollKind::StressDice { .. },
+            ) => {
+                return Err(RuleError::NotAllowed(
+                    "no preview for this roll kind".into(),
+                ));
+            }
+            _ => Vec::new(),
+        };
+        ctx.build(request, crate::roll::Role::Single, None)?;
+        match ctx.events.into_iter().next() {
+            Some(Event::RollStarted {
+                skill,
+                attribute,
+                base_dice,
+                stress_dice,
+                stress_dice_removed,
+                modifications,
+                max_pushes,
+                ..
+            }) => Ok(Preview {
+                skill,
+                attribute,
+                base_dice,
+                stress_dice,
+                stress_dice_removed,
+                modifications,
+                max_pushes,
+                talents,
+            }),
+            _ => Err(RuleError::NotAllowed("no preview for this roll".into())),
+        }
     }
 
     /// Hints working on an actor right now, for the overview: label, text
@@ -585,11 +659,16 @@ impl<'a> Ctx<'a> {
             .ok_or(RuleError::UnknownPending(id))?;
         match pending {
             Pending::Roll(roll) => self.decide_roll(*roll, choice),
-            Pending::StartRoll { mut request, then } => {
-                match choice {
-                    Choice::UseTalent(talent) => request.talents.push(talent),
-                    Choice::Accept => {}
-                    other => return Err(RuleError::InvalidChoice(format!("{other:?}"))),
+            Pending::StartRoll {
+                mut request,
+                then,
+                options,
+            } => {
+                if !options.contains(&choice) {
+                    return Err(RuleError::InvalidChoice(format!("{choice:?}")));
+                }
+                if let Choice::UseTalent(talent) = choice {
+                    request.talents.push(talent);
                 }
                 self.start_roll_with(*request, crate::roll::Role::Single, then)
             }
@@ -1287,11 +1366,12 @@ impl<'a> Ctx<'a> {
     }
 
     pub fn spend_use(&mut self, actor: &str, talent: &str) -> Result<()> {
-        *self
+        let uses = self
             .actor_mut(actor)?
             .uses
             .entry(talent.to_owned())
-            .or_default() += 1;
+            .or_default();
+        *uses = uses.saturating_add(1);
         self.emit(Event::TalentUsed {
             actor: actor.to_owned(),
             talent: talent.to_owned(),

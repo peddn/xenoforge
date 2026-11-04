@@ -69,8 +69,9 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-44 | Panik 1–9 nach einer Probe, S. 61, 104 | Nur ab 10 wird die Aktion ausdrücklich abgebrochen (02-A40) | Die Probe behält ihr Ergebnis | – |
 | F-45 | Zweiter Push nach Facehugger, S. 61, 104 | Die Regel ist nur für den ersten Push ausdrücklich (02-A41) | Kein zweiter Push; es folgt der Panikwurf | – |
 | F-46 | Stoic beim Death Roll, S. 79, 99 | Der Death Roll ist eine STAMINA-Probe (01-A26) | Stoic gilt auch beim Death Roll | – |
-| F-47 | The Long Haul und Push, S. 76 | „Alle Facehugger eines Wurfs“: offen, ob ein Push nach dem Einsatz noch zu diesem Wurf gehört | Vorschlag: Das Talent gilt für den Wurf, bei dem es eingesetzt wird; bringt der Push neue Facehugger, zählen sie (**offen**, Rückfrage) | gilt auch für den Push |
-| F-48 | Panik bei Broken, S. 98, 104 | Panik endet, wenn man Broken ist. Eine kritische Verletzung verlangt aber einen Panikwurf, meist wenn man schon Broken ist | Vorschlag: Die Panik endet sofort; ihre sofortigen Folgen (Stress, Panikwürfe anderer, 13+) gelten (**offen**, Rückfrage) | läuft weiter, bis ein Turn vergeht oder COMMAND sie beendet |
+| F-47 | The Long Haul und Push, S. 76 | „Alle Facehugger eines Wurfs“: offen, ob ein Push nach dem Einsatz noch zu diesem Wurf gehört | Das Talent gilt für den Wurf, bei dem es eingesetzt wird; der Push ist ein neuer Wurf, seine Facehugger zählen | gilt auch für den Push |
+| F-48 | Panik bei Broken, S. 98, 104 | Panik endet, wenn man Broken ist. Eine kritische Verletzung verlangt aber einen Panikwurf, meist wenn man schon Broken ist | Die Panik endet sofort; ihre sofortigen Folgen (Stress, Panikwürfe anderer, 13+) gelten | läuft weiter, bis ein Turn vergeht oder COMMAND sie beendet |
+| F-49 | Authority, S. 70, 71, 74 | Der Colonial Marshal würfelt COMMAND statt MANIPULATION; offen, welche an eine Fertigkeit gebundenen Boni und welche Stunts gelten | Gewürfelt wird COMMAND mit allen Modifikatoren für COMMAND, nicht denen für MANIPULATION (z. B. HoloTab +2, nicht Tape Recorder +1). Sonst bleibt es eine MANIPULATION-Probe: vergleichend gegen MANIPULATION, Verhandlungsposition, Nachgeben mit Gegenleistung oder Angriff, und für Erfolge über den Sieg hinaus die MANIPULATION-Stunts | – |
 
 ## Entscheidungen zur App
 
@@ -79,9 +80,11 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | A-01 | Sichtbarkeit | Spieler sehen nur den eigenen Charakterbogen. Würfe und Ereignisse stehen im gemeinsamen Protokoll. |
 | A-02 | Verdeckte Würfe | Nur für NSC und Kreaturen. Spieler würfeln immer offen, weil sie über den Push entscheiden. |
 | A-03 | Agenden | Nur Spieler und Spielleitung sehen sie. In Campaign gibt die App sie beim Sitzungsabschluss für die gemeinsame XP-Runde frei (S. 31). |
-| A-04 | Teams | Ein Team ist die ganze Spielrunde. Charaktere gehören den Spielern; die Spielleitung ordnet sie ihrem Team zu; ein Charakter ist höchstens in einem Team. |
+| A-04 | Teams | Ein Team ist die ganze Spielrunde, Cinematic oder Campaign. Charaktere gehören den Spielern; ein Charakter ist höchstens in einem Team. Spieler treten per Einladungslink bei und bringen einen ihrer freien Charaktere mit; die Spielleitung kann ihn wieder aus dem Team nehmen. |
 | A-05 | Bereiche an Bord | Frei editierbare Orte mit Deck, ohne Entfernungen und ohne Verbindung zu Modulen. Brücke und Reaktorbereich sind markiert, weil das Buch Schäden an sie bindet (S. 170, 198–199). |
 | A-06 | Schiffsstatus | Alle im Team sehen ihn; Spieler ohne Geheimes. Folgen stehen in drei Stufen: AUTO (App wendet an), HINWEIS (Spielleitung setzt um), INFO. |
+| A-07 | Konten | Jeder kann ein Konto anlegen und wählt dabei Spieler oder Spielleitung. Nur Spielleitungs-Konten legen Teams an, auch ohne Spieler zum Vorbereiten. Rechte gelten nur im eigenen Team; eine Spielleitung sieht nichts aus fremden Teams und kann dort als Spieler mitspielen. Jedes Team hat genau eine Spielleitung. |
+| A-08 | Würfe der Spieler | Die Schwierigkeit legt die Spielleitung fest (S. 63). Spieler würfeln Fertigkeits-, Attribut- und Death-Rolls für ihre eigenen Charaktere, mit Helfern und einem Ausrüstungsbonus, aber ohne Schwierigkeit. Will die Spielleitung eine Schwierigkeit, löst sie den Wurf für den Charakter aus; über Push und Story Point entscheidet weiter der Spieler. Der Server prüft jede Modifikation: Schwierigkeit nur mit einem Wert aus der Tabelle S. 63, Ausrüstung 0 bis `gear_bonus_max` (+3, der höchste Bonus im Buch, S. 128). Mit dem Ausrüstungskatalog (Phase 2c) kommt der Bonus vom Gegenstand. |
 
 ## Noch offen
 

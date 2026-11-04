@@ -2,13 +2,14 @@
 
 Begleit-App für das ALIEN-Rollenspiel (Free League, Grundregelwerk 1. Auflage). Spielleitung und Spieler verwalten Charaktere, würfeln per Klick, führen Kämpfe, bauen Schiffe, spielen Raumkämpfe und lassen die Spielzeit mitlaufen. Karte und Figuren bleiben auf dem Tisch.
 
-**Stand:** Phase 1, Regel-Engine: Würfe, Push, Stress, Panik und das Effekt-System als getestete Bibliothek. Eine Oberfläche zum Spielen kommt mit Phase 2.
+**Stand:** Phase 2a, Spieltisch: Konten mit Rolle, Teams mit Einladungslink, Würfe per Klick mit Push und Entscheidungen, Werkzeuge der Spielleitung und ein gemeinsames Protokoll in Echtzeit. Die Regel-Engine (Phase 1) rechnet Würfe, Stress, Panik und Effekte. Als Nächstes: Charaktererschaffung (2b) und Ausrüstung (2c).
 
 - [Projektplan](docs/PLAN.md)
 - [Regel-Spezifikation mit Seitenangaben](docs/rules/)
 - [Errata und Festlegungen](docs/rules/00-errata-und-festlegungen.md)
 - [Datenformat der Regeldaten](docs/datenformat.md)
 - [Regel-Engine](docs/engine.md)
+- [Server: Rechte, Sichtbarkeit, Speicher, Schnittstelle](docs/server.md)
 
 **Technik:** Rust-Server (axum, sqlx, SQLite) und Vue 3 mit Pinia und Vue Router in JavaScript.
 
@@ -27,17 +28,34 @@ npm install
 npm run dev                            # http://localhost:5173, leitet /api an den Server weiter
 ```
 
-Für den Betrieb baut `npm run build` die Oberfläche nach `frontend/dist`; der Server liefert sie mit aus. Einstellungen über Umgebungsvariablen:
+## Betrieb
+
+Ein Programm, eine Datenbankdatei, kein Docker:
+
+```
+cd frontend && npm ci && npm run build && cd ..
+cargo build --release -p xenoforge-server
+XENOFORGE_DB=/var/lib/xenoforge/xenoforge.db ./target/release/xenoforge-server
+```
+
+Der Server liefert die gebaute Oberfläche aus `frontend/dist` und die Regeldaten aus `data/` mit aus und legt die Datenbank beim ersten Start an. Hinter einem Reverse Proxy mit HTTPS `XENOFORGE_SECURE_COOKIES=true` setzen; der Proxy darf Server-Sent Events nicht puffern (bei nginx `proxy_buffering off;` für `/api/teams/`).
 
 | Variable | Bedeutung | Standard |
 | --- | --- | --- |
 | `XENOFORGE_ADDR` | Adresse und Port | `127.0.0.1:3000` |
+| `XENOFORGE_DB` | Datenbankdatei | `xenoforge.db` |
 | `XENOFORGE_STATIC` | gebaute Oberfläche | `frontend/dist` |
+| `XENOFORGE_DATA` | Regeldaten | `data` |
+| `XENOFORGE_SECURE_COOKIES` | `true` hinter HTTPS | `false` |
 | `RUST_LOG` | Log-Ausgabe | `info` |
+
+Gesichert wird die Datenbankdatei, am besten mit `sqlite3 xenoforge.db ".backup sicherung.db"` im laufenden Betrieb.
+
+## Aufbau
 
 ```
 crates/engine    Regel-Engine und Datentypen, ohne Netz und Datenbank
-crates/server    Webserver (axum)
+crates/server    Webserver: Konten, Teams, Befehle, Protokoll (axum, sqlx)
 data/            Regeldaten, Texte, erzeugte Schemas
 frontend/        Vue 3, Pinia, Vue Router, vue-i18n
 tools/           Hilfswerkzeuge, z. B. die Wortlautprüfung

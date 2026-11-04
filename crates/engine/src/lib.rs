@@ -14,4 +14,4 @@ pub mod roll;
 pub mod state;
 
 pub use active::{ActiveEffect, Modification};
-pub use engine::{Choice, Command, Engine, Event, NewSource, RuleError, Step};
+pub use engine::{Choice, Command, Engine, Event, NewSource, Preview, RuleError, Step};

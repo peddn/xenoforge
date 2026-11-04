@@ -1,0 +1,220 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
+
+import DecisionList from '@/components/DecisionList.vue'
+import RollPanel from '@/components/RollPanel.vue'
+import { choiceLabel, modsText, originLabel } from '@/labels'
+import { guard, routes } from '@/router'
+import { useAuthStore } from '@/stores/auth'
+import { useTeamStore } from '@/stores/team'
+import LoginView from '@/views/LoginView.vue'
+import TeamView from '@/views/TeamView.vue'
+
+import { mockApi, setup } from './helpers'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+})
+
+function router() {
+  const r = createRouter({ history: createMemoryHistory(), routes })
+  r.beforeEach(guard)
+  return r
+}
+
+describe('accounts', () => {
+  it('registers with the chosen role (A-07)', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /auth/register': { id: 1, name: 'Mother', role: 'gm' } })
+    const r = router()
+    const wrapper = mount(LoginView, { global: { plugins: [pinia, i18n, r] } })
+    await wrapper.get('[data-test="mode-register"]').trigger('click')
+    await wrapper.get('[data-test="name"]').setValue('Mother')
+    await wrapper.get('[data-test="password"]').setValue('secret-password')
+    await wrapper.get('[data-test="role-gm"]').setValue(true)
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(calls.find((c) => c.method === 'POST')).toEqual({
+      method: 'POST',
+      path: '/auth/register',
+      body: { name: 'Mother', password: 'secret-password', role: 'gm' },
+    })
+    expect(useAuthStore().user.role).toBe('gm')
+  })
+
+  it('sends people without a session to the login page', async () => {
+    setup()
+    mockApi({})
+    const r = router()
+    await r.push('/teams/3')
+    expect(r.currentRoute.value.name).toBe('login')
+    expect(r.currentRoute.value.query.next).toBe('/teams/3')
+  })
+})
+
+describe('rolling', () => {
+  it('asks the server for the dice and sends the roll', async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    const calls = mockApi({
+      'POST /teams/5/preview': { base_dice: 6, stress_dice: 2, modifications: [], talents: ['stoic'], max_pushes: 1 },
+      'POST /teams/5/commands': [],
+    })
+    useTeamStore().view = { id: 5, characters: [] }
+    const wrapper = mount(RollPanel, {
+      props: { character: { id: 9, name: 'Charlize' } },
+      global: { plugins: [pinia, i18n] },
+    })
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    expect(wrapper.get('[data-test="preview"]').text()).toContain('6 Grundwürfel, 2 Stresswürfel')
+    expect(calls[0].body).toMatchObject({ actor: '9', kind: { skill: { skill: 'observation' } }, modifiers: [] })
+    // Players set no difficulty (A-08); the preview is asked for once.
+    expect(wrapper.text()).not.toContain('Schwierigkeit:')
+    expect(wrapper.text()).toContain('Spielleitung')
+    await wrapper.get('[data-test="gear"]').setValue(2)
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+    const previews = calls.filter((c) => c.path === '/teams/5/preview')
+    expect(previews).toHaveLength(2)
+    expect(previews[1].body.modifiers).toEqual([{ source: 'gear', value: 2 }])
+    await wrapper.get('[data-test="roll-go"]').trigger('click')
+    await flushPromises()
+    const roll = calls.find((c) => c.path === '/teams/5/commands')
+    expect(roll.body.command.command).toBe('roll')
+  })
+
+  it('offers the decision to the owner and sends the choice', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/commands': [] })
+    useAuthStore().user = { id: 2, name: 'Gina', role: 'player' }
+    useTeamStore().view = {
+      id: 5,
+      is_gm: false,
+      characters: [{ id: 9, name: 'Charlize', owner_id: 2 }],
+      pending: [{ id: 4, kind: 'roll', actor: '9', options: ['push', 'accept'], candidates: [] }],
+    }
+    const wrapper = mount(DecisionList, { global: { plugins: [pinia, i18n] } })
+    expect(wrapper.text()).toContain('Pushen')
+    await wrapper.get('[data-test="choice-push"]').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({ command: { command: 'decide', pending: 4, choice: 'push' } })
+  })
+
+  it('hides other people\'s decisions', () => {
+    const { pinia, i18n } = setup()
+    mockApi({})
+    useAuthStore().user = { id: 3, name: 'Burke', role: 'player' }
+    useTeamStore().view = {
+      id: 5,
+      is_gm: false,
+      characters: [{ id: 9, name: 'Charlize', owner_id: 2 }],
+      pending: [{ id: 4, kind: 'roll', actor: '9', options: ['push', 'accept'], candidates: [] }],
+    }
+    const wrapper = mount(DecisionList, { global: { plugins: [pinia, i18n] } })
+    expect(wrapper.find('[data-test="decisions"]').exists()).toBe(false)
+  })
+
+  it('lets the game master correct values', async () => {
+    const { pinia, i18n } = setup()
+    vi.stubGlobal(
+      'EventSource',
+      class {
+        close() {}
+      },
+    )
+    const actor = { attributes: { wits: 4 }, skills: {}, talents: [], health: 3, stress: 1, sources: [] }
+    const calls = mockApi({
+      'GET /teams/5': {
+        id: 5,
+        name: 'Hope',
+        mode: 'cinematic',
+        gm: { id: 1, name: 'Mother' },
+        is_gm: true,
+        members: [],
+        characters: [{ id: 9, name: 'Charlize', owner_id: 2, owner_name: 'Gina', actor, hints: [] }],
+        pending: [],
+        story_points: {},
+        rulings: {},
+      },
+      'GET /characters': [],
+      'PUT /teams/5/characters/9': [],
+    })
+    const auth = useAuthStore()
+    auth.user = { id: 1, name: 'Mother', role: 'gm' }
+    auth.checked = true
+    const r = router()
+    r.push('/teams/5')
+    await r.isReady()
+    const wrapper = mount(TeamView, { global: { plugins: [pinia, i18n, r] } })
+    await flushPromises()
+    const correct = wrapper.findAll('button').find((b) => b.text() === 'Korrigieren')
+    await correct.trigger('click')
+    await wrapper.get('[data-test="attr-wits"]').setValue(5)
+    await wrapper.findAll('button').find((b) => b.text() === 'Speichern').trigger('click')
+    await flushPromises()
+    const put = calls.find((c) => c.method === 'PUT')
+    expect(put.body.actor.attributes.wits).toBe(5)
+  })
+
+  it('reports an expired session', async () => {
+    const { onUnauthorized, get } = await import('@/api')
+    const seen = vi.fn()
+    onUnauthorized(seen)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 401, statusText: 'Unauthorized', text: async () => '' })),
+    )
+    await expect(get('/teams')).rejects.toThrow()
+    expect(seen).toHaveBeenCalledOnce()
+    onUnauthorized(() => {})
+  })
+
+  it('lets go of a team that is no longer visible', async () => {
+    setup()
+    mockApi({})
+    const team = useTeamStore()
+    await team.open(5)
+    expect(team.gone).toBe(true)
+    team.view = { id: 5 }
+    team.gone = false
+    await team.refresh()
+    expect(team.view).toBe(null)
+    expect(team.gone).toBe(true)
+  })
+})
+
+describe('labels', () => {
+  it('names choices and sources', () => {
+    const { i18n } = setup()
+    const t = i18n.global.t
+    const rules = { name: (id) => `<${id}>` }
+    expect(choiceLabel('push', t, rules)).toBe('Pushen')
+    expect([0, 1, 3].map((n) => t('log.stunts', n))).toEqual(['kein Stunt', '1 Stunt', '3 Stunts'])
+    const mods = [
+      { source: 'gear', value: 2 },
+      { source: 'help', value: 1 },
+      { source: 'difficulty_hard', value: -2 },
+      { source: 'talent/stoic', value: 1 },
+    ]
+    expect(modsText(mods, t, rules)).toBe('Ausrüstung +2, Helfer +1, <difficulty_hard> -2, <stoic> +1')
+    expect(choiceLabel({ use_talent: 'stoic' }, t, rules)).toBe('Mit <stoic>')
+    expect(choiceLabel({ answer: false }, t, rules)).toBe('Nein')
+    expect(originLabel({ condition: { id: 'freezing', cold: 'sub_zero' } }, t, rules)).toBe('<freezing> (unter null)')
+    expect(originLabel({ block: { blocks: 'stress_relief', by: 'depression' } }, t, rules)).toBe(
+      '<depression>: Stressabbau gesperrt',
+    )
+  })
+})
+
+describe('translations', () => {
+  it('have the same keys in German and English', async () => {
+    const { default: de } = await import('@/i18n/de.json')
+    const { default: en } = await import('@/i18n/en.json')
+    const keys = (obj, prefix = '') =>
+      Object.entries(obj).flatMap(([k, v]) => (typeof v === 'object' ? keys(v, `${prefix}${k}.`) : [`${prefix}${k}`]))
+    expect(keys(en).sort()).toEqual(keys(de).sort())
+  })
+})

@@ -14,9 +14,10 @@ use super::{Data, Entry, LANGUAGES, Page};
 /// Highest page number of the core rulebook.
 pub const MAX_PAGE: Page = 400;
 
-/// Constants the engine reads from `constants.json`.
+/// Constants the engine and the server read from `constants.json`.
 pub const REQUIRED_CONSTANTS: &[&str] = &[
     "base_pushes",
+    "gear_bonus_max",
     "help_max",
     "panic_effect_from",
     "shifts_per_day",
