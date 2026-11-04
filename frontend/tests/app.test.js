@@ -4,7 +4,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 
 import DecisionList from '@/components/DecisionList.vue'
 import RollPanel from '@/components/RollPanel.vue'
-import { choiceLabel, originLabel } from '@/labels'
+import { choiceLabel, modsText, originLabel } from '@/labels'
 import { guard, routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { useTeamStore } from '@/stores/team'
@@ -70,7 +70,16 @@ describe('rolling', () => {
     await vi.advanceTimersByTimeAsync(200)
     await flushPromises()
     expect(wrapper.get('[data-test="preview"]').text()).toContain('6 Grundwürfel, 2 Stresswürfel')
-    expect(calls[0].body).toMatchObject({ actor: '9', kind: { skill: { skill: 'observation' } } })
+    expect(calls[0].body).toMatchObject({ actor: '9', kind: { skill: { skill: 'observation' } }, modifiers: [] })
+    // Players set no difficulty (A-08); the preview is asked for once.
+    expect(wrapper.text()).not.toContain('Schwierigkeit:')
+    expect(wrapper.text()).toContain('Spielleitung')
+    await wrapper.get('[data-test="gear"]').setValue(2)
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+    const previews = calls.filter((c) => c.path === '/teams/5/preview')
+    expect(previews).toHaveLength(2)
+    expect(previews[1].body.modifiers).toEqual([{ source: 'gear', value: 2 }])
     await wrapper.get('[data-test="roll-go"]').trigger('click')
     await flushPromises()
     const roll = calls.find((c) => c.path === '/teams/5/commands')
@@ -150,6 +159,19 @@ describe('rolling', () => {
     expect(put.body.actor.attributes.wits).toBe(5)
   })
 
+  it('reports an expired session', async () => {
+    const { onUnauthorized, get } = await import('@/api')
+    const seen = vi.fn()
+    onUnauthorized(seen)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 401, statusText: 'Unauthorized', text: async () => '' })),
+    )
+    await expect(get('/teams')).rejects.toThrow()
+    expect(seen).toHaveBeenCalledOnce()
+    onUnauthorized(() => {})
+  })
+
   it('lets go of a team that is no longer visible', async () => {
     setup()
     mockApi({})
@@ -171,6 +193,13 @@ describe('labels', () => {
     const rules = { name: (id) => `<${id}>` }
     expect(choiceLabel('push', t, rules)).toBe('Pushen')
     expect([0, 1, 3].map((n) => t('log.stunts', n))).toEqual(['kein Stunt', '1 Stunt', '3 Stunts'])
+    const mods = [
+      { source: 'gear', value: 2 },
+      { source: 'help', value: 1 },
+      { source: 'difficulty_hard', value: -2 },
+      { source: 'talent/stoic', value: 1 },
+    ]
+    expect(modsText(mods, t, rules)).toBe('Ausrüstung +2, Helfer +1, <difficulty_hard> -2, <stoic> +1')
     expect(choiceLabel({ use_talent: 'stoic' }, t, rules)).toBe('Mit <stoic>')
     expect(choiceLabel({ answer: false }, t, rules)).toBe('Nein')
     expect(originLabel({ condition: { id: 'freezing', cold: 'sub_zero' } }, t, rules)).toBe('<freezing> (unter null)')

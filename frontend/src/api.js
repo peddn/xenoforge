@@ -9,6 +9,12 @@ export class ApiError extends Error {
   }
 }
 
+// Called when the server says the session is gone (401).
+let unauthorized = () => {}
+export function onUnauthorized(handler) {
+  unauthorized = handler
+}
+
 export async function api(method, path, body) {
   const options = { method, headers: {}, credentials: 'same-origin' }
   if (body !== undefined) {
@@ -19,6 +25,7 @@ export async function api(method, path, body) {
   const text = await response.text()
   const data = text ? JSON.parse(text) : null
   if (!response.ok) {
+    if (response.status === 401) unauthorized()
     throw new ApiError(response.status, data?.error ?? 'error', data?.message ?? response.statusText)
   }
   return data

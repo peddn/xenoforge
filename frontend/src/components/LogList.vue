@@ -42,7 +42,7 @@ function describe(entry) {
     case 'roll_started':
       return {
         text: t('log.roll_started', { actor, what: what(ev), base: ev.base_dice, stress: ev.stress_dice }),
-        detail: modsText(ev.modifications, rules),
+        detail: modsText(ev.modifications, t, rules),
       }
     case 'dice_thrown':
       return { dice: ev.dice }
@@ -67,12 +67,12 @@ function describe(entry) {
     case 'panic_rolled':
       return {
         text: t('log.panic_rolled', { actor, d6: ev.d6, stress: ev.stress, value: ev.value }),
-        detail: [modsText(ev.modifications, rules), ev.raised_from != null ? t('log.raised', { from: ev.raised_from }) : '']
+        detail: [modsText(ev.modifications, t, rules), ev.raised_from != null ? t('log.raised', { from: ev.raised_from }) : '']
           .filter(Boolean)
           .join(' · '),
       }
     case 'panic_effect':
-      return { status: { tone: ev.value >= 10 ? 'alert' : 'warn', text: rules.name(ev.effect) }, text: actor }
+      return { status: { tone: 'alert', text: rules.name(ev.effect) }, text: actor }
     case 'panic_stopped':
       return { text: t('log.panic_stopped', { actor }) }
     case 'source_applied':

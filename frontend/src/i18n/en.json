@@ -77,7 +77,8 @@
     "difficulty": "Difficulty",
     "gear": "Gear",
     "helpers": "Helpers",
-    "preview": "{base} Base Dice, {stress} Stress Dice"
+    "preview": "{base} Base Dice, {stress} Stress Dice",
+    "difficultyByGm": "Difficulty is up to the game master, who then starts the roll for your character."
   },
   "decision": {
     "title": "Decision",

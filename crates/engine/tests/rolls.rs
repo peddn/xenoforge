@@ -139,6 +139,18 @@ fn modifications_add_up() {
     assert_eq!(started(&ev).0, 3);
 }
 
+/// Absurd values saturate instead of overflowing.
+#[test]
+fn huge_modifications_do_not_overflow() {
+    let t = Table::new(Mode::Campaign).with("a", pc().attr("wits", 255).skill("observation", 255));
+    let mut request = RollRequest::skill("a", "observation");
+    for _ in 0..300 {
+        request = request.modifier("gear", 127);
+    }
+    let preview = t.engine.preview(&t.state, request).unwrap();
+    assert_eq!(preview.base_dice, u8::MAX);
+}
+
 /// A negative overhang removes Stress Dice [p. 62]; a push then adds one
 /// new Stress Die (F-20).
 #[test]

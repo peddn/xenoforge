@@ -50,7 +50,11 @@ export const useTeamStore = defineStore('team', () => {
     }
     source = new EventSource(`/api/teams/${id}/events`)
     source.onopen = () => (connected.value = true)
-    source.onerror = () => (connected.value = false)
+    source.onerror = () => {
+      connected.value = false
+      // The browser gives up for good on 401 or 404; find out which.
+      if (source?.readyState === 2) refresh().catch(() => {})
+    }
     source.onmessage = (message) => {
       const entry = JSON.parse(message.data)
       if (!log.value.some((e) => e.id === entry.id)) log.value.push(entry)

@@ -152,8 +152,6 @@ async fn events(
     Query(query): Query<After>,
     headers: HeaderMap,
 ) -> ApiResult<Sse<impl Stream<Item = Result<SseEvent, Infallible>>>> {
-    let team = game::load_team(&state.pool, id).await?;
-    let is_gm = game::access(&state.pool, &team, &user).await?;
     let after = headers
         .get("last-event-id")
         .and_then(|v| v.to_str().ok())
@@ -182,6 +180,10 @@ async fn events(
             entry: payload.entry,
         });
     }
+    // Access is checked after reading the log: a removal committed before
+    // this point refuses the stream, a later one arrives live and ends it.
+    let team = game::load_team(&state.pool, id).await?;
+    let is_gm = game::access(&state.pool, &team, &user).await?;
     let last = replay.last().map_or(after, |s| s.id);
     let replay = stream::iter(
         replay

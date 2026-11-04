@@ -61,7 +61,7 @@ const mine = (c) => c.owner_id === auth.user?.id
           <template v-if="c.actor">
             <td>
               <XStatus
-                v-if="c.actor.health === 0"
+                v-if="c.broken"
                 tone="alert"
                 :text="t('crew.broken')"
               />

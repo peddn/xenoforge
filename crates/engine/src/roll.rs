@@ -451,8 +451,9 @@ impl Ctx<'_> {
                 0,
             ),
             (RollKind::Skill { .. } | RollKind::Death, Some(a)) => {
-                let value = a.attribute(attribute.as_deref().unwrap_or_default())
-                    + a.skill_level(skill.as_deref().unwrap_or_default());
+                let value = a
+                    .attribute(attribute.as_deref().unwrap_or_default())
+                    .saturating_add(a.skill_level(skill.as_deref().unwrap_or_default()));
                 let stress = if is_skill && human { a.stress } else { 0 };
                 (i16::from(value), stress)
             }
@@ -478,10 +479,10 @@ impl Ctx<'_> {
                     + active::extra_pushes(&self.effects(id)?, matcher);
             }
         }
-        base += modifications
+        // Saturating: absurd inputs must not overflow.
+        base = modifications
             .iter()
-            .map(|m| i16::from(m.value))
-            .sum::<i16>();
+            .fold(base, |sum, m| sum.saturating_add(i16::from(m.value)));
         // A negative overhang removes Stress Dice [p. 62].
         let mut stress_dice = stress;
         let mut removed = 0;
@@ -527,7 +528,7 @@ impl Ctx<'_> {
     }
 
     fn throw_and_go(&mut self, mut roll: RollState) -> Result<()> {
-        if roll.automatic || roll.base_dice + roll.stress_dice == 0 {
+        if roll.automatic || (roll.base_dice == 0 && roll.stress_dice == 0) {
             // No dice: the roll cannot succeed (F-21) [p. 62].
             return self.finish(roll);
         }
@@ -670,7 +671,7 @@ impl Ctx<'_> {
                     face: 1,
                     locked: false,
                 });
-                roll.stress_dice += 1;
+                roll.stress_dice = roll.stress_dice.saturating_add(1);
                 let mut thrown = Vec::new();
                 for die in roll.dice.iter_mut().filter(|d| !d.locked) {
                     die.face = self.dice.d6();

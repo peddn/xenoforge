@@ -246,6 +246,7 @@
   "panic_effect_from.name": "Panic effect from",
   "shifts_per_day.name": "Shifts per day",
   "supply_dice_max.name": "Most dice in a supply roll",
+  "gear_bonus_max.name": "Highest gear bonus",
   "F-48.name": "Panic while Broken",
   "F-48.ends_at_once": "Ends at once",
   "F-48.runs_on": "Runs on",

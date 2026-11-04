@@ -27,21 +27,32 @@ Browser ── HTTP (JSON) ──▶ axum ──▶ Engine (rein)
 
 | Befehl | Spieler | Spielleitung |
 | --- | --- | --- |
-| `roll` für eigenen Charakter | ja | ja |
+| `roll` für eigenen Charakter: Fertigkeit, Attribut, Death Roll; Helfer und Ausrüstungsbonus | ja | ja |
+| `roll` mit Schwierigkeit, fester Pool, Vorrat, einzelne Stresswürfel (A-08) | nein | ja |
 | `roll` für fremde Charaktere oder ohne Charakter | nein | ja |
 | `decide` | wenn die Entscheidung beim eigenen Charakter liegt | ja |
 | `decide` bei der Wahl der Betroffenen (`targets`) | nein | ja |
 | `use_signature_item`, `perform_action` für eigenen Charakter | ja | ja |
 | alle übrigen (Stress, Schaden, Panik, Quellen, Akt- und Sitzungsende …) | nein | ja |
-| Vorschau eines Wurfs | eigener Charakter | alle |
+| Vorschau eines Wurfs | eigener Charakter, Regeln wie bei `roll` | alle |
 | Werte korrigieren, Rückgängig | nein | ja |
+
+### Modifikationen eines Wurfs (A-08)
+
+Ein Wurf bringt höchstens eine Schwierigkeit und einen Ausrüstungsbonus mit, als Kennung und Wert:
+
+- `{"source": "difficulty_hard", "value": -2}`: nur die Spielleitung, nur mit dem Wert aus der Tabelle S. 63 (`data/rules/constants.json`).
+- `{"source": "gear", "value": 2}`: 0 bis `gear_bonus_max`. Mit dem Ausrüstungskatalog (2c) kommt der Bonus vom Gegenstand.
+
+Helfer stehen in `helpers`; es zählen höchstens drei (S. 63). Alles andere lehnt der Server ab.
 
 ## Sichtbarkeit (A-01)
 
-- Werte eines Charakters (Attribute, Fertigkeiten, Stress, Zustände) sehen die Spielleitung und der Besitzer. Die anderen sehen Name und Spieler.
+- Die Werte im Bogen (Attribute, Fertigkeiten, Talente, Stress, Zustände) sehen die Spielleitung und der Besitzer. Die anderen sehen Name und Spieler.
+- Was im Spiel geschieht, steht nach A-01 im gemeinsamen Protokoll, so wie es am Tisch angesagt würde: Würfe, Stress und Schaden, Panik, eingesetzte Talente und die Entscheidungen, auf die gewartet wird.
 - Story Points sieht jeder Spieler für sich, die Spielleitung für alle.
 - Jeder Protokolleintrag ist entweder für **alle** im Team oder nur für die **Spielleitung** sichtbar. Nur für die Spielleitung sind Hinweise der Engine, die als solche markiert sind. Gefiltert wird an einer Stelle (`log.rs`), für das Nachladen und für den Live-Strom gleich.
-- Die Wahl der Betroffenen eines Effekts ist eine offene Entscheidung nur für die Spielleitung; Spieler sehen sie nicht.
+- Wen ein Effekt trifft, entscheidet nur die Spielleitung; die offene Entscheidung sehen Spieler nicht, im Protokoll steht nur, dass gewählt wird.
 
 ## Spielstand
 
@@ -50,13 +61,13 @@ Der Spielstand der Engine (`GameState`) wird für jeden Befehl zusammengesetzt:
 - aus dem **Team-Dokument** (Modus, offene Entscheidungen, Story Points, Festlegungen, Zeit …), gespeichert als JSON in `teams.state`,
 - und aus den **Charakteren** des Teams, jeweils als JSON in `characters.data`. Jeder Akteur bekommt dabei den Besitzer als Spieler gesetzt, denn Story Points gehören dem Spieler.
 
-Nach dem Befehl teilt der Server den neuen Stand wieder auf und speichert Team, Charaktere und Protokolleinträge in **einer Transaktion**. Lehnt die Engine ab, ändert sich nichts, und die Antwort ist `422` mit dem Grund samt Buchseite.
+Nach dem Befehl teilt der Server den neuen Stand wieder auf und speichert Team, Charaktere und Protokolleinträge in **einer Transaktion**. Alles, was Team oder Charaktere schreibt, läuft unter demselben Schloss; so überschreibt kein Speichern einen Spielzug mit älteren Werten. Lehnt die Engine ab, ändert sich nichts, und die Antwort ist `422` mit dem Grund samt Buchseite.
 
 Außerhalb eines Teams bearbeitet der Besitzer seinen Charakter frei. Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung; Name, Aussehen und Notizen bleiben frei. Volle Health folgt STRENGTH (S. 30), solange Health nicht selbst geändert wurde.
 
 ### Rückgängig
 
-Vor jedem Befehl und jeder Korrektur legt der Server einen Schnappschuss von Team und Charakteren an; die letzten 20 bleiben erhalten. **Rückgängig** stellt den letzten wieder her und schreibt das ins Protokoll; die alten Einträge bleiben stehen. Wird ein Charakter aus dem Team genommen, endet die Kette, weil ältere Stände ihn noch enthalten.
+Vor jedem Befehl und jeder Korrektur legt der Server einen Schnappschuss des Team-Dokuments und der Werte aller Charaktere an; die letzten 20 bleiben erhalten. **Rückgängig** stellt den letzten wieder her und schreibt das ins Protokoll; die alten Einträge bleiben stehen. Name, Aussehen und Notizen bleiben, wie der Spieler sie zuletzt gespeichert hat, und Nummern von Würfen und Entscheidungen werden nie zweimal vergeben. Wird ein Charakter aus dem Team genommen, endet die Kette, weil ältere Stände ihn noch enthalten.
 
 ## Speicher (SQLite)
 
@@ -76,7 +87,7 @@ Beim Start prüft der Server die Regeldaten in `XENOFORGE_DATA` und startet nich
 
 ## Schnittstelle
 
-Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "error": "<code>", "message": "<text>" }` mit den Codes `bad_request` (400), `unauthorized` (401), `forbidden` (403), `not_found` (404), `conflict` (409), `rule` (422) und `internal` (500).
+Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "error": "<code>", "message": "<text>" }` mit den Codes `bad_request` (400), `unauthorized` (401), `forbidden` (403), `not_found` (404), `conflict` (409), `rule` (422) und `internal` (500). Bei `internal` steht der Grund nur im Log des Servers.
 
 ### Konto
 

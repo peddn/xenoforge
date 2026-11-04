@@ -406,6 +406,80 @@ async fn rule_errors_are_reported() {
     assert_eq!(body["error"], "rule");
 }
 
+/// Players roll without difficulty; modifications are checked (A-08).
+#[tokio::test]
+async fn roll_modifications_follow_a08() {
+    let server = server("a08").await;
+    let (mut gm, mut player, team, character) = table(&server).await;
+    let actor = character.to_string();
+    let preview = format!("/api/teams/{team}/preview");
+    let skill = |modifiers: Value| json!({ "actor": actor, "kind": { "skill": { "skill": "observation" } }, "modifiers": modifiers, "helpers": 1 });
+
+    let ok = player
+        .ok(
+            "POST",
+            &preview,
+            Some(skill(json!([{ "source": "gear", "value": 2 }]))),
+        )
+        .await;
+    assert_eq!(
+        ok["base_dice"], 9,
+        "WITS 4 + OBSERVATION 2 + gear 2 + help 1"
+    );
+
+    for (who, body, status) in [
+        (
+            "player",
+            skill(json!([{ "source": "difficulty_hard", "value": -2 }])),
+            StatusCode::FORBIDDEN,
+        ),
+        (
+            "player",
+            json!({ "actor": actor, "kind": { "fixed_pool": { "dice": 200 } } }),
+            StatusCode::FORBIDDEN,
+        ),
+        (
+            "player",
+            skill(json!([{ "source": "gear", "value": 4 }])),
+            StatusCode::BAD_REQUEST,
+        ),
+        (
+            "player",
+            skill(json!([{ "source": "GM approved", "value": 50 }])),
+            StatusCode::BAD_REQUEST,
+        ),
+        (
+            "gm",
+            skill(json!([{ "source": "difficulty_hard", "value": -1 }])),
+            StatusCode::BAD_REQUEST,
+        ),
+        (
+            "gm",
+            skill(json!([{ "source": "gear", "value": 1 }, { "source": "gear", "value": 1 }])),
+            StatusCode::BAD_REQUEST,
+        ),
+    ] {
+        let client = if who == "gm" { &mut gm } else { &mut player };
+        let (got, body_text) = client.call("POST", &preview, Some(body.clone())).await;
+        assert_eq!(got, status, "{who}: {body} -> {body_text}");
+        let (got, _) = client
+            .command(team, json!({ "command": "roll", "request": body }))
+            .await;
+        assert_eq!(got, status, "{who} command");
+    }
+
+    let hard = gm
+        .ok(
+            "POST",
+            &preview,
+            Some(skill(json!([{ "source": "difficulty_hard", "value": -2 }]))),
+        )
+        .await;
+    assert_eq!(hard["base_dice"], 5, "WITS 4 + OBSERVATION 2 - 2 + help 1");
+    let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(view["characters"][0]["broken"], false);
+}
+
 /// Corrections and commands can be undone (plan section 3 and 10).
 #[tokio::test]
 async fn correction_and_undo() {
@@ -449,6 +523,29 @@ async fn correction_and_undo() {
         .call("POST", &format!("/api/teams/{team}/undo"), None)
         .await;
     assert_eq!(status, StatusCode::FORBIDDEN);
+
+    // Undo takes back values, not the player's notes.
+    gm.command(
+        team,
+        json!({ "command": "change_stress", "actors": [actor], "delta": 1 }),
+    )
+    .await;
+    player
+        .ok(
+            "PUT",
+            &format!("/api/characters/{character}"),
+            Some(
+                json!({ "name": "Charlize", "data": { "sheet": { "notes": "Look for Torres" } } }),
+            ),
+        )
+        .await;
+    gm.ok("POST", &format!("/api/teams/{team}/undo"), None)
+        .await;
+    let sheet = player
+        .ok("GET", &format!("/api/characters/{character}"), None)
+        .await;
+    assert_eq!(sheet["data"]["sheet"]["notes"], "Look for Torres");
+    assert_eq!(sheet["data"]["actor"]["stress"], 0);
 
     // Removing a character ends the undo history: older states would
     // still refer to it.

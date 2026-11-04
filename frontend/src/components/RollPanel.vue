@@ -9,7 +9,8 @@ import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The roll dialog (plan 6.1). The dice count comes from the server's
-// preview; this component computes no rules.
+// preview; this component computes no rules. The difficulty is the game
+// master's (A-08).
 const props = defineProps({ character: { type: Object, required: true } })
 const emit = defineEmits(['done'])
 const { t } = useI18n()
@@ -28,9 +29,9 @@ let timer = null
 const request = computed(() => {
   const [kind, id] = what.value.split(':')
   const modifiers = []
-  const level = rules.difficulties().find((d) => d.id === difficulty.value)
-  if (level && level.value !== 0) modifiers.push({ source: rules.name(level.id), value: level.value })
-  if (Number(gear.value)) modifiers.push({ source: t('roll.gear'), value: Number(gear.value) })
+  const level = team.view.is_gm && rules.difficulties().find((d) => d.id === difficulty.value)
+  if (level && level.value !== 0) modifiers.push({ source: level.id, value: level.value })
+  if (Number(gear.value)) modifiers.push({ source: 'gear', value: Number(gear.value) })
   const kinds = { skill: { skill: { skill: id } }, attribute: { attribute: { attribute: id } }, death: 'death' }
   return {
     actor: String(props.character.id),
@@ -48,7 +49,9 @@ watch(
     timer = setTimeout(async () => {
       try {
         preview.value = await team.preview(request.value)
-        talents.value = talents.value.filter((id) => preview.value.talents.includes(id))
+        // Assign only on a change: a new array would start the next preview.
+        const offered = talents.value.filter((id) => preview.value.talents.includes(id))
+        if (offered.length !== talents.value.length) talents.value = offered
         error.value = ''
       } catch (e) {
         preview.value = null
@@ -99,7 +102,10 @@ async function roll() {
           </option>
         </select>
       </XField>
-      <XField :label="t('roll.difficulty')">
+      <XField
+        v-if="team.view.is_gm"
+        :label="t('roll.difficulty')"
+      >
         <select v-model="difficulty">
           <option
             v-for="level in rules.difficulties()"
@@ -114,6 +120,9 @@ async function roll() {
         <input
           v-model="gear"
           type="number"
+          min="0"
+          :max="rules.constant('gear_bonus_max')"
+          data-test="gear"
         >
       </XField>
       <XField :label="t('roll.helpers')">
@@ -124,6 +133,12 @@ async function roll() {
         >
       </XField>
     </div>
+    <p
+      v-if="!team.view.is_gm"
+      class="muted"
+    >
+      {{ t('roll.difficultyByGm') }}
+    </p>
     <div
       v-if="preview?.talents.length"
       class="row"
@@ -149,7 +164,7 @@ async function roll() {
       <span
         v-if="preview.modifications.length"
         class="muted"
-      > · {{ modsText(preview.modifications, rules) }}</span>
+      > · {{ modsText(preview.modifications, t, rules) }}</span>
     </p>
     <p
       v-if="error"

@@ -56,12 +56,16 @@ impl ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        if self.status.is_server_error() {
+        // Details of server errors go to the log, not to the browser.
+        let message = if self.status.is_server_error() {
             tracing::error!("{}: {}", self.code, self.message);
-        }
+            "internal error, see the server log".to_owned()
+        } else {
+            self.message
+        };
         (
             self.status,
-            Json(json!({ "error": self.code, "message": self.message })),
+            Json(json!({ "error": self.code, "message": message })),
         )
             .into_response()
     }

@@ -30,10 +30,15 @@ export function blockLabel(blocks, t, rules) {
   return rules.name(blocks.action)
 }
 
-export function modsText(mods, rules) {
+// Sources: effect labels such as "talent/stoic", ids of difficulty levels,
+// and "gear" or "help" from the roll request.
+const requestSources = { gear: 'roll.gear', help: 'roll.helpers' }
+
+export function modsText(mods, t, rules) {
   return mods
     .map((m) => {
-      const source = m.source.includes('/') ? rules.name(m.source.split('/').pop()) : m.source
+      const id = m.source.split('/').pop()
+      const source = requestSources[m.source] ? t(requestSources[m.source]) : rules.name(id)
       return `${source} ${m.value > 0 ? '+' : ''}${m.value}`
     })
     .join(', ')

@@ -84,6 +84,7 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | A-05 | Bereiche an Bord | Frei editierbare Orte mit Deck, ohne Entfernungen und ohne Verbindung zu Modulen. Brücke und Reaktorbereich sind markiert, weil das Buch Schäden an sie bindet (S. 170, 198–199). |
 | A-06 | Schiffsstatus | Alle im Team sehen ihn; Spieler ohne Geheimes. Folgen stehen in drei Stufen: AUTO (App wendet an), HINWEIS (Spielleitung setzt um), INFO. |
 | A-07 | Konten | Jeder kann ein Konto anlegen und wählt dabei Spieler oder Spielleitung. Nur Spielleitungs-Konten legen Teams an, auch ohne Spieler zum Vorbereiten. Rechte gelten nur im eigenen Team; eine Spielleitung sieht nichts aus fremden Teams und kann dort als Spieler mitspielen. Jedes Team hat genau eine Spielleitung. |
+| A-08 | Würfe der Spieler | Die Schwierigkeit legt die Spielleitung fest (S. 63). Spieler würfeln Fertigkeits-, Attribut- und Death-Rolls für ihre eigenen Charaktere, mit Helfern und einem Ausrüstungsbonus, aber ohne Schwierigkeit. Will die Spielleitung eine Schwierigkeit, löst sie den Wurf für den Charakter aus; über Push und Story Point entscheidet weiter der Spieler. Der Server prüft jede Modifikation: Schwierigkeit nur mit einem Wert aus der Tabelle S. 63, Ausrüstung 0 bis `gear_bonus_max` (+3, der höchste Bonus im Buch, S. 128). Mit dem Ausrüstungskatalog (Phase 2c) kommt der Bonus vom Gegenstand. |
 
 ## Noch offen
 

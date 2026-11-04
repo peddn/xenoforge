@@ -19,8 +19,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use axum::http::StatusCode;
 use axum::{Json, Router, routing::get};
 use serde::Serialize;
-use sqlx::SqlitePool;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
+use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::{Mutex, broadcast};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
@@ -126,6 +126,12 @@ pub fn router(state: AppState, static_dir: &Path, data_dir: &Path) -> Router {
         .nest("/api", api)
         .fallback_service(frontend)
         .layer(TraceLayer::new_for_http())
+}
+
+/// A transaction that writes: it takes SQLite's write lock at once, so a
+/// write elsewhere cannot make it fail halfway (`SQLITE_BUSY_SNAPSHOT`).
+pub async fn begin_write(pool: &SqlitePool) -> Result<Transaction<'static, Sqlite>, ApiError> {
+    Ok(pool.begin_with("BEGIN IMMEDIATE").await?)
 }
 
 /// Seconds since 1970.

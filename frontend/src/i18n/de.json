@@ -77,7 +77,8 @@
     "difficulty": "Schwierigkeit",
     "gear": "Ausrüstung",
     "helpers": "Helfer",
-    "preview": "{base} Grundwürfel, {stress} Stresswürfel"
+    "preview": "{base} Grundwürfel, {stress} Stresswürfel",
+    "difficultyByGm": "Eine Schwierigkeit legt die Spielleitung fest: Sie löst den Wurf dann für deinen Charakter aus."
   },
   "decision": {
     "title": "Entscheidung",

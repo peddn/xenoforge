@@ -40,9 +40,12 @@ export const useRulesStore = defineStore('rules', () => {
   }
 
   /** Difficulty levels [p. 63] from constants.json. */
+  function constant(id) {
+    return list('constants').find((c) => c.id === id)?.value
+  }
   function difficulties() {
     return list('constants').filter((c) => c.id.startsWith('difficulty_'))
   }
 
-  return { data, loaded, load, name, text, list, difficulties }
+  return { data, loaded, load, name, text, list, constant, difficulties }
 })

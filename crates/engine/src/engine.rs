@@ -1366,11 +1366,12 @@ impl<'a> Ctx<'a> {
     }
 
     pub fn spend_use(&mut self, actor: &str, talent: &str) -> Result<()> {
-        *self
+        let uses = self
             .actor_mut(actor)?
             .uses
             .entry(talent.to_owned())
-            .or_default() += 1;
+            .or_default();
+        *uses = uses.saturating_add(1);
         self.emit(Event::TalentUsed {
             actor: actor.to_owned(),
             talent: talent.to_owned(),

@@ -15,7 +15,7 @@ use crate::characters::{self, Character};
 use crate::error::{ApiError, ApiResult};
 use crate::game::{self, PendingView, Team};
 use crate::log::{self, Entry, Stored};
-use crate::{AppState, now, random_token};
+use crate::{AppState, begin_write, now, random_token};
 
 pub fn routes() -> Router<AppState> {
     Router::new()
@@ -118,6 +118,8 @@ struct CharacterInTeam {
     owner_name: String,
     /// Values only for the game master and the owner (A-01).
     actor: Option<Actor>,
+    /// Broken as the engine sees it [p. 98], for the same people.
+    broken: Option<bool>,
     /// Hints working on the character: (source, text key).
     hints: Vec<(String, String)>,
 }
@@ -185,6 +187,7 @@ async fn view(
             owner_id: character.owner_id,
             owner_name: name_of(&state, character.owner_id).await?,
             actor: sees.then(|| character.data.actor.clone()),
+            broken: sees.then(|| character.data.actor.broken()),
             hints,
         });
     }
@@ -264,7 +267,7 @@ async fn bring(
             "the character is already in a team (A-04)",
         ));
     }
-    let mut tx = state.pool.begin().await?;
+    let mut tx = begin_write(&state.pool).await?;
     character.team_id = Some(team.id);
     characters::save(&mut tx, &character).await?;
     if team.gm_id != user.id {
@@ -300,13 +303,15 @@ async fn remove(
     user: User,
     Path((id, character_id)): Path<(i64, i64)>,
 ) -> ApiResult<Json<Vec<Stored>>> {
-    let mut team = gm_team(&state, &user, id).await?;
+    // Lock first: the team document must not change between reading and
+    // writing it back.
     let _guard = state.lock.lock().await;
+    let mut team = gm_team(&state, &user, id).await?;
     let mut character = characters::load(&state.pool, character_id).await?;
     if character.team_id != Some(id) {
         return Err(ApiError::not_found("character"));
     }
-    let mut tx = state.pool.begin().await?;
+    let mut tx = begin_write(&state.pool).await?;
     character.team_id = None;
     characters::save(&mut tx, &character).await?;
     game::forget_actor(&mut team.state, &character_id.to_string());

@@ -7,6 +7,7 @@
 //! place only.
 
 use std::collections::HashMap;
+use std::sync::PoisonError;
 
 use axum::extract::{Path, State};
 use axum::{Json, Router, routing::post};
@@ -14,15 +15,15 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 use xenoforge_engine::data::Id;
 use xenoforge_engine::data::effects::Who;
-use xenoforge_engine::roll::RollRequest;
+use xenoforge_engine::roll::{RollKind, RollRequest};
 use xenoforge_engine::state::{Actor, GameState, Pending};
-use xenoforge_engine::{Choice, Command, Preview};
+use xenoforge_engine::{Choice, Command, Engine, Preview};
 
 use crate::auth::User;
-use crate::characters::{self, Character, CharacterData};
+use crate::characters::{self, Character};
 use crate::error::{ApiError, ApiResult};
 use crate::log::{self, Entry, Stored};
-use crate::{AppState, now};
+use crate::{AppState, begin_write, now};
 
 /// How many steps the game master can take back.
 const UNDO_DEPTH: i64 = 20;
@@ -141,10 +142,12 @@ async fn store(
     save_team_state(tx, team_id, &game).await
 }
 
+/// A state for undo: the team document and the characters' values. Name,
+/// appearance and notes are the player's and stay as they are.
 #[derive(Serialize, Deserialize)]
 struct Snapshot {
     team: GameState,
-    characters: Vec<(i64, CharacterData)>,
+    characters: Vec<(i64, Actor)>,
 }
 
 async fn save_snapshot(
@@ -154,7 +157,10 @@ async fn save_snapshot(
 ) -> ApiResult<()> {
     let snapshot = Snapshot {
         team: team.state.clone(),
-        characters: characters.iter().map(|c| (c.id, c.data.clone())).collect(),
+        characters: characters
+            .iter()
+            .map(|c| (c.id, c.data.actor.clone()))
+            .collect(),
     };
     sqlx::query("INSERT INTO snapshots (team_id, state, created_at) VALUES (?, ?, ?)")
         .bind(team.id)
@@ -215,6 +221,53 @@ fn check_permission(
     }
 }
 
+/// What a roll may bring along (A-08): a difficulty from the table on
+/// p. 63 and a gear bonus up to `gear_bonus_max`, each at most once. The
+/// difficulty is the game master's; players roll skill, attribute and death
+/// rolls only.
+fn check_roll(engine: &Engine, request: &RollRequest, is_gm: bool) -> ApiResult<()> {
+    let player_kind = matches!(
+        request.kind,
+        RollKind::Skill { .. } | RollKind::Attribute { .. } | RollKind::Death
+    );
+    if !is_gm && !player_kind {
+        return Err(ApiError::forbidden(
+            "players roll skill, attribute and death rolls (A-08)",
+        ));
+    }
+    let (mut gear, mut difficulty) = (false, false);
+    for modification in &request.modifiers {
+        let value = i16::from(modification.value);
+        if modification.source == "gear" {
+            if gear || !(0..=engine.constant("gear_bonus_max")).contains(&value) {
+                return Err(ApiError::bad_request(
+                    "one gear bonus from 0 to gear_bonus_max (A-08)",
+                ));
+            }
+            gear = true;
+            continue;
+        }
+        let level = engine
+            .rules()
+            .constants
+            .iter()
+            .find(|c| c.id.starts_with("difficulty_") && c.id == modification.source)
+            .ok_or_else(|| ApiError::bad_request("unknown modification (A-08)"))?;
+        if !is_gm {
+            return Err(ApiError::forbidden(
+                "the game master sets the difficulty (A-08) [p. 63]",
+            ));
+        }
+        if difficulty || level.value != value {
+            return Err(ApiError::bad_request(
+                "one difficulty with its value from the table [p. 63]",
+            ));
+        }
+        difficulty = true;
+    }
+    Ok(())
+}
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/{id}/commands", post(command))
@@ -237,7 +290,10 @@ async fn command(
     let _guard = state.lock.lock().await;
     let team = load_team(&state.pool, id).await?;
     let is_gm = access(&state.pool, &team, &user).await?;
-    let mut tx = state.pool.begin().await?;
+    if let Command::Roll { request } = &body.command {
+        check_roll(&state.engine, request, is_gm)?;
+    }
+    let mut tx = begin_write(&state.pool).await?;
     let team = load_team_tx(&mut tx, id).await?;
     let mut characters = team_characters(&mut tx, id).await?;
     let owners: HashMap<String, i64> = characters
@@ -248,10 +304,9 @@ async fn command(
 
     let mut game = assemble(&team, &characters);
     let events = {
-        let mut dice = state
-            .dice
-            .lock()
-            .map_err(|_| ApiError::internal("dice lock"))?;
+        // The dice hold no state worth protecting: after a panic elsewhere
+        // they still work.
+        let mut dice = state.dice.lock().unwrap_or_else(PoisonError::into_inner);
         state.engine.apply(&mut game, body.command, &mut **dice)?
     };
     save_snapshot(&mut tx, &team, &characters).await?;
@@ -292,6 +347,7 @@ async fn preview(
     if !is_gm && !owns {
         return Err(ApiError::forbidden("not your character"));
     }
+    check_roll(&state.engine, &request, is_gm)?;
     let game = assemble(&team, &characters);
     Ok(Json(state.engine.preview(&game, request)?))
 }
@@ -307,26 +363,26 @@ async fn undo(
     if !access(&state.pool, &team, &user).await? {
         return Err(ApiError::forbidden("only the game master can undo"));
     }
-    let mut tx = state.pool.begin().await?;
+    let mut tx = begin_write(&state.pool).await?;
     let row =
         sqlx::query("SELECT id, state FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1")
             .bind(id)
             .fetch_optional(&mut *tx)
             .await?
             .ok_or_else(|| ApiError::conflict("nothing to undo"))?;
-    let snapshot: Snapshot = serde_json::from_str(row.get("state"))?;
+    let mut snapshot: Snapshot = serde_json::from_str(row.get("state"))?;
+    // Numbers of decisions and rolls are never handed out twice: the log
+    // already names the newer ones.
+    snapshot.team.next_pending = snapshot.team.next_pending.max(team.state.next_pending);
     save_team_state(&mut tx, id, &snapshot.team).await?;
-    for character in team_characters(&mut tx, id).await? {
-        if let Some((_, data)) = snapshot
+    for mut character in team_characters(&mut tx, id).await? {
+        if let Some((_, actor)) = snapshot
             .characters
             .iter()
             .find(|(cid, _)| *cid == character.id)
         {
-            let restored = Character {
-                data: data.clone(),
-                ..character
-            };
-            characters::save(&mut tx, &restored).await?;
+            character.data.actor = actor.clone();
+            characters::save(&mut tx, &character).await?;
         }
     }
     sqlx::query("DELETE FROM snapshots WHERE id = ?")
@@ -360,7 +416,7 @@ pub async fn correct(
         ));
     }
     characters::check_actor(&state, &body.actor)?;
-    let mut tx = state.pool.begin().await?;
+    let mut tx = begin_write(&state.pool).await?;
     let characters = team_characters(&mut tx, id).await?;
     let mut character = characters
         .iter()

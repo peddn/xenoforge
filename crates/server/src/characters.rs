@@ -11,7 +11,7 @@ use xenoforge_engine::state::Actor;
 
 use crate::auth::User;
 use crate::error::{ApiError, ApiResult};
-use crate::{AppState, now};
+use crate::{AppState, begin_write, now};
 
 /// Fields of the sheet that are not rules (phase 2b adds more).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -179,6 +179,9 @@ async fn update(
     Path(id): Path<i64>,
     Json(body): Json<Update>,
 ) -> ApiResult<Json<Character>> {
+    // Under the lock: a command in the team must not be overwritten with
+    // values read before it.
+    let _guard = state.lock.lock().await;
     let mut character = owned(&state, &user, id).await?;
     character.name = check_name(&body.name)?;
     character.data.sheet = body.data.sheet;
@@ -201,7 +204,7 @@ async fn update(
         };
         actor.stress = new.stress;
     }
-    let mut tx = state.pool.begin().await?;
+    let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;
     tx.commit().await?;
     Ok(Json(character))
@@ -212,13 +215,15 @@ async fn remove(
     user: User,
     Path(id): Path<i64>,
 ) -> ApiResult<Json<serde_json::Value>> {
+    let _guard = state.lock.lock().await;
     let character = owned(&state, &user, id).await?;
-    if character.team_id.is_some() {
+    let deleted = sqlx::query("DELETE FROM characters WHERE id = ? AND team_id IS NULL")
+        .bind(character.id)
+        .execute(&state.pool)
+        .await?
+        .rows_affected();
+    if deleted == 0 {
         return Err(ApiError::conflict("the character is in a team"));
     }
-    sqlx::query("DELETE FROM characters WHERE id = ?")
-        .bind(id)
-        .execute(&state.pool)
-        .await?;
     Ok(Json(serde_json::json!({ "ok": true })))
 }

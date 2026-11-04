@@ -20,7 +20,11 @@ const message = ref('')
 const error = ref('')
 
 onMounted(async () => {
-  character.value = await get(`/characters/${route.params.id}`)
+  try {
+    character.value = await get(`/characters/${route.params.id}`)
+  } catch (e) {
+    error.value = e.message
+  }
 })
 
 async function save() {
@@ -34,8 +38,13 @@ async function save() {
 }
 
 async function remove() {
-  await store.remove(character.value.id)
-  router.push('/')
+  error.value = ''
+  try {
+    await store.remove(character.value.id)
+    router.push('/')
+  } catch (e) {
+    error.value = e.message
+  }
 }
 </script>
 
@@ -96,4 +105,11 @@ async function remove() {
       >{{ error }}</span>
     </div>
   </XPanel>
+  <p
+    v-else-if="error"
+    class="error"
+    role="alert"
+  >
+    {{ error }}
+  </p>
 </template>
