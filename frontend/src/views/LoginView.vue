@@ -33,7 +33,7 @@ async function submit() {
 
 <template>
   <XPanel :title="t(mode === 'login' ? 'auth.login' : 'auth.register')">
-    <div class="row">
+    <div class="flex flex-wrap items-center gap-2">
       <XButton
         :aria-pressed="mode === 'login'"
         data-test="mode-login"
@@ -50,7 +50,7 @@ async function submit() {
       </XButton>
     </div>
     <form
-      class="panel"
+      class="grid content-start gap-3 border border-line p-3"
       @submit.prevent="submit"
     >
       <XField :label="t('auth.name')">
@@ -72,17 +72,17 @@ async function submit() {
       </XField>
       <fieldset
         v-if="mode === 'register'"
-        class="row"
+        class="flex flex-wrap items-center gap-2"
       >
-        <legend class="field-label">
+        <legend class="text-sm text-dim uppercase">
           {{ t('auth.role') }}
         </legend>
-        <label class="row"><input
+        <label class="flex flex-wrap items-center gap-2"><input
           v-model="role"
           type="radio"
           value="player"
         > {{ t('auth.player') }}</label>
-        <label class="row"><input
+        <label class="flex flex-wrap items-center gap-2"><input
           v-model="role"
           type="radio"
           value="gm"
@@ -91,13 +91,13 @@ async function submit() {
       </fieldset>
       <p
         v-if="mode === 'register'"
-        class="muted"
+        class="text-dim"
       >
         {{ t('auth.roleHint') }}
       </p>
       <p
         v-if="error"
-        class="error"
+        class="text-red"
         role="alert"
       >
         {{ error }}

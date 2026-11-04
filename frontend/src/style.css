@@ -1,386 +1,89 @@
 /* Design system: the ship computer look of the films (plan 11.5).
    Monospace, green or amber on black, status codes in capitals. Colour never
-   carries meaning alone: symbols and text come with it. */
-:root {
-  --bg: #040805;
-  --bg-raised: #08120b;
-  --fg: #7dff9a;
-  --fg-strong: #c8ffd4;
-  --dim: #46a05e;
-  --line: #1d4a2a;
-  --amber: #ffb347;
-  --red: #ff6b5e;
-  --focus: #ffd27a;
-  color-scheme: dark;
-  --gap: 0.75rem;
+   carries meaning alone: symbols and text come with it.
+   Layout and details are Tailwind utilities in the components; this file
+   holds the colours, the font and the styles of bare elements. */
+@import 'tailwindcss';
+
+@theme {
+  /* Only our own colours, no default palette. */
+  --color-*: initial;
+  --color-black: #000;
+  --color-bg: #040805;
+  --color-raised: #08120b;
+  --color-fg: #7dff9a;
+  --color-strong: #c8ffd4;
+  --color-dim: #46a05e;
+  --color-line: #1d4a2a;
+  --color-amber: #ffb347;
+  --color-red: #ff6b5e;
+  --color-focus: #ffd27a;
+
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --animate-blink: blink 1.2s steps(2, start) 3;
+
+  @keyframes blink {
+    to {
+      visibility: hidden;
+    }
+  }
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: var(--bg);
-  color: var(--fg);
-  font: 15px/1.5 ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
-}
-
-#app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-a {
-  color: var(--fg-strong);
-}
-
-h1,
-h2,
-h3 {
-  margin: 0;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-/* Shell */
-.bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
-  padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.brand {
-  font-weight: bold;
-  letter-spacing: 0.3em;
-  text-decoration: none;
-}
-
-.bar-right {
-  margin-left: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-main {
-  flex: 1;
-  width: 100%;
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 1rem;
-  display: grid;
-  gap: var(--gap);
-  align-content: start;
-}
-
-.disclaimer {
-  padding: 0.6rem 1rem;
-  border-top: 1px solid var(--line);
-  color: var(--dim);
-  font-size: 0.8rem;
-}
-
-/* Panels */
-.panel {
-  border: 1px solid var(--line);
-  background: var(--bg-raised);
-  padding: 0.75rem 1rem;
-  display: grid;
-  gap: var(--gap);
-  align-content: start;
-  min-width: 0;
-}
-
-/* Tables scroll sideways on narrow screens instead of overflowing. */
-.table-wrap {
-  overflow-x: auto;
-}
-
-.panel-title {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px dashed var(--line);
-  padding-bottom: 0.4rem;
-}
-
-.grid-2 {
-  display: grid;
-  gap: var(--gap);
+/* Columns of at least 20rem that wrap on narrow screens. */
+@utility cols-auto {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  align-items: start;
 }
 
-.stack {
-  display: grid;
-  gap: var(--gap);
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.muted {
-  color: var(--dim);
-}
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.35rem;
-}
-
-/* Controls */
-.btn {
-  font: inherit;
-  color: var(--fg);
-  background: transparent;
-  border: 1px solid var(--dim);
-  padding: 0.3rem 0.8rem;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.btn-primary {
-  background: var(--fg);
-  color: var(--bg);
-  border-color: var(--fg);
-}
-
-.btn-danger {
-  color: var(--red);
-  border-color: var(--red);
-}
-
-.btn-quiet {
-  border-color: transparent;
-  color: var(--dim);
-}
-
-.btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.btn[aria-pressed='true'] {
-  background: var(--fg);
-  color: var(--bg);
-}
-
-:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.field {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.field-label {
-  color: var(--dim);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-}
-
-input,
-select,
-textarea {
-  font: inherit;
-  color: var(--fg-strong);
-  background: var(--bg);
-  border: 1px solid var(--line);
-  padding: 0.3rem 0.5rem;
-  min-width: 0;
-}
-
-input.wide {
-  width: 40ch;
-  max-width: 100%;
-}
-
-input[type='number'] {
-  width: 4.5rem;
-}
-
-.error {
-  color: var(--red);
-}
-
-/* Status codes */
-.status {
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-}
-
-.status-warn {
-  color: var(--amber);
-}
-
-.status-alert {
-  color: var(--red);
-  animation: blink 1.2s steps(2, start) 3;
-}
-
-.status-ok {
-  color: var(--fg-strong);
-}
-
-@keyframes blink {
-  to {
-    visibility: hidden;
+@layer base {
+  :root {
+    color-scheme: dark;
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .status-alert {
-    animation: none;
+  body {
+    @apply min-h-screen bg-bg font-mono text-fg;
+    font-size: 15px;
+    line-height: 1.5;
   }
-}
 
-/* Tables */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
+  #app {
+    @apply flex min-h-screen flex-col;
+  }
 
-th,
-td {
-  text-align: left;
-  padding: 0.25rem 0.5rem 0.25rem 0;
-  border-bottom: 1px solid var(--line);
-  vertical-align: top;
-}
+  a {
+    @apply text-strong underline;
+  }
 
-th {
-  color: var(--dim);
-  font-weight: normal;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-}
+  h1,
+  h2,
+  h3 {
+    @apply text-base font-bold tracking-[0.12em] uppercase;
+  }
 
-/* Dice */
-.dice {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
+  input:not([type='checkbox'], [type='radio']),
+  select,
+  textarea {
+    @apply min-w-0 border border-line bg-bg px-2 py-1 text-strong;
+  }
 
-.die {
-  display: inline-grid;
-  place-items: center;
-  width: 1.7rem;
-  height: 1.7rem;
-  border: 1px solid var(--dim);
-}
+  input[type='number'] {
+    @apply w-18;
+  }
 
-.die-stress {
-  border-color: var(--amber);
-  color: var(--amber);
-  border-style: dashed;
-}
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-focus;
+  }
 
-.die-success {
-  background: var(--fg);
-  color: var(--bg);
-  border-style: solid;
-}
+  table {
+    @apply w-full border-collapse;
+  }
 
-.die-facehugger {
-  background: var(--red);
-  color: var(--bg);
-  border-color: var(--red);
-}
+  th,
+  td {
+    @apply border-b border-line py-1 pr-2 text-left align-top;
+  }
 
-.die-locked {
-  outline: 1px dotted var(--fg-strong);
-  outline-offset: 2px;
-}
-
-/* Log */
-.log {
-  display: grid;
-  gap: 0.5rem;
-  align-content: start;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-/* One block per command: who and when on top, the events below. */
-.log-block {
-  display: grid;
-  gap: 0.35rem;
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--dim);
-  background: var(--bg);
-  padding: 0.4rem 0.6rem;
-}
-
-.log-entry {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.log-meta {
-  color: var(--dim);
-  font-size: 0.8rem;
-}
-
-.actions {
-  margin-top: 0.3rem;
-  gap: 0.25rem;
-}
-
-.actions .btn {
-  padding: 0.15rem 0.45rem;
-  font-size: 0.85rem;
-}
-
-/* Dialogs */
-.modal {
-  padding: 0;
-  border: 1px solid var(--dim);
-  background: var(--bg-raised);
-  color: var(--fg);
-  width: min(44rem, calc(100vw - 2rem));
-  max-height: calc(100dvh - 2rem);
-}
-
-.modal::backdrop {
-  background: rgb(0 0 0 / 0.75);
-}
-
-.modal-box {
-  display: grid;
-  gap: var(--gap);
-  padding: 0.75rem 1rem;
-}
-
-/* On phones the dialog takes the whole screen. */
-@media (max-width: 40rem) {
-  .modal {
-    width: 100vw;
-    max-width: 100vw;
-    height: 100dvh;
-    max-height: 100dvh;
-    margin: 0;
-    border: none;
+  th {
+    @apply text-sm font-normal text-dim uppercase;
   }
 }

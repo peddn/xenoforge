@@ -51,9 +51,9 @@ async function createTeam() {
 </script>
 
 <template>
-  <div class="grid-2">
+  <div class="grid cols-auto items-start gap-3">
     <XPanel :title="t('home.characters')">
-      <ul class="list">
+      <ul class="grid gap-1.5">
         <li
           v-for="character in characters.list"
           :key="character.id"
@@ -63,18 +63,18 @@ async function createTeam() {
           </RouterLink>
           <span
             v-if="character.team_id"
-            class="muted"
+            class="text-dim"
           > · {{ teamName(character.team_id) }}</span>
         </li>
         <li
           v-if="!characters.list.length"
-          class="muted"
+          class="text-dim"
         >
           {{ t('home.noCharacters') }}
         </li>
       </ul>
       <form
-        class="row"
+        class="flex flex-wrap items-center gap-2"
         @submit.prevent="createCharacter"
       >
         <XField :label="t('home.newCharacter')">
@@ -91,7 +91,7 @@ async function createTeam() {
     </XPanel>
 
     <XPanel :title="t('home.teams')">
-      <ul class="list">
+      <ul class="grid gap-1.5">
         <li
           v-for="team in teams"
           :key="team.id"
@@ -99,18 +99,18 @@ async function createTeam() {
           <RouterLink :to="`/teams/${team.id}`">
             {{ team.name }}
           </RouterLink>
-          <span class="muted"> · {{ t(`mode.${team.mode}`) }} · {{ t(team.is_gm ? 'auth.gm' : 'auth.player') }}</span>
+          <span class="text-dim"> · {{ t(`mode.${team.mode}`) }} · {{ t(team.is_gm ? 'auth.gm' : 'auth.player') }}</span>
         </li>
         <li
           v-if="!teams.length"
-          class="muted"
+          class="text-dim"
         >
           {{ t('home.noTeams') }}
         </li>
       </ul>
       <form
         v-if="auth.user?.role === 'gm'"
-        class="row"
+        class="flex flex-wrap items-center gap-2"
         @submit.prevent="createTeam"
       >
         <XField :label="t('home.newTeam')">
@@ -136,14 +136,14 @@ async function createTeam() {
       </form>
       <p
         v-else
-        class="muted"
+        class="text-dim"
       >
         {{ t('home.teamsByGm') }}
       </p>
     </XPanel>
     <p
       v-if="error"
-      class="error"
+      class="text-red"
       role="alert"
     >
       {{ error }}

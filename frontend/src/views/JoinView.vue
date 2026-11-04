@@ -60,13 +60,13 @@ async function join() {
       </XField>
       <p
         v-else
-        class="muted"
+        class="text-dim"
       >
         {{ t('join.noFree') }} <RouterLink to="/">
           {{ t('home.characters') }}
         </RouterLink>
       </p>
-      <div class="row">
+      <div class="flex flex-wrap items-center gap-2">
         <XButton
           variant="primary"
           :disabled="!chosen"
@@ -84,7 +84,7 @@ async function join() {
     </template>
     <p
       v-if="error"
-      class="error"
+      class="text-red"
       role="alert"
     >
       {{ error }}

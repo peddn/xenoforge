@@ -73,8 +73,8 @@ async function roll() {
 </script>
 
 <template>
-  <div class="stack">
-    <div class="row">
+  <div class="grid gap-3">
+    <div class="flex flex-wrap items-center gap-2">
       <XField :label="t('roll.what')">
         <select
           v-model="what"
@@ -134,18 +134,18 @@ async function roll() {
     </div>
     <p
       v-if="!team.view.is_gm"
-      class="muted"
+      class="text-dim"
     >
       {{ t('roll.difficultyByGm') }}
     </p>
     <div
       v-if="preview?.talents.length"
-      class="row"
+      class="flex flex-wrap items-center gap-2"
     >
       <label
         v-for="id in preview.talents"
         :key="id"
-        class="row"
+        class="flex flex-wrap items-center gap-2"
       >
         <input
           v-model="talents"
@@ -162,17 +162,17 @@ async function roll() {
       {{ t('roll.preview', { base: preview.base_dice, stress: preview.stress_dice }) }}
       <span
         v-if="preview.modifications.length"
-        class="muted"
+        class="text-dim"
       > · {{ modsText(preview.modifications, t, rules) }}</span>
     </p>
     <p
       v-if="error"
-      class="error"
+      class="text-red"
       role="alert"
     >
       {{ error }}
     </p>
-    <div class="row">
+    <div class="flex flex-wrap items-center gap-2">
       <XButton
         variant="primary"
         data-test="roll-go"

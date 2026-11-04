@@ -703,6 +703,7 @@ Browser schicken nur Befehle. Der Server prüft Rechte, lässt die Engine würfe
 | Anmeldung | Passwörter mit argon2, Session-Cookie | Kein fremder Login-Dienst |
 | Zufall | rand mit der Zufallsquelle des Betriebssystems; in Tests fester Startwert | Fair im Spiel, reproduzierbar im Test |
 | Oberfläche | Vue 3 mit Pinia und Vue Router, JavaScript ohne TypeScript, Build mit Vite | Vorgabe |
+| Gestaltung | Tailwind CSS 4 mit eigenem Theme, Bausteine als Vue-Komponenten | Schneller Aufbau neuer Seiten; ein einziges Stil-System |
 | Sprachen | vue-i18n mit Deutsch und Englisch | Zweisprachig von Anfang an |
 | Tests | cargo test für Engine und Server, Vitest für die Oberfläche | |
 
@@ -741,7 +742,7 @@ xenoforge/
 
 ### 11.5 Gestaltung
 
-Die ganze App sieht aus wie die Bordcomputer der Filme: Monospace-Schrift, Grün oder Bernstein auf Schwarz, Statuscodes in Großbuchstaben, sparsam blinkende Warnungen. Es gibt ein einziges Design-System für alle Seiten, kein zweites Design nur für die Schiffsseite. Das Design-System entsteht in Phase 2 als Grundlage.
+Die ganze App sieht aus wie die Bordcomputer der Filme: Monospace-Schrift, Grün oder Bernstein auf Schwarz, Statuscodes in Großbuchstaben, sparsam blinkende Warnungen. Es gibt ein einziges Design-System für alle Seiten, kein zweites Design nur für die Schiffsseite. Es besteht aus einem Tailwind-Theme mit den Farben und der Schrift und aus wenigen Bausteinen (Knopf, Feld, Panel, Status, Würfel, Dialog); alles andere sind Tailwind-Klassen in den Vorlagen. Eine fertige Komponentenbibliothek gibt es nicht, weil sie ein eigenes Aussehen mitbrächte.
 
 - **Lesbarkeit:** ausreichender Kontrast, auch auf dem Handy; Farbe trägt nie allein die Bedeutung, dazu kommen immer Text und Symbol.
 - **Dialoge statt eingeschobener Blöcke:** Würfeln, Bogen und die Aktionen der Spielleitung öffnen sich über der Seite; auf dem Handy füllen sie den Bildschirm. Die Teamseite bleibt dadurch eine ruhige Übersicht aus Crew und Protokoll.

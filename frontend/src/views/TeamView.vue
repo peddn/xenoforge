@@ -67,14 +67,14 @@ async function addOwn() {
           :text="t(team.connected ? 'team.live' : 'team.offline')"
         />
       </template>
-      <p class="muted">
+      <p class="text-dim">
         {{ t(`mode.${team.view.mode}`) }} · {{ t('team.gm') }}: {{ team.view.gm.name }}
       </p>
       <template v-if="team.view.is_gm">
-        <div class="row">
+        <div class="flex flex-wrap items-center gap-2">
           <XField :label="t('team.invite')">
             <input
-              class="wide"
+              class="w-[40ch] max-w-full"
               readonly
               :value="inviteLink"
               data-test="invite"
@@ -111,7 +111,7 @@ async function addOwn() {
       </template>
       <p
         v-if="error"
-        class="error"
+        class="text-red"
         role="alert"
       >
         {{ error }}
@@ -120,7 +120,7 @@ async function addOwn() {
 
     <DecisionList />
 
-    <div class="grid-2">
+    <div class="grid cols-auto items-start gap-3">
       <XPanel :title="t('team.crew')">
         <CrewList
           @roll="open('roll', $event)"

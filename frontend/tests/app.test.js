@@ -220,9 +220,9 @@ describe('log', () => {
     // The first entry is older and has no batch.
     team.log = [{ ...joined(1), batch: undefined }, stress(2, 2), stress(3, 2), joined(4, 4)]
     const wrapper = mount(LogList, { global: { plugins: [pinia, i18n] } })
-    const blocks = wrapper.findAll('.log-block')
+    const blocks = wrapper.findAll('[data-test="log-block"]')
     expect(blocks).toHaveLength(3)
-    expect(blocks[1].findAll('.log-entry')).toHaveLength(2)
+    expect(blocks[1].findAll('[data-test="log-entry"]')).toHaveLength(2)
     expect(blocks[1].find('header').text()).toContain('Mother')
   })
 })

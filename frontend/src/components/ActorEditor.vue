@@ -29,11 +29,11 @@ function toggleTalent(id, on) {
 </script>
 
 <template>
-  <div class="grid-2">
+  <div class="grid cols-auto items-start gap-3">
     <div
       v-for="attribute in attributes"
       :key="attribute.id"
-      class="panel"
+      class="grid content-start gap-3 border border-line p-3"
     >
       <XField :label="rules.name(attribute.id)">
         <input
@@ -61,7 +61,7 @@ function toggleTalent(id, on) {
       </XField>
     </div>
   </div>
-  <div class="row">
+  <div class="flex flex-wrap items-center gap-2">
     <XField :label="t('sheet.health')">
       <input
         type="number"
@@ -80,7 +80,7 @@ function toggleTalent(id, on) {
         @input="actor = { ...actor, stress: Math.max(0, Math.trunc(Number($event.target.value) || 0)) }"
       >
     </XField>
-    <label class="row">
+    <label class="flex flex-wrap items-center gap-2">
       <input
         type="checkbox"
         :disabled="disabled"
@@ -90,15 +90,15 @@ function toggleTalent(id, on) {
       {{ t('sheet.android') }}
     </label>
   </div>
-  <fieldset class="panel">
-    <legend class="field-label">
+  <fieldset class="grid content-start gap-3 border border-line p-3">
+    <legend class="text-sm text-dim uppercase">
       {{ t('sheet.talents') }}
     </legend>
-    <div class="row">
+    <div class="flex flex-wrap items-center gap-2">
       <label
         v-for="talent in rules.list('talents')"
         :key="talent.id"
-        class="row"
+        class="flex flex-wrap items-center gap-2"
         :title="rules.text(`${talent.id}.desc`)"
       >
         <input

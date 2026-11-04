@@ -53,8 +53,8 @@ function apply() {
 </script>
 
 <template>
-  <div class="stack">
-    <div class="row">
+  <div class="grid gap-3">
+    <div class="flex flex-wrap items-center gap-2">
       <XField :label="t('gm.amount')">
         <input
           v-model.number="amount"
@@ -75,7 +75,7 @@ function apply() {
         {{ t('gm.damage') }}
       </XButton>
     </div>
-    <div class="row">
+    <div class="flex flex-wrap items-center gap-2">
       <XButton @click="run({ command: 'panic_roll', actor })">
         {{ t('gm.panicRoll') }}
       </XButton>
@@ -86,7 +86,7 @@ function apply() {
         {{ t('gm.signatureItem') }}
       </XButton>
     </div>
-    <div class="row">
+    <div class="flex flex-wrap items-center gap-2">
       <XField :label="t('gm.source')">
         <select
           v-model="sourceKind"
@@ -134,12 +134,12 @@ function apply() {
     </div>
     <ul
       v-if="character.actor?.sources?.length"
-      class="list"
+      class="grid gap-1.5"
     >
       <li
         v-for="(source, i) in character.actor.sources"
         :key="i"
-        class="row"
+        class="flex flex-wrap items-center gap-2"
       >
         {{ originLabel(source.origin, t, rules) }}
         <XButton
@@ -152,7 +152,7 @@ function apply() {
     </ul>
     <p
       v-if="error"
-      class="error"
+      class="text-red"
       role="alert"
     >
       {{ error }}
