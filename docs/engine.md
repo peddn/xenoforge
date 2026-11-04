@@ -47,7 +47,7 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 - **Ende:** ein Turn oder eine Schicht vergeht, Broken, eine gelungene COMMAND-Probe eines anderen, die Spielleitung [S. 104].
 - **Ketten:** Wer etwas hört, sieht oder auf kurzer Distanz ist, kennt die App nicht. Sie schlägt alle anderen menschlichen Spielercharaktere vor (F-39), die Spielleitung wählt aus.
 - **Overkill** bietet die Engine ab 11 an; der Wert bleibt für Mehr Panik und die Trauma-Schwelle maßgeblich (F-26, F-30).
-- **Broken:** Eine Panik endet, wenn man Broken wird. Beginnt sie, während man schon Broken ist, endet sie sofort; die sofortigen Folgen gelten (F-48, noch offen).
+- **Broken:** Eine Panik endet, wenn man Broken wird. Beginnt sie, während man schon Broken ist, endet sie sofort; die sofortigen Folgen gelten (F-48).
 - **Trauma:** Wer in der Sitzung 13+ hatte, würfelt bei `end_session` einmal EMPATHY ohne Stresswürfel und ohne Push (F-27, F-42); misslingt sie, entsteht ein Trauma (F-01).
 
 ## Effekte und Zeit

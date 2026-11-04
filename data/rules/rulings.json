@@ -48,6 +48,7 @@
     { "id": "F-45", "pages": [61, 104], "options": ["no_second_push"], "default": "no_second_push" },
     { "id": "F-46", "pages": [79, 99], "options": ["stoic_applies"], "default": "stoic_applies" },
     { "id": "F-47", "pages": [76], "options": ["this_throw", "including_push"], "default": "this_throw" },
-    { "id": "F-48", "pages": [98, 104], "options": ["ends_at_once", "runs_on"], "default": "ends_at_once" }
+    { "id": "F-48", "pages": [98, 104], "options": ["ends_at_once", "runs_on"], "default": "ends_at_once" },
+    { "id": "F-49", "pages": [70, 71, 74], "options": ["command_roll"], "default": "command_roll" }
   ]
 }
