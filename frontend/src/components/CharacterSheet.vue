@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import XFacts from '@/ui/XFacts.vue'
 import { useRulesStore } from '@/stores/rules'
 
 // The character sheet to read, in the order of the printed one [p. 389]:
@@ -51,19 +52,7 @@ const talentText = (id) => {
 
 <template>
   <div class="grid gap-3">
-    <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-      <template
-        v-for="[label, value] in facts"
-        :key="label"
-      >
-        <dt class="text-sm text-dim uppercase">
-          {{ label }}
-        </dt>
-        <dd class="whitespace-pre-line text-strong">
-          {{ value || '–' }}
-        </dd>
-      </template>
-    </dl>
+    <XFacts :items="facts" />
     <div class="grid cols-auto items-start gap-3">
       <div
         v-for="attribute in rules.list('attributes')"

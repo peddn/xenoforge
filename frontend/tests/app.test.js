@@ -474,6 +474,21 @@ describe('creation wizard', () => {
     expect(wrapper.get('[data-test="next"]').attributes('disabled')).toBeDefined()
   })
 
+  it('labels what each career sets [p. 38–55]', () => {
+    const { pinia, i18n } = setup()
+    mockApi({})
+    const wrapper = mount(CreationWizard, {
+      props: { character: draft([missing('career', 'career_missing', 27)]) },
+      global: { plugins: [pinia, i18n] },
+    })
+    const facts = wrapper.get('[data-test="career-facts-officer"]')
+    expect(facts.text()).toContain('Schlüsselattributwits')
+    expect(facts.text()).toContain('Schlüsselfertigkeitenobservation')
+    expect(facts.text()).toContain('Talentepull_rank')
+    expect(facts.text()).toContain('Startgeld2W6 × 100 $')
+    expect(facts.get('[title="pull_rank.desc"]').exists()).toBe(true)
+  })
+
   it('finishes a complete draft; the server rolls the cash', async () => {
     const { pinia, i18n } = setup()
     const finished = { ...draft([]), data: { status: 'finished', sheet: {}, actor: {}, start_cash: { dice: [3, 4], amount: 700 } } }
