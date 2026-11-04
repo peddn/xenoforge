@@ -388,6 +388,12 @@ async fn rolls_and_decisions() {
 
     let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
     assert_eq!(view["pending"][0]["options"], json!(["push", "accept"]));
+    // The decision comes with the roll so far.
+    let thrown = &view["pending"][0]["roll"];
+    assert_eq!(thrown["skill"], "observation");
+    assert_eq!(thrown["dice"].as_array().unwrap().len(), 6);
+    assert_eq!(thrown["successes"], 0);
+    assert_eq!(thrown["pushes_left"], 1);
 
     let (status, _) = gm
         .command(

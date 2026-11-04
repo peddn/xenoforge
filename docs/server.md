@@ -131,6 +131,8 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `POST /teams/{id}/undo` | – | Eintrag `undone` |
 | `GET /teams/{id}/events` | `Last-Event-ID` oder `?after=<id>` | Server-Sent Events, je Eintrag `{ id, batch, visible_to, by, at, entry }` |
 
+Offene Entscheidungen (`pending` in der Ansicht des Teams) bringen bei einem Wurf den bisherigen Stand mit (`roll`): Fertigkeit oder Attribut, Würfel, Erfolge und übrige Pushes. Die Erfolge zählt die Engine.
+
 Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `character_joined`, `character_removed`, `corrected`, `undone`. Alle Einträge eines Befehls tragen in `batch` die Nummer des ersten; die Oberfläche zeigt sie als einen Block.
 
 ### Regeldaten

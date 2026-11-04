@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
-import DecisionList from '@/components/DecisionList.vue'
+import DecisionBar from '@/components/DecisionBar.vue'
+import DecisionDialog from '@/components/DecisionDialog.vue'
 import GmBar from '@/components/GmBar.vue'
 import LogList from '@/components/LogList.vue'
 import RollPanel from '@/components/RollPanel.vue'
@@ -88,35 +89,97 @@ describe('rolling', () => {
     expect(roll.body.command.command).toBe('roll')
   })
 
-  it('offers the decision to the owner and sends the choice', async () => {
+  const pushDecision = {
+    id: 4,
+    kind: 'roll',
+    actor: '9',
+    options: ['push', 'accept'],
+    candidates: [],
+    roll: {
+      skill: 'observation',
+      base_dice: 2,
+      stress_dice: 1,
+      dice: [
+        { kind: 'base', face: 6, locked: false },
+        { kind: 'base', face: 3, locked: false },
+        { kind: 'stress', face: 2, locked: false },
+      ],
+      successes: 1,
+      pushes_left: 1,
+    },
+  }
+
+  it('shows the roll in the decision and sends the choice', async () => {
     const { pinia, i18n } = setup()
     const calls = mockApi({ 'POST /teams/5/commands': [] })
-    useAuthStore().user = { id: 2, name: 'Gina', role: 'player' }
-    useTeamStore().view = {
-      id: 5,
-      is_gm: false,
-      characters: [{ id: 9, name: 'Charlize', owner_id: 2 }],
-      pending: [{ id: 4, kind: 'roll', actor: '9', options: ['push', 'accept'], candidates: [] }],
-    }
-    const wrapper = mount(DecisionList, { global: { plugins: [pinia, i18n] } })
-    expect(wrapper.text()).toContain('Pushen')
+    useTeamStore().view = { id: 5, characters: [{ id: 9, name: 'Charlize', owner_id: 2 }], pending: [pushDecision] }
+    const wrapper = mount(DecisionDialog, { props: { pending: pushDecision }, global: { plugins: [pinia, i18n] } })
+    expect(wrapper.findAll('[aria-label^="Grundwürfel"], [aria-label^="Stresswürfel"]')).toHaveLength(3)
+    expect(wrapper.text()).toContain('1 Erfolg')
+    expect(wrapper.text()).toContain('1 Push übrig')
     await wrapper.get('[data-test="choice-push"]').trigger('click')
     await flushPromises()
     expect(calls[0].body).toEqual({ command: { command: 'decide', pending: 4, choice: 'push' } })
   })
 
-  it('hides other people\'s decisions', () => {
+  it('shows the bar only for one\'s own decisions, the game master sees all', () => {
     const { pinia, i18n } = setup()
     mockApi({})
-    useAuthStore().user = { id: 3, name: 'Burke', role: 'player' }
-    useTeamStore().view = {
+    const auth = useAuthStore()
+    const team = useTeamStore()
+    auth.user = { id: 3, name: 'Burke', role: 'player' }
+    team.view = { id: 5, is_gm: false, characters: [{ id: 9, name: 'Charlize', owner_id: 2 }], pending: [pushDecision] }
+    const bar = () => mount(DecisionBar, { global: { plugins: [pinia, i18n] } })
+    expect(bar().find('[data-test="decision-bar"]').exists()).toBe(false)
+
+    auth.user = { id: 2, name: 'Gina', role: 'player' }
+    expect(bar().get('[data-test="decision-4"]').text()).toContain('Charlize · Wurf')
+
+    auth.user = { id: 1, name: 'Mother', role: 'gm' }
+    team.view = { ...team.view, is_gm: true }
+    expect(bar().get('[data-test="decision-4"]').text()).toContain('Wartet auf Charlize')
+  })
+
+  it('opens one\'s own decision by itself, not the players\' ones for the game master', async () => {
+    const { pinia, i18n } = setup()
+    vi.stubGlobal(
+      'EventSource',
+      class {
+        close() {}
+      },
+    )
+    const view = (isGm) => ({
       id: 5,
-      is_gm: false,
-      characters: [{ id: 9, name: 'Charlize', owner_id: 2 }],
-      pending: [{ id: 4, kind: 'roll', actor: '9', options: ['push', 'accept'], candidates: [] }],
+      name: 'Hope',
+      mode: 'cinematic',
+      gm: { id: 1, name: 'Mother' },
+      is_gm: isGm,
+      members: [],
+      characters: [{ id: 9, name: 'Charlize', owner_id: 2, owner_name: 'Gina', actor: null, hints: [] }],
+      pending: [pushDecision],
+      story_points: {},
+      rulings: {},
+    })
+    const auth = useAuthStore()
+    auth.checked = true
+    const mountAs = async (user, isGm) => {
+      auth.user = user
+      mockApi({ 'GET /teams/5': view(isGm), 'GET /characters': [] })
+      const r = router()
+      r.push('/teams/5')
+      await r.isReady()
+      const wrapper = mount(TeamView, { global: { plugins: [pinia, i18n, r] } })
+      await flushPromises()
+      return wrapper
     }
-    const wrapper = mount(DecisionList, { global: { plugins: [pinia, i18n] } })
-    expect(wrapper.find('[data-test="decisions"]').exists()).toBe(false)
+    const player = await mountAs({ id: 2, name: 'Gina', role: 'player' }, false)
+    expect(player.find('[data-test="decision"]').exists()).toBe(true)
+    player.unmount()
+
+    const gm = await mountAs({ id: 1, name: 'Mother', role: 'gm' }, true)
+    expect(gm.find('[data-test="decision"]').exists()).toBe(false)
+    await gm.get('[data-test="decision-4"]').trigger('click')
+    expect(gm.find('[data-test="decision"]').exists()).toBe(true)
   })
 
   it('lets the game master correct values', async () => {

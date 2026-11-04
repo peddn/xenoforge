@@ -94,7 +94,11 @@
       "overkill": "Overkill?",
       "question": "Frage",
       "targets": "Ziele"
-    }
+    },
+    "waiting": "Wartet auf {name} · {what}",
+    "titleFor": "Entscheidung: {name}",
+    "pushesLeft": "kein Push mehr | 1 Push übrig | {n} Pushes übrig",
+    "pushHint": "Pushen: Stress +1, alle Würfel ohne Erfolg werden neu geworfen."
   },
   "choice": {
     "accept": "Weiter",

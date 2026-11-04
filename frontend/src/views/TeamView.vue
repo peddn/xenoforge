@@ -1,11 +1,12 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import CharacterActions from '@/components/CharacterActions.vue'
 import CrewList from '@/components/CrewList.vue'
-import DecisionList from '@/components/DecisionList.vue'
+import DecisionBar from '@/components/DecisionBar.vue'
+import DecisionDialog from '@/components/DecisionDialog.vue'
 import GmBar from '@/components/GmBar.vue'
 import LogList from '@/components/LogList.vue'
 import RollPanel from '@/components/RollPanel.vue'
@@ -24,7 +25,8 @@ const route = useRoute()
 const team = useTeamStore()
 const characters = useCharactersStore()
 
-// The open dialog: { kind: 'roll' | 'sheet' | 'actions', id }.
+// The open dialog: { kind: 'roll' | 'sheet' | 'actions', id } with a
+// character id, or { kind: 'decision', id } with a pending decision's id.
 const dialog = ref(null)
 const ownChoice = ref(null)
 const error = ref('')
@@ -40,11 +42,39 @@ const inviteLink = computed(() =>
 )
 const freeOwn = computed(() => characters.list.filter((c) => !c.team_id))
 // Looked up live, so the dialog shows current values; it closes when the
-// character leaves the team.
-const current = computed(() => team.view?.characters.find((c) => c.id === dialog.value?.id))
-const titles = { roll: 'roll.title', sheet: 'sheet.title', actions: 'gm.actionsTitle' }
+// character leaves the team or the decision is made.
+const current = computed(() => {
+  if (!dialog.value || !team.view) return null
+  if (dialog.value.kind === 'decision') return team.view.pending.find((p) => p.id === dialog.value.id)
+  return team.view.characters.find((c) => c.id === dialog.value.id)
+})
+const title = computed(() => {
+  const { kind } = dialog.value
+  if (kind === 'decision') {
+    const name = current.value.actor ? team.characterNames[current.value.actor] : t('auth.gm')
+    return t('decision.titleFor', { name })
+  }
+  const titles = { roll: 'roll.title', sheet: 'sheet.title', actions: 'gm.actionsTitle' }
+  return t(titles[kind], { name: current.value.name })
+})
 
 const open = (kind, id) => (dialog.value = { kind, id })
+
+// A decision the logged-in person has to make opens by itself, once, as
+// soon as no other dialog is open; the bar keeps it in view after that.
+const shown = new Set()
+watch(
+  [() => team.decisions, dialog],
+  () => {
+    if (dialog.value && current.value) return
+    const next = team.decisions.find((p) => !shown.has(p.id) && team.decidesMyself(p))
+    if (next) {
+      shown.add(next.id)
+      open('decision', next.id)
+    }
+  },
+  { immediate: true },
+)
 
 async function addOwn() {
   error.value = ''
@@ -118,8 +148,6 @@ async function addOwn() {
       </p>
     </XPanel>
 
-    <DecisionList />
-
     <div class="grid cols-auto items-start gap-3">
       <XPanel :title="t('team.crew')">
         <CrewList
@@ -136,11 +164,15 @@ async function addOwn() {
     <XModal
       v-if="dialog && current"
       :key="`${dialog.kind}-${dialog.id}`"
-      :title="t(titles[dialog.kind], { name: current.name })"
+      :title="title"
       @close="dialog = null"
     >
+      <DecisionDialog
+        v-if="dialog.kind === 'decision'"
+        :pending="current"
+      />
       <RollPanel
-        v-if="dialog.kind === 'roll'"
+        v-else-if="dialog.kind === 'roll'"
         :character="current"
         @done="dialog = null"
       />
@@ -154,6 +186,8 @@ async function addOwn() {
         :character="current"
       />
     </XModal>
+
+    <DecisionBar @open="open('decision', $event)" />
   </template>
   <XPanel
     v-else-if="team.gone"

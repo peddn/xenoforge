@@ -202,7 +202,7 @@ pub struct RollState {
 }
 
 impl RollState {
-    fn successes(&self) -> u8 {
+    pub fn successes(&self) -> u8 {
         let rolled = self.dice.iter().filter(|d| d.success()).count();
         u8::try_from(rolled).unwrap_or(u8::MAX)
             + u8::from(self.story_point)
