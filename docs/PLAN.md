@@ -66,7 +66,7 @@ Die übrigen Unklarheiten stehen in den Abschnitten „Ambiguities“ der Spezif
 
 ## 3. Rollen und Rechte
 
-Jede Person hat ein Benutzerkonto. Gespielt wird in **Teams**: Die Spielleitung (im Buch „Game Mother“) legt ein Team an, lädt Spieler per Einladungslink ein und ordnet ihm Charaktere zu. Ein Team ist entweder ein **Szenario** (Cinematic) oder eine **Kampagne** (Campaign) und bündelt Mitglieder, Charaktere, NSC, Schiffe, Spielzeit und Protokoll. Die Rolle hängt am Team, nicht am Konto: Wer in einem Team Spielleitung ist, kann in einem anderen Spieler sein. Den Begriff „Team“ nutzt der Plan auch, damit er nicht mit der Kampfrunde verwechselt wird.
+Jede Person hat ein Benutzerkonto und wählt bei der Registrierung, ob sie Spieler oder Spielleitung ist (A-07). Gespielt wird in **Teams**: Nur ein Spielleitungs-Konto legt Teams an, als **Szenario** (Cinematic) oder **Kampagne** (Campaign), und kann sie ohne Spieler vorbereiten. Spieler treten per Einladungslink bei und bringen einen ihrer freien Charaktere mit (A-04). Ein Team bündelt Mitglieder, Charaktere, NSC, Schiffe, Spielzeit und Protokoll und hat genau eine Spielleitung. Rechte gelten nur im eigenen Team: Eine Spielleitung sieht nichts aus fremden Teams und kann dort als Spieler mitspielen. Den Begriff „Team“ nutzt der Plan auch, damit er nicht mit der Kampfrunde verwechselt wird.
 
 | Bereich | Spielleitung | Spieler |
 | --- | --- | --- |
@@ -221,7 +221,7 @@ Der Charaktermanager deckt alle sieben Wege ab, auf denen im Buch Charaktere ent
 ### 5.0 Besitz und Teams
 
 - **Ein Charakter gehört der Person, die ihn angelegt hat.** Spieler legen Charaktere in ihrer eigenen Sammlung an und verwalten sie dort, auch ohne Team.
-- **Die Spielleitung ordnet Charaktere ihrem Team zu.** Zur Auswahl stehen die Charaktere der Team-Mitglieder. Die Spielleitung kann einen Charakter auch wieder aus dem Team lösen; sein Stand (Health, Stress, XP, Ausrüstung) bleibt dabei erhalten.
+- **Spieler bringen ihre Charaktere ins Team.** Wer über den Einladungslink beitritt, wählt einen seiner freien Charaktere; niemand wird ohne Zustimmung in ein Team geholt. Die Spielleitung kann einen Charakter wieder aus dem Team lösen; sein Stand (Health, Stress, XP, Ausrüstung) bleibt dabei erhalten.
 - **Höchstens ein Team gleichzeitig.** Sonst würden Health, Stress und XP doppelt geführt.
 - **Vorgefertigte Szenario-Charaktere und NSC** legt die Spielleitung an. Vorgefertigte Charaktere gibt sie Spielern zum Spielen; die Spielleitung bleibt Eigentümerin.
 
@@ -674,7 +674,7 @@ flowchart LR
         gm["Spielleitung<br/>Kampf, Zeit, NSC, Schiffe, Korrekturen"]
     end
     subgraph Server["Rust-Server"]
-        api["HTTP-API und WebSocket"]
+        api["HTTP-API und Ereignisstrom (SSE)"]
         auth["Rechte und Sichtbarkeit"]
         engine["Regel-Engine<br/>Würfe, Regeln, Effekte, Timer"]
         rng["Zufallsquelle"]
@@ -696,7 +696,8 @@ Browser schicken nur Befehle. Der Server prüft Rechte, lässt die Engine würfe
 | Teil | Wahl | Grund |
 | --- | --- | --- |
 | Server | Rust (stable) als Cargo-Workspace | Vorgabe |
-| Webframework | axum auf tokio, WebSockets eingebaut | HTTP und Echtzeit aus einer Hand, weit verbreitet |
+| Webframework | axum auf tokio | weit verbreitet |
+| Echtzeit | Befehle per HTTP, Ereignisse per Server-Sent Events | Jeder Befehl hat seine eigene Antwort; nach einem Abbruch verbindet sich der Browser selbst neu und bekommt Verpasstes nach (Last-Event-ID) |
 | Datenbank | SQLite über sqlx zum Start; PostgreSQL bleibt möglich | Ein Prozess, eine Datei, Sicherung per Kopie; für eine Spielgruppe mehr als genug |
 | Datenformat | serde und serde_json | Regeldaten und API im selben Format |
 | Anmeldung | Passwörter mit argon2, Session-Cookie | Kein fremder Login-Dienst |
@@ -714,7 +715,7 @@ xenoforge/
 ├─ Cargo.toml        Workspace
 ├─ crates/
 │  ├─ engine/        Regel-Engine: reine Bibliothek ohne Netz und Datenbank
-│  └─ server/        axum-Server: API, WebSocket, Rechte, Datenbank, Spielzeit
+│  └─ server/        axum-Server: API, Ereignisstrom, Rechte, Datenbank
 ├─ data/             Regeldaten als JSON mit Seitenangaben, dazu JSON-Schemas
 │  └─ i18n/          Texte der Regeldaten auf Deutsch und Englisch
 ├─ frontend/         Vue 3, Pinia, Router, vue-i18n (JavaScript, Vite)
@@ -725,7 +726,7 @@ xenoforge/
 
 1. **Regel-Engine als eigenständige Bibliothek** ohne Abhängigkeit von Oberfläche, Netz oder Datenbank. Nur so lässt sie sich vollständig gegen die Buchbeispiele testen.
 2. **Der Server würfelt** mit einer kryptografisch sicheren Zufallsquelle. Clients schicken nur Befehle wie „Probe COMTECH mit Bewegungsmelder“.
-3. **Echtzeit:** Jedes Ereignis erreicht alle Teilnehmenden des Teams ohne Neuladen. Nach einem Verbindungsabbruch holt sich der Client den aktuellen Stand.
+3. **Echtzeit:** Jedes Ereignis erreicht alle Teilnehmenden des Teams ohne Neuladen. Nach einem Verbindungsabbruch bekommt der Client die verpassten Ereignisse nach.
 4. **Sichtbarkeit wird auf dem Server gefiltert.** Agenden, verdeckte Androiden, NSC-Werte und geheime Timer verlassen den Server nur an Berechtigte. Was ein Spieler-Browser nie bekommt, kann auch niemand in den Entwicklerwerkzeugen nachlesen.
 5. **Regeldaten als Dateien im Repo** mit Schema, das beim Start und in den Tests geprüft wird.
 6. **Zweisprachig von Anfang an:** Alle Oberflächentexte und alle Texte der Regeldaten als Übersetzungsschlüssel für Deutsch und Englisch. Umschaltbar pro Person, mit der Option, Regelbegriffe wie im Buch englisch zu lassen.
@@ -733,9 +734,9 @@ xenoforge/
 
 ### 11.4 Betrieb
 
-- **Ein Programm:** Das Rust-Binary liefert API, WebSocket und die gebaute Oberfläche aus. Es läuft als systemd-Dienst hinter einem Reverse Proxy mit HTTPS, ohne Docker.
+- **Ein Programm:** Das Rust-Binary liefert API, Ereignisstrom und die gebaute Oberfläche aus. Es läuft als systemd-Dienst hinter einem Reverse Proxy mit HTTPS, ohne Docker.
 - **Datenbank:** SQLite-Datei neben dem Programm, täglich gesichert. Wollt ihr später mehrere Gruppen oder einen eigenen Datenbankserver, steht PostgreSQL offen; dafür werden die SQL-Abfragen von Anfang an möglichst standardnah geschrieben.
-- **Anmeldung:** Konto mit Passwort, Beitritt zu Teams per Einladungslink.
+- **Anmeldung:** Konto mit Passwort und Rolle (Spieler oder Spielleitung), Beitritt zu Teams per Einladungslink.
 - **Aktualisieren:** Regeldaten und Code kommen gemeinsam aus dem Repo; Datenbankmigrationen laufen beim Start.
 
 ### 11.5 Gestaltung
@@ -753,7 +754,7 @@ Ich schlage sieben Phasen vor, jede mit einer Abnahme, meist einer Testsitzung m
 flowchart TD
     p0["Phase 0 · Fundament<br/>Cargo-Workspace, Vite-Projekt, CI,<br/>Regeldaten mit Schema inkl. Effektformat,<br/>Errata und Festlegungen<br/>Abnahme: alle Regeldaten bestehen die Prüfung"]
     p1["Phase 1 · Regel-Engine<br/>Würfe außer Initiative, Push, Stress, Panik,<br/>Effekt-System mit Ereignissen und Zustandsprüfung<br/>Abnahme: alle Buchbeispiele und ihre Effekte als Tests grün"]
-    p2["Phase 2 · Teams und Charaktere<br/>Konten, Teams, Rollen, Echtzeit, Protokoll, Würfeln;<br/>alle Erschaffungswege, Bogen, Ausrüstung;<br/>Terminal-Design als Grundlage aller Seiten<br/>Abnahme: erste Testsitzung mit Proben"]
+    p2["Phase 2 · Teams und Charaktere<br/>2a Spieltisch: Konten, Teams, Echtzeit, Protokoll, Würfeln, Design-System<br/>2b Charaktere: alle Erschaffungswege für SC, Bogen, Talente<br/>2c Ausrüstung: Katalog, Traglast, Boni<br/>Abnahme je Teil, zuletzt Testsitzung mit Proben"]
     p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Turn- und Runden-Phasen<br/>Abnahme: Hope's Last Day komplett spielbar"]
     p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Story Points<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
     p5["Phase 5 · Schiffe<br/>Designer, sechs Buchschiffe, Schiffsbogen,<br/>Schiffsstatus, Bereiche und Decks,<br/>Wartung, Reparatur, FTL-Reisen<br/>Abnahme: Buchschiffe laden, Eigenbau prüft,<br/>jeder Schadenseintrag wirkt wie im Buch"]
@@ -766,7 +767,7 @@ flowchart TD
     p6 -.-> p7
 ```
 
-Initiative entsteht mit dem Kampf in Phase 3, die Raumkampf-Paniktabelle mit dem Raumkampf in Phase 6, weil beide ohne diese Zusammenhänge nichts zu tun haben. Die Regel-Engine kennt in Phase 1 nur den Zeitschritt als Befehl; das Zeitmodell mit Schichtmarker und Phasen baut Phase 4 darauf auf.
+Phase 2 kommt in drei Teilen mit je eigenem Pull Request. NSC-Erschaffung (Schnell-NSC, typische NSC) gehört zu Phase 3, wo Gegner gebraucht werden. Initiative entsteht mit dem Kampf in Phase 3, die Raumkampf-Paniktabelle mit dem Raumkampf in Phase 6, weil beide ohne diese Zusammenhänge nichts zu tun haben. Die Regel-Engine kennt in Phase 1 nur den Zeitschritt als Befehl; das Zeitmodell mit Schichtmarker und Phasen baut Phase 4 darauf auf.
 
 Die Reihenfolge folgt den Abhängigkeiten: Ohne Regel-Engine keine Proben, ohne Proben kein Kampf, ohne Kampfregeln kein Raumkampf. Ab Phase 3 ist das Werkzeug am echten Tisch brauchbar, weil Hope's Last Day als Cinematic-Szenario samt vorgefertigten Charakteren vollständig im Buch steht. Das Lagebild der Spielleitung (3.1) wächst mit: Crew ab Phase 2, Kampf ab Phase 3, Zeit ab Phase 4, Schiff ab Phase 5.
 

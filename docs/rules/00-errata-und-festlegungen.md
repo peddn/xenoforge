@@ -80,9 +80,10 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | A-01 | Sichtbarkeit | Spieler sehen nur den eigenen Charakterbogen. Würfe und Ereignisse stehen im gemeinsamen Protokoll. |
 | A-02 | Verdeckte Würfe | Nur für NSC und Kreaturen. Spieler würfeln immer offen, weil sie über den Push entscheiden. |
 | A-03 | Agenden | Nur Spieler und Spielleitung sehen sie. In Campaign gibt die App sie beim Sitzungsabschluss für die gemeinsame XP-Runde frei (S. 31). |
-| A-04 | Teams | Ein Team ist die ganze Spielrunde. Charaktere gehören den Spielern; die Spielleitung ordnet sie ihrem Team zu; ein Charakter ist höchstens in einem Team. |
+| A-04 | Teams | Ein Team ist die ganze Spielrunde, Cinematic oder Campaign. Charaktere gehören den Spielern; ein Charakter ist höchstens in einem Team. Spieler treten per Einladungslink bei und bringen einen ihrer freien Charaktere mit; die Spielleitung kann ihn wieder aus dem Team nehmen. |
 | A-05 | Bereiche an Bord | Frei editierbare Orte mit Deck, ohne Entfernungen und ohne Verbindung zu Modulen. Brücke und Reaktorbereich sind markiert, weil das Buch Schäden an sie bindet (S. 170, 198–199). |
 | A-06 | Schiffsstatus | Alle im Team sehen ihn; Spieler ohne Geheimes. Folgen stehen in drei Stufen: AUTO (App wendet an), HINWEIS (Spielleitung setzt um), INFO. |
+| A-07 | Konten | Jeder kann ein Konto anlegen und wählt dabei Spieler oder Spielleitung. Nur Spielleitungs-Konten legen Teams an, auch ohne Spieler zum Vorbereiten. Rechte gelten nur im eigenen Team; eine Spielleitung sieht nichts aus fremden Teams und kann dort als Spieler mitspielen. Jedes Team hat genau eine Spielleitung. |
 
 ## Noch offen
 
