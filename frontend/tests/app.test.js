@@ -9,6 +9,7 @@ import { guard, routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { useTeamStore } from '@/stores/team'
 import LoginView from '@/views/LoginView.vue'
+import TeamView from '@/views/TeamView.vue'
 
 import { mockApi, setup } from './helpers'
 
@@ -107,6 +108,48 @@ describe('rolling', () => {
     expect(wrapper.find('[data-test="decisions"]').exists()).toBe(false)
   })
 
+  it('lets the game master correct values', async () => {
+    const { pinia, i18n } = setup()
+    vi.stubGlobal(
+      'EventSource',
+      class {
+        close() {}
+      },
+    )
+    const actor = { attributes: { wits: 4 }, skills: {}, talents: [], health: 3, stress: 1, sources: [] }
+    const calls = mockApi({
+      'GET /teams/5': {
+        id: 5,
+        name: 'Hope',
+        mode: 'cinematic',
+        gm: { id: 1, name: 'Mother' },
+        is_gm: true,
+        members: [],
+        characters: [{ id: 9, name: 'Charlize', owner_id: 2, owner_name: 'Gina', actor, hints: [] }],
+        pending: [],
+        story_points: {},
+        rulings: {},
+      },
+      'GET /characters': [],
+      'PUT /teams/5/characters/9': [],
+    })
+    const auth = useAuthStore()
+    auth.user = { id: 1, name: 'Mother', role: 'gm' }
+    auth.checked = true
+    const r = router()
+    r.push('/teams/5')
+    await r.isReady()
+    const wrapper = mount(TeamView, { global: { plugins: [pinia, i18n, r] } })
+    await flushPromises()
+    const correct = wrapper.findAll('button').find((b) => b.text() === 'Korrigieren')
+    await correct.trigger('click')
+    await wrapper.get('[data-test="attr-wits"]').setValue(5)
+    await wrapper.findAll('button').find((b) => b.text() === 'Speichern').trigger('click')
+    await flushPromises()
+    const put = calls.find((c) => c.method === 'PUT')
+    expect(put.body.actor.attributes.wits).toBe(5)
+  })
+
   it('lets go of a team that is no longer visible', async () => {
     setup()
     mockApi({})
@@ -127,6 +170,7 @@ describe('labels', () => {
     const t = i18n.global.t
     const rules = { name: (id) => `<${id}>` }
     expect(choiceLabel('push', t, rules)).toBe('Pushen')
+    expect([0, 1, 3].map((n) => t('log.stunts', n))).toEqual(['kein Stunt', '1 Stunt', '3 Stunts'])
     expect(choiceLabel({ use_talent: 'stoic' }, t, rules)).toBe('Mit <stoic>')
     expect(choiceLabel({ answer: false }, t, rules)).toBe('Nein')
     expect(originLabel({ condition: { id: 'freezing', cold: 'sub_zero' } }, t, rules)).toBe('<freezing> (unter null)')

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, toRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
@@ -39,7 +39,8 @@ const inviteLink = computed(() =>
 const freeOwn = computed(() => characters.list.filter((c) => !c.team_id))
 
 function startCorrection(character) {
-  correcting.value = { id: character.id, name: character.name, actor: structuredClone(character.actor) }
+  // A copy to edit; structuredClone refuses Vue's reactive proxies.
+  correcting.value = { id: character.id, name: character.name, actor: structuredClone(toRaw(character.actor)) }
 }
 
 async function saveCorrection() {

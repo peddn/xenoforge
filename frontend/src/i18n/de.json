@@ -173,8 +173,7 @@
   "log": {
     "pool": "einen Pool",
     "roll_started": "{actor} würfelt {what}: {base} Grundwürfel, {stress} Stresswürfel",
-    "roll_finished": "{successes} Erfolge, {stunts} Stunts",
-    "against": "gegen {against} Erfolge",
+    "against": "gegen {against}",
     "decision": "Wartet auf {actor}: {options}",
     "question": "Frage an {actor}: {question}",
     "choose_targets": "Die Spielleitung wählt, wer betroffen ist: {who}",
@@ -199,6 +198,8 @@
     "character_joined": "{name} kommt ins Team",
     "character_removed": "{name} verlässt das Team",
     "corrected": "Die Spielleitung korrigiert {name}",
-    "undone": "Letzter Schritt zurückgenommen"
+    "undone": "Letzter Schritt zurückgenommen",
+    "successes": "kein Erfolg | {n} Erfolg | {n} Erfolge",
+    "stunts": "kein Stunt | {n} Stunt | {n} Stunts"
   }
 }

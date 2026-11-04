@@ -173,8 +173,7 @@
   "log": {
     "pool": "a pool",
     "roll_started": "{actor} rolls {what}: {base} Base Dice, {stress} Stress Dice",
-    "roll_finished": "{successes} successes, {stunts} stunts",
-    "against": "against {against} successes",
+    "against": "against {against}",
     "decision": "Waiting for {actor}: {options}",
     "question": "Question for {actor}: {question}",
     "choose_targets": "The game master chooses who is affected: {who}",
@@ -199,6 +198,8 @@
     "character_joined": "{name} joins the team",
     "character_removed": "{name} leaves the team",
     "corrected": "The game master corrects {name}",
-    "undone": "Last step undone"
+    "undone": "Last step undone",
+    "successes": "no successes | {n} success | {n} successes",
+    "stunts": "no stunts | {n} stunt | {n} stunts"
   }
 }

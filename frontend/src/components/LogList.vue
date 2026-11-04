@@ -49,8 +49,8 @@ function describe(entry) {
     case 'roll_finished':
       return {
         status: { tone: ev.outcome === 'success' ? 'ok' : 'warn', text: t(`outcome.${ev.outcome}`) },
-        text: t('log.roll_finished', { successes: ev.successes, stunts: ev.stunts }),
-        detail: ev.against != null ? t('log.against', { against: ev.against }) : '',
+        text: `${t('log.successes', ev.successes)}, ${t('log.stunts', ev.stunts)}`,
+        detail: ev.against != null ? t('log.against', { against: t('log.successes', ev.against) }) : '',
       }
     case 'decision':
       return { text: t('log.decision', { actor, options: ev.options.map((o) => choiceLabel(o, t, rules)).join(' / ') }) }
