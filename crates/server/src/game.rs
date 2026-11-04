@@ -15,7 +15,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 use xenoforge_engine::data::Id;
 use xenoforge_engine::data::effects::Who;
-use xenoforge_engine::roll::{RollKind, RollRequest};
+use xenoforge_engine::dice::Die;
+use xenoforge_engine::roll::{RollKind, RollRequest, RollState};
 use xenoforge_engine::state::{Actor, GameState, Pending};
 use xenoforge_engine::{Choice, Command, Engine, Preview};
 
@@ -448,6 +449,35 @@ pub struct PendingView {
     pub question: Option<Id>,
     pub who: Option<Who>,
     pub candidates: Vec<String>,
+    /// For a roll waiting for push or Story Point: the roll so far, so the
+    /// decision can be made with the dice in view.
+    pub roll: Option<RollView>,
+}
+
+/// A roll as far as it has gone; the engine counts the successes.
+#[derive(Debug, Clone, Serialize)]
+pub struct RollView {
+    pub skill: Option<Id>,
+    pub attribute: Option<Id>,
+    pub base_dice: u8,
+    pub stress_dice: u8,
+    pub dice: Vec<Die>,
+    pub successes: u8,
+    pub pushes_left: u8,
+}
+
+impl From<&RollState> for RollView {
+    fn from(roll: &RollState) -> Self {
+        Self {
+            skill: roll.skill.clone(),
+            attribute: roll.attribute.clone(),
+            base_dice: roll.base_dice,
+            stress_dice: roll.stress_dice,
+            dice: roll.dice.clone(),
+            successes: roll.successes(),
+            pushes_left: roll.max_pushes.saturating_sub(roll.pushes),
+        }
+    }
 }
 
 /// Open decisions; the choice of targets only for the game master.
@@ -464,11 +494,13 @@ pub fn pending_views(state: &GameState, is_gm: bool) -> Vec<PendingView> {
                 question: None,
                 who: None,
                 candidates: Vec::new(),
+                roll: None,
             };
             match pending {
                 Pending::Roll(roll) => {
                     view.kind = "roll";
                     view.options = roll.offered.clone();
+                    view.roll = Some(RollView::from(&**roll));
                 }
                 Pending::StartRoll { options, .. } => {
                     view.kind = "start_roll";

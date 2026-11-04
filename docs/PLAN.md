@@ -747,6 +747,7 @@ Die ganze App sieht aus wie die Bordcomputer der Filme: Monospace-Schrift, Grün
 - **Lesbarkeit:** ausreichender Kontrast, auch auf dem Handy; Farbe trägt nie allein die Bedeutung, dazu kommen immer Text und Symbol.
 - **Dialoge statt eingeschobener Blöcke:** Würfeln, Bogen und die Aktionen der Spielleitung öffnen sich über der Seite; auf dem Handy füllen sie den Bildschirm. Die Teamseite bleibt dadurch eine ruhige Übersicht aus Crew und Protokoll.
 - **Protokoll in Blöcken:** Alles, was ein Befehl auslöst, steht in einem abgesetzten Block mit Person und Uhrzeit.
+- **Entscheidungen im Blick:** Eine offene Entscheidung öffnet sich als Dialog für die Person, die entscheidet, bei Würfen mit den Würfeln, den Erfolgen und den übrigen Pushes. Bis zur Entscheidung bleibt unten eine Leiste sichtbar; sie blinkt beim Auftauchen kurz und bleibt dann ruhig in Bernstein. Die Spielleitung sieht dort alle offenen Entscheidungen; von selbst öffnen sich bei ihr nur ihre eigenen.
 - **Keine fremden Marken:** keine Logos oder Grafiken aus den Filmen oder dem Buch, eigene Gestaltung.
 
 ## 12. Umsetzungsphasen

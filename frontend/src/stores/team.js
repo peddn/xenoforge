@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { get, post, put } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 
 // One team at the table: its view, the shared log (Server-Sent Events) and
 // commands to the engine.
@@ -17,6 +18,20 @@ export const useTeamStore = defineStore('team', () => {
 
   const characterNames = computed(() =>
     Object.fromEntries((view.value?.characters ?? []).map((c) => [String(c.id), c.name])),
+  )
+
+  const ownerOf = (actor) => view.value?.characters.find((c) => String(c.id) === actor)?.owner_id
+
+  // Whether the logged-in person makes this decision: the owner of the
+  // character, or the game master when no character decides (targets).
+  function decidesMyself(pending) {
+    const me = useAuthStore().user?.id
+    return pending.actor ? ownerOf(pending.actor) === me : !!view.value?.is_gm
+  }
+
+  // Open decisions shown: players see their own, the game master all.
+  const decisions = computed(() =>
+    (view.value?.pending ?? []).filter((p) => view.value.is_gm || decidesMyself(p)),
   )
 
   async function refresh() {
@@ -90,5 +105,5 @@ export const useTeamStore = defineStore('team', () => {
     await refresh()
   }
 
-  return { view, log, connected, gone, characterNames, open, close, refresh, command, preview, undo, correct, newInvite }
+  return { view, log, connected, gone, characterNames, decisions, decidesMyself, open, close, refresh, command, preview, undo, correct, newInvite }
 })

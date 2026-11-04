@@ -25,6 +25,14 @@ export function originLabel(origin, t, rules) {
   return name
 }
 
+/** What an open decision is about, e.g. "Roll: push or accept?". */
+export function decisionText(pending, t, rules) {
+  if (['roll', 'start_roll', 'overkill'].includes(pending.kind)) return t(`decision.kind.${pending.kind}`)
+  if (pending.question) return rules.text(pending.question)
+  if (pending.who) return t('decision.targets', { who: t(`who.${pending.who}`) })
+  return t('decision.title')
+}
+
 export function blockLabel(blocks, t, rules) {
   if (typeof blocks === 'string') return t(`blocks.${blocks}`)
   return rules.name(blocks.action)

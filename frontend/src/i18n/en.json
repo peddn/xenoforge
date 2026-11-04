@@ -94,7 +94,11 @@
       "overkill": "Overkill?",
       "question": "Question",
       "targets": "Targets"
-    }
+    },
+    "waiting": "Waiting for {name} · {what}",
+    "titleFor": "Decision: {name}",
+    "pushesLeft": "no push left | 1 push left | {n} pushes left",
+    "pushHint": "Push: Stress +1, all dice without a success are rolled again."
   },
   "choice": {
     "accept": "Go on",
