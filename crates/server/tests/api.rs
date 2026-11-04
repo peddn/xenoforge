@@ -104,18 +104,19 @@ impl<'s> Client<'s> {
         me["id"].as_i64().unwrap()
     }
 
-    /// Creates a character with the given values.
+    /// Creates a character with exactly these values. Players create with
+    /// the wizard (A-09); the values go straight into the database.
     async fn character(&mut self, name: &str, actor: Value) -> i64 {
-        let created = self
-            .ok("POST", "/api/characters", Some(json!({ "name": name })))
-            .await;
+        let created = self.ok("POST", "/api/characters", Some(json!({}))).await;
         let id = created["id"].as_i64().unwrap();
-        self.ok(
-            "PUT",
-            &format!("/api/characters/{id}"),
-            Some(json!({ "name": name, "data": { "actor": actor } })),
-        )
-        .await;
+        let data = json!({ "status": "free", "actor": actor });
+        sqlx::query("UPDATE characters SET name = ?, data = ? WHERE id = ?")
+            .bind(name)
+            .bind(data.to_string())
+            .bind(id)
+            .execute(&self.server.state.pool)
+            .await
+            .unwrap();
         id
     }
 
@@ -731,4 +732,237 @@ async fn event_stream_replays_the_log() {
         }
     }
     assert!(text.contains("character_removed"), "{text}");
+}
+
+/// Nat the Roughneck as the book builds her [p. 28–29].
+fn nat() -> Value {
+    json!({
+        "career": "roughneck",
+        "attributes": { "strength": 5, "agility": 3, "wits": 2, "empathy": 4 },
+        "skills": { "heavy_machinery": 3, "stamina": 2, "close_combat": 2, "comtech": 1, "observation": 1, "medical_aid": 1 },
+        "talent": "true_grit",
+        "name": "Nat",
+        "appearance": "Wild hair",
+        "agenda": "Never let your friends down.",
+        "signature_item": "Tool belt"
+    })
+}
+
+/// The wizard: a draft is checked by the engine, cannot join a team and
+/// becomes playable with the starting cash rolled on finishing (A-09, plan
+/// 5.2). Free set-up is for game master accounts.
+#[tokio::test]
+async fn creation_wizard() {
+    let server = server("wizard").await;
+    let mut gm = Client::new(&server);
+    gm.register("Mother", "gm").await;
+    let mut player = Client::new(&server);
+    player.register("Nat", "player").await;
+
+    let (status, _) = player
+        .call(
+            "POST",
+            "/api/characters",
+            Some(json!({ "free": true, "name": "Ripley" })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "free set-up is for the GM");
+    let free = gm
+        .ok(
+            "POST",
+            "/api/characters",
+            Some(json!({ "free": true, "name": "Ripley" })),
+        )
+        .await;
+    assert_eq!(free["data"]["status"], "free");
+
+    let draft = player.ok("POST", "/api/characters", Some(json!({}))).await;
+    let id = draft["id"].as_i64().unwrap();
+    assert_eq!(draft["data"]["status"], "draft");
+    assert_eq!(draft["problems"][0]["code"], "career_missing");
+
+    let mut half = nat();
+    half["skills"]["medical_aid"] = json!(0);
+    let saved = player
+        .ok(
+            "PUT",
+            &format!("/api/characters/{id}"),
+            Some(json!({ "data": { "draft": half } })),
+        )
+        .await;
+    assert_eq!(saved["name"], "Nat");
+    let problems = saved["problems"].as_array().unwrap();
+    assert_eq!(problems.len(), 1);
+    assert_eq!(problems[0]["code"], "skill_points");
+    assert_eq!(problems[0]["page"], 28);
+    let (status, _) = player
+        .call("POST", &format!("/api/characters/{id}/finish"), None)
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "only a complete draft");
+
+    // A draft cannot join a team.
+    let team = gm
+        .ok(
+            "POST",
+            "/api/teams",
+            Some(json!({ "name": "Sotillo", "mode": "campaign" })),
+        )
+        .await["id"]
+        .as_i64()
+        .unwrap();
+    let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let (status, _) = player
+        .call(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": id })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+
+    player
+        .ok(
+            "PUT",
+            &format!("/api/characters/{id}"),
+            Some(json!({ "data": { "draft": nat() } })),
+        )
+        .await;
+    server.dice(&[4]);
+    let done = player
+        .ok("POST", &format!("/api/characters/{id}/finish"), None)
+        .await;
+    assert_eq!(done["data"]["status"], "finished");
+    assert!(done["data"].get("draft").is_none());
+    assert_eq!(
+        done["data"]["start_cash"],
+        json!({ "dice": [4], "amount": 400 })
+    );
+    assert_eq!(done["data"]["sheet"]["career"], "roughneck");
+    assert_eq!(done["data"]["actor"]["health"], 5);
+    assert_eq!(done["data"]["actor"]["skills"]["heavy_machinery"], 3);
+
+    // Finished: values stay, texts and the agenda can change (F-54).
+    let mut edit = done.clone();
+    edit["data"]["actor"]["attributes"]["strength"] = json!(8);
+    edit["data"]["sheet"]["agenda"] = json!("Get rich.");
+    let edited = player
+        .ok("PUT", &format!("/api/characters/{id}"), Some(edit))
+        .await;
+    assert_eq!(edited["data"]["actor"]["attributes"]["strength"], 5);
+    assert_eq!(edited["data"]["sheet"]["agenda"], "Get rich.");
+    player
+        .ok(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": id })),
+        )
+        .await;
+}
+
+/// Buddy and rival: other player characters of the same team, not the
+/// same one; gone when one of them leaves (F-52) [p. 31].
+#[tokio::test]
+async fn buddy_and_rival() {
+    let server = server("buddy").await;
+    let (mut gm, mut player, team, charlize) = table(&server).await;
+    let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut other = Client::new(&server);
+    other.register("Burke", "player").await;
+    let burke = other
+        .character("Burke", json!({ "attributes": { "strength": 3 } }))
+        .await;
+    let outside = other.character("Lambert", json!({})).await;
+    other
+        .ok(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": burke })),
+        )
+        .await;
+    let relations = |buddy: Value, rival: Value| json!({ "name": "Charlize", "data": { "sheet": { "buddy": buddy, "rival": rival } } });
+    let path = format!("/api/characters/{charlize}");
+    for (buddy, rival) in [
+        (json!(burke), json!(burke)),
+        (json!(charlize), Value::Null),
+        (json!(outside), Value::Null),
+    ] {
+        let (status, _) = player
+            .call("PUT", &path, Some(relations(buddy, rival)))
+            .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+    }
+    player
+        .ok("PUT", &path, Some(relations(Value::Null, json!(burke))))
+        .await;
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let sheet = view["characters"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["id"] == charlize)
+        .unwrap()["sheet"]
+        .clone();
+    assert_eq!(sheet["rival"], burke, "the game master sees the sheet");
+
+    other
+        .ok(
+            "DELETE",
+            &format!("/api/teams/{team}/characters/{burke}"),
+            None,
+        )
+        .await;
+    let sheet = player.ok("GET", &path, None).await;
+    assert!(sheet["data"]["sheet"]["rival"].is_null());
+}
+
+/// Pull Rank: a player may order another character of the team [p. 76].
+#[tokio::test]
+async fn talent_action_with_target() {
+    let server = server("pullrank").await;
+    let (mut gm, _player, team, charlize) = table(&server).await;
+    let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut officer = Client::new(&server);
+    officer.register("Gorman", "player").await;
+    let gorman = officer
+        .character(
+            "Gorman",
+            json!({ "attributes": { "strength": 3, "empathy": 3 }, "talents": ["pull_rank"], "health": 3 }),
+        )
+        .await;
+    officer
+        .ok(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": gorman })),
+        )
+        .await;
+    server.dice(&[2, 3, 6, 6, 2]);
+    let (status, entries) = officer
+        .command(
+            team,
+            json!({ "command": "perform_action", "actor": gorman.to_string(), "action": "pull_rank_order", "target": charlize.to_string() }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{entries}");
+    let events = events_of(&entries);
+    let target = charlize.to_string();
+    assert!(
+        events
+            .iter()
+            .any(|e| e["event"] == "roll_started" && e["actor"] == target.as_str())
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| e["event"] == "stress_changed" && e["to"] == 1)
+    );
 }

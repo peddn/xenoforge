@@ -19,7 +19,7 @@ Browser ── HTTP (JSON) ──▶ axum ──▶ Engine (rein)
 - Bei der Registrierung wählt man die Rolle: **Spieler** oder **Spielleitung**. Name 2 bis 40 Zeichen, eindeutig ohne Rücksicht auf Groß- und Kleinschreibung; Passwort mindestens 8 Zeichen, gespeichert als Argon2-Hash.
 - Anmeldung über ein Cookie `xf_session` (HttpOnly, SameSite=Lax, auf Wunsch Secure). Im Cookie steht ein zufälliges Token; die Datenbank kennt nur dessen SHA-256. Eine Sitzung gilt 30 Tage.
 - **Teams legt nur die Spielleitung an.** Sie kann ein Team ohne Spieler vorbereiten und eigene Charaktere hineinnehmen. Andere Spielleitungen sehen das Team nicht.
-- **Spieler treten über einen Einladungslink bei** und bringen dabei einen ihrer freien Charaktere mit. Ein Charakter ist in höchstens einem Team. Die Spielleitung kann den Link erneuern; der alte gilt dann nicht mehr.
+- **Spieler treten über einen Einladungslink bei** und bringen dabei einen ihrer freien Charaktere mit; ein Entwurf muss erst fertiggestellt sein (A-09). Ein Charakter ist in höchstens einem Team. Die Spielleitung kann den Link erneuern; der alte gilt dann nicht mehr.
 - Die Spielleitung kann Charaktere aus dem Team nehmen, und ein Spieler kann mit seinem eigenen Charakter austreten. Hat ein Spieler danach keinen Charakter mehr im Team, sieht er es nicht mehr; ein offener Ereignisstrom endet und muss sich neu anmelden.
 - Wer weder Spielleitung noch Mitglied ist, bekommt für das Team `404`, nicht `403`: Es soll nicht einmal erkennbar sein, dass es das Team gibt.
 
@@ -32,7 +32,7 @@ Browser ── HTTP (JSON) ──▶ axum ──▶ Engine (rein)
 | `roll` für fremde Charaktere oder ohne Charakter | nein | ja |
 | `decide` | wenn die Entscheidung beim eigenen Charakter liegt | ja |
 | `decide` bei der Wahl der Betroffenen (`targets`) | nein | ja |
-| `use_signature_item`, `perform_action` für eigenen Charakter | ja | ja |
+| `use_signature_item`, `perform_action` für eigenen Charakter, als Ziel jeder im Team (Pull Rank) | ja | ja |
 | alle übrigen (Stress, Schaden, Panik, Quellen, Akt- und Sitzungsende …) | nein | ja |
 | Vorschau eines Wurfs | eigener Charakter, Regeln wie bei `roll` | alle |
 | Werte korrigieren, Rückgängig | nein | ja |
@@ -63,7 +63,15 @@ Der Spielstand der Engine (`GameState`) wird für jeden Befehl zusammengesetzt:
 
 Nach dem Befehl teilt der Server den neuen Stand wieder auf und speichert Team, Charaktere und Protokolleinträge in **einer Transaktion**. Alles, was Team oder Charaktere schreibt, läuft unter demselben Schloss; so überschreibt kein Speichern einen Spielzug mit älteren Werten. Lehnt die Engine ab, ändert sich nichts, und die Antwort ist `422` mit dem Grund samt Buchseite.
 
-Außerhalb eines Teams bearbeitet der Besitzer seinen Charakter frei. Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung; Name, Aussehen und Notizen bleiben frei. Volle Health folgt STRENGTH (S. 30), solange Health nicht selbst geändert wurde.
+### Erschaffung und Bogen (A-09, Plan 5.2)
+
+Ein Charakter hat einen Status:
+
+- **Entwurf:** Spieler erschaffen mit dem Assistenten. Der Server speichert den Entwurf, lässt die Engine die Figur bauen und gibt ihre Probleme mit Schritt und Buchseite zurück. Ein Entwurf kann keinem Team beitreten. **Fertigstellen** geht nur ohne Probleme; dann würfelt der Server das Startgeld, und der Entwurf wird zum Bogen.
+- **Fertig:** Die Werte ändern sich nur im Spiel. Name, Aussehen, Agenda (F-54), Signature Item und Notizen bleiben frei.
+- **Frei:** Nur Spielleitungskonten legen frei an, für vorgefertigte Charaktere und Szenarien; nur sie bearbeiten außerhalb eines Teams auch die Werte und die Karriere. Charaktere von vor dem Assistenten gelten als frei.
+
+Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung. Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt der Besitzer im Team: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
 
 ### Rückgängig
 
@@ -103,9 +111,10 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | Methode und Pfad | Inhalt | Antwort |
 | --- | --- | --- |
 | `GET /characters` | – | eigene Charaktere |
-| `POST /characters` | `{ name }` | neuer Charakter |
+| `POST /characters` | `{}` für einen Entwurf, `{ free: true, name }` nur Spielleitung | neuer Charakter, ein Entwurf mit `problems` |
 | `GET /characters/{id}` | – | Charakter |
-| `PUT /characters/{id}` | `{ name, data: { sheet, actor } }` | Charakter; Werte nur außerhalb eines Teams |
+| `PUT /characters/{id}` | Entwurf: `{ data: { draft } }`; sonst `{ name, data: { sheet, actor } }` | Charakter, beim Entwurf mit `problems`; Werte nur bei freien Charakteren der Spielleitung außerhalb eines Teams |
+| `POST /characters/{id}/finish` | – | fertiger Charakter mit `start_cash`; 400, solange es Probleme gibt |
 | `DELETE /characters/{id}` | – | nur außerhalb eines Teams, sonst 409 |
 
 ### Teams
