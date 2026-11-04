@@ -118,6 +118,9 @@ struct CharacterInTeam {
     owner_name: String,
     /// Values only for the game master and the owner (A-01).
     actor: Option<Actor>,
+    /// Career, agenda, buddy and rival and the other texts, for the same
+    /// people [p. 31].
+    sheet: Option<characters::Sheet>,
     /// Broken as the engine sees it [p. 98], for the same people.
     broken: Option<bool>,
     /// Full Health [p. 30], for the same people.
@@ -189,8 +192,9 @@ async fn view(
             owner_id: character.owner_id,
             owner_name: name_of(&state, character.owner_id).await?,
             actor: sees.then(|| character.data.actor.clone()),
+            sheet: sees.then(|| character.data.sheet.clone()),
             broken: sees.then(|| character.data.actor.broken()),
-            health_max: sees.then(|| character.data.actor.full_health()),
+            health_max: sees.then(|| state.engine.full_health(&character.data.actor)),
             hints,
         });
     }
@@ -270,6 +274,11 @@ async fn bring(
             "the character is already in a team (A-04)",
         ));
     }
+    if character.data.status == characters::Status::Draft {
+        return Err(ApiError::conflict(
+            "a draft joins a team only when it is finished (A-09)",
+        ));
+    }
     let mut tx = begin_write(&state.pool).await?;
     character.team_id = Some(team.id);
     characters::save(&mut tx, &character).await?;
@@ -324,7 +333,19 @@ async fn remove(
     }
     let mut tx = begin_write(&state.pool).await?;
     character.team_id = None;
+    // Buddy and rival exist only within the team (F-52).
+    character.data.sheet.buddy = None;
+    character.data.sheet.rival = None;
     characters::save(&mut tx, &character).await?;
+    for mut other in game::team_characters(&mut tx, id).await? {
+        let sheet = &mut other.data.sheet;
+        let before = (sheet.buddy, sheet.rival);
+        sheet.buddy = sheet.buddy.filter(|c| *c != character.id);
+        sheet.rival = sheet.rival.filter(|c| *c != character.id);
+        if (sheet.buddy, sheet.rival) != before {
+            characters::save(&mut tx, &other).await?;
+        }
+    }
     game::forget_actor(&mut team.state, &character_id.to_string());
     sqlx::query("UPDATE teams SET state = ? WHERE id = ?")
         .bind(serde_json::to_string(&team.state)?)

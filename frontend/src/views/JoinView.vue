@@ -18,7 +18,7 @@ const characters = useCharactersStore()
 const info = ref(null)
 const chosen = ref(null)
 const error = ref('')
-const free = computed(() => characters.list.filter((c) => !c.team_id))
+const free = computed(() => characters.list.filter((c) => !c.team_id && c.data.status !== 'draft'))
 
 onMounted(async () => {
   try {

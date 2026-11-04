@@ -1,23 +1,54 @@
 //! Characters belong to the person who created them (plan 5.0). A
-//! character is one JSON document: the sheet plus the engine's actor.
-//! Outside a team the owner edits it freely; inside a team its game values
-//! change only through commands and corrections by the game master.
+//! character is one JSON document: status, the wizard's draft, the sheet
+//! and the engine's actor.
+//!
+//! Players create characters with the wizard; the engine checks each draft
+//! and finishing turns it into a playable character (A-09, plan 5.2). Only
+//! game master accounts set up characters freely, and only those values can
+//! be edited outside a team. Inside a team game values change only through
+//! commands and corrections by the game master.
+
+use std::sync::PoisonError;
 
 use axum::extract::{Path, State};
-use axum::{Json, Router, routing::get};
+use axum::routing::{get, post, put};
+use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, Sqlite, Transaction};
-use xenoforge_engine::state::Actor;
+use xenoforge_engine::creation::{Cash, CreationProblem, Draft};
+use xenoforge_engine::data::Id;
+use xenoforge_engine::state::{Actor, ActorKind};
 
-use crate::auth::User;
+use crate::auth::{Role, User};
 use crate::error::{ApiError, ApiResult};
 use crate::{AppState, begin_write, now};
 
-/// Fields of the sheet that are not rules (phase 2b adds more).
+/// How a character came about (A-09).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Status {
+    /// In the wizard; it cannot join a team yet.
+    Draft,
+    /// Created by the rules; its values change only in play.
+    Finished,
+    /// Set up freely by a game master. Characters from before the wizard
+    /// count as free.
+    #[default]
+    Free,
+}
+
+/// Fields of the sheet that are not rules [p. 30–33, 389].
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Sheet {
+    pub career: Option<Id>,
     pub appearance: String,
+    /// Only the owner and the game master see it [p. 31].
+    pub agenda: String,
+    pub signature_item: String,
+    /// Other player characters of the same team (F-52) [p. 31].
+    pub buddy: Option<i64>,
+    pub rival: Option<i64>,
     pub notes: String,
 }
 
@@ -25,8 +56,15 @@ pub struct Sheet {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CharacterData {
+    pub status: Status,
+    /// The wizard's state while the character is a draft.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub draft: Option<Draft>,
     pub sheet: Sheet,
     pub actor: Actor,
+    /// Starting cash as rolled when finishing [p. 39–55].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start_cash: Option<Cash>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -36,17 +74,35 @@ pub struct Character {
     pub team_id: Option<i64>,
     pub name: String,
     pub data: CharacterData,
+    /// What keeps a draft from being finished, from the engine.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub problems: Vec<CreationProblem>,
 }
 
-#[derive(Deserialize)]
+impl Character {
+    /// With the engine's problems if it is a draft.
+    fn checked(mut self, state: &AppState) -> Self {
+        if let (Status::Draft, Some(draft)) = (self.data.status, &self.data.draft) {
+            self.problems = state.engine.check_creation(draft);
+        }
+        self
+    }
+}
+
+/// A draft for the wizard, or with `free` a character set up freely by a
+/// game master (A-09).
+#[derive(Deserialize, Default)]
+#[serde(default)]
 struct NewCharacter {
+    free: bool,
     name: String,
 }
 
-#[derive(Deserialize)]
+/// A draft takes only `data.draft`; its name is in there.
+#[derive(Deserialize, Default)]
+#[serde(default)]
 struct Update {
     name: String,
-    #[serde(default)]
     data: CharacterData,
 }
 
@@ -54,6 +110,8 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/", get(list).post(create))
         .route("/{id}", get(read).put(update).delete(remove))
+        .route("/{id}/finish", post(finish))
+        .route("/{id}/relations", put(relations))
 }
 
 pub fn from_row(row: &sqlx::sqlite::SqliteRow) -> ApiResult<Character> {
@@ -64,6 +122,7 @@ pub fn from_row(row: &sqlx::sqlite::SqliteRow) -> ApiResult<Character> {
         team_id: row.get("team_id"),
         name: row.get("name"),
         data: serde_json::from_str(&data)?,
+        problems: Vec::new(),
     })
 }
 
@@ -87,12 +146,37 @@ pub async fn save(tx: &mut Transaction<'_, Sqlite>, character: &Character) -> Ap
     Ok(())
 }
 
+/// The longest name, in characters.
+const NAME_MAX: usize = 60;
+
 fn check_name(name: &str) -> ApiResult<String> {
     let name = name.trim();
-    if (1..=60).contains(&name.chars().count()) {
+    if (1..=NAME_MAX).contains(&name.chars().count()) {
         Ok(name.to_owned())
     } else {
         Err(ApiError::bad_request("the name needs 1 to 60 characters"))
+    }
+}
+
+/// The longest sheet text, in characters.
+const TEXT_MAX: usize = 4000;
+
+fn check_texts(texts: &[&str]) -> ApiResult<()> {
+    if texts.iter().any(|t| t.chars().count() > TEXT_MAX) {
+        return Err(ApiError::bad_request(format!(
+            "a text has at most {TEXT_MAX} characters"
+        )));
+    }
+    Ok(())
+}
+
+/// A draft may have no name yet.
+fn draft_name(name: &str) -> ApiResult<String> {
+    let name = name.trim();
+    if name.chars().count() <= NAME_MAX {
+        Ok(name.to_owned())
+    } else {
+        Err(ApiError::bad_request("the name has at most 60 characters"))
     }
 }
 
@@ -123,7 +207,11 @@ async fn list(State(state): State<AppState>, user: User) -> ApiResult<Json<Vec<C
         .bind(user.id)
         .fetch_all(&state.pool)
         .await?;
-    Ok(Json(rows.iter().map(from_row).collect::<ApiResult<_>>()?))
+    let list = rows
+        .iter()
+        .map(|row| Ok(from_row(row)?.checked(&state)))
+        .collect::<ApiResult<_>>()?;
+    Ok(Json(list))
 }
 
 async fn create(
@@ -131,10 +219,27 @@ async fn create(
     user: User,
     Json(body): Json<NewCharacter>,
 ) -> ApiResult<Json<Character>> {
-    let name = check_name(&body.name)?;
-    let data = CharacterData {
-        sheet: Sheet::default(),
-        actor: Actor::pc(),
+    let (name, data) = if body.free {
+        if user.role != Role::Gm {
+            return Err(ApiError::forbidden(
+                "only game master accounts set up characters freely (A-09)",
+            ));
+        }
+        let data = CharacterData {
+            status: Status::Free,
+            actor: Actor::pc(),
+            ..CharacterData::default()
+        };
+        (check_name(&body.name)?, data)
+    } else {
+        let draft = Draft::default();
+        let data = CharacterData {
+            status: Status::Draft,
+            actor: state.engine.creation_actor(&draft),
+            draft: Some(draft),
+            ..CharacterData::default()
+        };
+        (String::new(), data)
     };
     let id = sqlx::query(
         "INSERT INTO characters (owner_id, name, data, created_at) VALUES (?, ?, ?, ?)",
@@ -146,13 +251,15 @@ async fn create(
     .execute(&state.pool)
     .await?
     .last_insert_rowid();
-    Ok(Json(Character {
+    let character = Character {
         id,
         owner_id: user.id,
         team_id: None,
         name,
         data,
-    }))
+        problems: Vec::new(),
+    };
+    Ok(Json(character.checked(&state)))
 }
 
 async fn owned(state: &AppState, user: &User, id: i64) -> ApiResult<Character> {
@@ -168,11 +275,14 @@ async fn read(
     user: User,
     Path(id): Path<i64>,
 ) -> ApiResult<Json<Character>> {
-    Ok(Json(owned(&state, &user, id).await?))
+    Ok(Json(owned(&state, &user, id).await?.checked(&state)))
 }
 
-/// Name and sheet can always be edited. The values that count for the
-/// rules only while the character is in no team (plan 5.0).
+/// A draft takes the wizard's state; the engine builds the actor from it
+/// and names the problems. Otherwise name and sheet texts can always be
+/// edited, the agenda too (F-54); buddy and rival have their own route.
+/// The values that count for the rules only on a free character, by a
+/// game master account, outside a team (A-09, plan 5.0).
 async fn update(
     State(state): State<AppState>,
     user: User,
@@ -183,27 +293,176 @@ async fn update(
     // values read before it.
     let _guard = state.lock.lock().await;
     let mut character = owned(&state, &user, id).await?;
+    if character.data.status == Status::Draft {
+        let draft = body
+            .data
+            .draft
+            .ok_or_else(|| ApiError::bad_request("a draft is saved as data.draft"))?;
+        check_texts(&[
+            &draft.appearance,
+            &draft.agenda,
+            &draft.signature_item,
+            draft.talent_param.as_deref().unwrap_or_default(),
+        ])?;
+        character.name = draft_name(&draft.name)?;
+        character.data.actor = state.engine.creation_actor(&draft);
+        character.data.draft = Some(draft);
+        let mut tx = begin_write(&state.pool).await?;
+        save(&mut tx, &character).await?;
+        tx.commit().await?;
+        return Ok(Json(character.checked(&state)));
+    }
+    let new = body.data.sheet;
+    check_texts(&[
+        &new.appearance,
+        &new.agenda,
+        &new.signature_item,
+        &new.notes,
+    ])?;
     character.name = check_name(&body.name)?;
-    character.data.sheet = body.data.sheet;
-    if character.team_id.is_none() {
+    let free = character.data.status == Status::Free && user.role == Role::Gm;
+    let sheet = &mut character.data.sheet;
+    sheet.appearance = new.appearance;
+    sheet.agenda = new.agenda;
+    sheet.signature_item = new.signature_item;
+    sheet.notes = new.notes;
+    if free {
+        if let Some(career) = &new.career {
+            if !state.engine.rules().careers.iter().any(|c| &c.id == career) {
+                return Err(ApiError::bad_request(format!(
+                    "unknown career \"{career}\""
+                )));
+            }
+        }
+        sheet.career = new.career;
+    }
+    if free && character.team_id.is_none() {
         let new = body.data.actor;
         check_actor(&state, &new)?;
         let actor = &mut character.data.actor;
         // A character at full Health stays at full Health when STRENGTH
         // changes, unless Health itself was changed [p. 30].
-        let was_full = actor.health == actor.full_health();
+        let was_full = actor.health == state.engine.full_health(actor);
         let health_untouched = new.health == actor.health;
         actor.android = new.android;
         actor.attributes = new.attributes;
         actor.skills = new.skills;
         actor.talents = new.talents;
         actor.health = if was_full && health_untouched {
-            actor.full_health()
+            state.engine.full_health(actor)
         } else {
             new.health
         };
         actor.stress = new.stress;
+        actor.talent_params = new.talent_params;
     }
+    let mut tx = begin_write(&state.pool).await?;
+    save(&mut tx, &character).await?;
+    tx.commit().await?;
+    Ok(Json(character))
+}
+
+#[derive(Deserialize)]
+struct Relations {
+    buddy: Option<i64>,
+    rival: Option<i64>,
+}
+
+/// Buddy and rival: other player characters of the same team, not the
+/// same one; both are optional (F-52) [p. 31]. A route of their own, so
+/// saving texts never touches them.
+async fn relations(
+    State(state): State<AppState>,
+    user: User,
+    Path(id): Path<i64>,
+    Json(body): Json<Relations>,
+) -> ApiResult<Json<Character>> {
+    let _guard = state.lock.lock().await;
+    let mut character = owned(&state, &user, id).await?;
+    check_relations(&state, &character, body.buddy, body.rival).await?;
+    character.data.sheet.buddy = body.buddy;
+    character.data.sheet.rival = body.rival;
+    let mut tx = begin_write(&state.pool).await?;
+    save(&mut tx, &character).await?;
+    tx.commit().await?;
+    Ok(Json(character))
+}
+
+async fn check_relations(
+    state: &AppState,
+    character: &Character,
+    buddy: Option<i64>,
+    rival: Option<i64>,
+) -> ApiResult<()> {
+    if (buddy, rival) == (None, None) {
+        return Ok(());
+    }
+    let Some(team) = character.team_id else {
+        return Err(ApiError::bad_request(
+            "buddy and rival are chosen within a team",
+        ));
+    };
+    if buddy.is_some() && buddy == rival {
+        return Err(ApiError::bad_request(
+            "buddy and rival are two different characters (F-52)",
+        ));
+    }
+    for other in [buddy, rival].into_iter().flatten() {
+        let row = sqlx::query("SELECT * FROM characters WHERE id = ? AND team_id = ?")
+            .bind(other)
+            .bind(team)
+            .fetch_optional(&state.pool)
+            .await?;
+        let pc = match row {
+            Some(row) => from_row(&row)?.data.actor.kind == ActorKind::Pc,
+            None => false,
+        };
+        if other == character.id || !pc {
+            return Err(ApiError::bad_request(
+                "buddy and rival are other player characters of the team (F-52)",
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Finishes a draft without problems: the actor with full Health, the
+/// sheet texts and the starting cash rolled with the server's dice
+/// [p. 27–39].
+async fn finish(
+    State(state): State<AppState>,
+    user: User,
+    Path(id): Path<i64>,
+) -> ApiResult<Json<Character>> {
+    let _guard = state.lock.lock().await;
+    let mut character = owned(&state, &user, id).await?;
+    let draft = match (character.data.status, &character.data.draft) {
+        (Status::Draft, Some(draft)) => draft.clone(),
+        _ => return Err(ApiError::conflict("the character is not a draft")),
+    };
+    if !state.engine.check_creation(&draft).is_empty() {
+        return Err(ApiError::bad_request("the draft is not complete yet"));
+    }
+    let career = draft.career.clone().unwrap_or_default();
+    let start_cash = {
+        // The dice hold no state worth protecting (see game.rs).
+        let mut dice = state.dice.lock().unwrap_or_else(PoisonError::into_inner);
+        state.engine.roll_cash(&career, &mut **dice)
+    };
+    character.name = check_name(&draft.name)?;
+    character.data = CharacterData {
+        status: Status::Finished,
+        draft: None,
+        sheet: Sheet {
+            career: draft.career.clone(),
+            appearance: draft.appearance.trim().to_owned(),
+            agenda: draft.agenda.trim().to_owned(),
+            signature_item: draft.signature_item.trim().to_owned(),
+            ..Sheet::default()
+        },
+        actor: state.engine.creation_actor(&draft),
+        start_cash,
+    };
     let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;
     tx.commit().await?;

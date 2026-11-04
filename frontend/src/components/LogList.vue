@@ -83,10 +83,12 @@ function describe(entry) {
       return { text: `${actor}: ${rules.text(ev.text)}` }
     case 'talent_used':
       return { text: t('log.talent_used', { actor, talent: rules.name(ev.talent) }) }
+    case 'action_performed':
+      return { text: t('log.action_performed', { actor, action: rules.name(ev.action) }) }
     case 'trauma_check':
       return { dice: ev.dice, text: ev.trauma ? t('log.trauma', { actor, trauma: rules.name(ev.trauma) }) : t('log.no_trauma', { actor }) }
     default:
-      return { text: t(`log.${ev.event}`, { actor, ...ev }) }
+      return { text: t(`log.${ev.event}`, { ...ev, actor }) }
   }
 }
 

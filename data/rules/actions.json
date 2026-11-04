@@ -2,6 +2,9 @@
   "$schema": "../schema/actions.schema.json",
   "entries": [
     { "id": "run", "page": 88, "kind": "fast" },
-    { "id": "dock", "page": 193, "kind": "space_pilot" }
+    { "id": "dock", "page": 193, "kind": "space_pilot" },
+    { "id": "investigate", "page": 74, "kind": "turn" },
+    { "id": "analyze", "page": 77, "kind": "turn" },
+    { "id": "pull_rank_order", "page": 76, "kind": "slow", "target": true }
   ]
 }

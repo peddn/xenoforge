@@ -2,12 +2,10 @@
   "$schema": "../schema/talents.schema.json",
   "entries": [
     {
-      "id": "past_the_limit",
+      "id": "banter",
       "page": 74,
       "career": "colonial_marine",
-      "effects": [
-        { "kind": "modifier", "applies_to": { "based_on": ["strength"] }, "modifies": "pushes", "change": { "add": 1 } }
-      ]
+      "later": "time"
     },
     {
       "id": "overkill",
@@ -15,6 +13,14 @@
       "career": "colonial_marine",
       "effects": [
         { "kind": "replacement", "replaces": { "panic_result": { "from": 11 } }, "with": { "panic_effect": "overkill_effect" }, "optional": true }
+      ]
+    },
+    {
+      "id": "past_the_limit",
+      "page": 74,
+      "career": "colonial_marine",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["strength"] }, "modifies": "pushes", "change": { "add": 1 } }
       ]
     },
     {
@@ -26,12 +32,33 @@
       ]
     },
     {
+      "id": "investigator",
+      "page": 74,
+      "career": "colonial_marshal",
+      "effects": [
+        { "kind": "capability", "grants": "investigate" },
+        { "kind": "trigger", "on": { "action": "investigate" }, "then": [{ "op": "roll", "roll": { "skill": "observation" }, "on_success": [{ "op": "hint", "text": "investigator.questions" }] }] }
+      ]
+    },
+    {
+      "id": "subdue",
+      "page": 74,
+      "career": "colonial_marshal",
+      "later": "combat"
+    },
+    {
       "id": "cunning",
       "page": 75,
       "career": "company_agent",
       "effects": [
         { "kind": "modifier", "applies_to": { "based_on": ["wits"] }, "modifies": "pushes", "change": { "add": 1 } }
       ]
+    },
+    {
+      "id": "personal_safety",
+      "page": 75,
+      "career": "company_agent",
+      "later": "combat"
     },
     {
       "id": "take_control",
@@ -42,12 +69,30 @@
       ]
     },
     {
+      "id": "beneath_notice",
+      "page": 75,
+      "career": "kid",
+      "later": "combat"
+    },
+    {
+      "id": "dodge",
+      "page": 75,
+      "career": "kid",
+      "later": "combat"
+    },
+    {
       "id": "nimble",
       "page": 75,
       "career": "kid",
       "effects": [
         { "kind": "modifier", "applies_to": { "based_on": ["agility"] }, "modifies": "pushes", "change": { "add": 1 } }
       ]
+    },
+    {
+      "id": "calming_presence",
+      "page": 75,
+      "career": "medic",
+      "later": "time"
     },
     {
       "id": "compassion",
@@ -58,6 +103,20 @@
       ]
     },
     {
+      "id": "field_surgeon",
+      "page": 75,
+      "career": "medic",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["medical_aid"] }, "change": { "add": 2 }, "when": "field_surgeon.when" }
+      ]
+    },
+    {
+      "id": "field_commander",
+      "page": 76,
+      "career": "officer",
+      "later": "combat"
+    },
+    {
       "id": "influence",
       "page": 76,
       "career": "officer",
@@ -66,12 +125,45 @@
       ]
     },
     {
+      "id": "pull_rank",
+      "page": 76,
+      "career": "officer",
+      "effects": [
+        { "kind": "capability", "grants": "pull_rank_order" },
+        { "kind": "trigger", "on": { "action": "pull_rank_order" }, "then": [{ "op": "special", "handler": "pull_rank" }, { "op": "stress", "delta": 1 }] }
+      ]
+    },
+    {
+      "id": "full_throttle",
+      "page": 76,
+      "career": "pilot",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["piloting"] }, "change": { "add": 2 }, "when": "full_throttle.when" }
+      ]
+    },
+    {
+      "id": "like_the_back_of_your_hand",
+      "page": 76,
+      "career": "pilot",
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["piloting"] }, "change": { "add": 2 }, "when": "like_the_back_of_your_hand.when" }
+      ],
+      "parameter": "vehicle",
+      "repeatable": true
+    },
+    {
       "id": "reckless",
       "page": 76,
       "career": "pilot",
       "effects": [
         { "kind": "modifier", "applies_to": { "based_on": ["agility"] }, "modifies": "pushes", "change": { "add": 1 } }
       ]
+    },
+    {
+      "id": "resilient",
+      "page": 76,
+      "career": "roughneck",
+      "later": "combat"
     },
     {
       "id": "the_long_haul",
@@ -87,6 +179,15 @@
       "career": "roughneck",
       "effects": [
         { "kind": "modifier", "applies_to": { "based_on": ["strength"] }, "modifies": "pushes", "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "analysis",
+      "page": 77,
+      "career": "scientist",
+      "effects": [
+        { "kind": "capability", "grants": "analyze" },
+        { "kind": "trigger", "on": { "action": "analyze" }, "then": [{ "op": "roll", "roll": { "skill": "observation" }, "on_success": [{ "op": "hint", "text": "analysis.questions" }, { "op": "stress", "delta": -1, "who": "friendly_pcs_short_range" }], "on_fail": [{ "op": "stress", "delta": 1, "who": "friendly_pcs_short_range" }] }] }
       ]
     },
     {
@@ -106,11 +207,65 @@
       ]
     },
     {
+      "id": "bodyguard",
+      "page": 78,
+      "later": "combat"
+    },
+    {
       "id": "calm_breather",
       "page": 78,
       "effects": [
         { "kind": "modifier", "applies_to": { "rolls": ["air_supply"] }, "change": { "add": -2 }, "at_least": 1 }
       ]
+    },
+    {
+      "id": "counselor",
+      "page": 78,
+      "later": "time"
+    },
+    {
+      "id": "eva_specialist",
+      "page": 78,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["heavy_machinery", "comtech"] }, "change": { "add": 2 }, "when": "eva_specialist.when" }
+      ]
+    },
+    {
+      "id": "fast_reflexes",
+      "page": 78,
+      "later": "combat"
+    },
+    {
+      "id": "flyweight",
+      "page": 78,
+      "later": "combat"
+    },
+    {
+      "id": "hard_hitter",
+      "page": 78,
+      "later": "combat"
+    },
+    {
+      "id": "healer",
+      "page": 78,
+      "later": "time"
+    },
+    {
+      "id": "hidden_stash",
+      "page": 78,
+      "later": "gear"
+    },
+    {
+      "id": "hothead",
+      "page": 78,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["manipulation"] }, "change": { "add": 2 }, "when": "hothead.when" }
+      ]
+    },
+    {
+      "id": "killer",
+      "page": 78,
+      "later": "combat"
     },
     {
       "id": "light_eater",
@@ -120,11 +275,26 @@
       ]
     },
     {
+      "id": "light_sleeper",
+      "page": 78,
+      "later": "time"
+    },
+    {
+      "id": "machinegunner",
+      "page": 78,
+      "later": "combat"
+    },
+    {
       "id": "menacing",
       "page": 78,
       "effects": [
         { "kind": "replacement", "replaces": { "attribute_for": "manipulation" }, "with": { "attribute": "strength" }, "optional": true }
       ]
+    },
+    {
+      "id": "merciless",
+      "page": 78,
+      "later": "combat"
     },
     {
       "id": "nerves_of_steel",
@@ -134,10 +304,89 @@
       ]
     },
     {
+      "id": "pack_mule",
+      "page": 79,
+      "later": "gear"
+    },
+    {
+      "id": "quick_draw",
+      "page": 79,
+      "later": "combat"
+    },
+    {
+      "id": "rapid_fire",
+      "page": 79,
+      "later": "combat"
+    },
+    {
+      "id": "rapid_reload",
+      "page": 79,
+      "later": "combat"
+    },
+    {
+      "id": "second_wind",
+      "page": 79,
+      "later": "combat"
+    },
+    {
+      "id": "spaceship_commander",
+      "page": 79,
+      "later": "space_combat"
+    },
+    {
+      "id": "spaceship_gunner",
+      "page": 79,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["ranged_combat"] }, "change": { "add": 2 }, "when": "spaceship_gunner.when" }
+      ]
+    },
+    {
+      "id": "spaceship_mechanic",
+      "page": 79,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["heavy_machinery", "comtech"] }, "change": { "add": 2 }, "when": "spaceship_mechanic.when" }
+      ]
+    },
+    {
+      "id": "stealthy",
+      "page": 79,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["mobility"] }, "change": { "add": 2 }, "when": "stealthy.when" }
+      ]
+    },
+    {
       "id": "stoic",
       "page": 79,
       "effects": [
         { "kind": "replacement", "replaces": { "attribute_for": "stamina" }, "with": { "attribute": "wits" }, "optional": true }
+      ]
+    },
+    {
+      "id": "tough",
+      "page": 79,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "stats": ["health_max"] }, "change": { "add": 2 } }
+      ]
+    },
+    {
+      "id": "watchful",
+      "page": 79,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["observation"] }, "change": { "add": 2 }, "when": "watchful.when" }
+      ]
+    },
+    {
+      "id": "weapon_specialist",
+      "page": 79,
+      "later": "gear",
+      "parameter": "weapon",
+      "repeatable": true
+    },
+    {
+      "id": "zero_g_training",
+      "page": 79,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["mobility"] }, "change": { "add": 2 }, "when": "zero_g_training.when" }
       ]
     }
   ]

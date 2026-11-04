@@ -1,14 +1,113 @@
 {
   "$schema": "../schema/careers.schema.json",
   "entries": [
-    { "id": "colonial_marine", "page": 39, "key_attribute": "strength" },
-    { "id": "colonial_marshal", "page": 41, "key_attribute": "wits" },
-    { "id": "company_agent", "page": 43, "key_attribute": "wits" },
-    { "id": "kid", "page": 45, "key_attribute": "agility" },
-    { "id": "medic", "page": 47, "key_attribute": "empathy" },
-    { "id": "officer", "page": 49, "key_attribute": "empathy" },
-    { "id": "pilot", "page": 51, "key_attribute": "agility" },
-    { "id": "roughneck", "page": 53, "key_attribute": "strength" },
-    { "id": "scientist", "page": 55, "key_attribute": "wits" }
+    {
+      "id": "colonial_marine",
+      "page": 39,
+      "key_attribute": "strength",
+      "key_skills": ["close_combat", "stamina", "ranged_combat"],
+      "talents": ["banter", "overkill", "past_the_limit"],
+      "cash": { "dice": 1, "times": 100 },
+      "names": ["Marcus Mullaney", "Nik Elson", "Vic Pasengrau", "Kimi Diem", "Tara Zanelli", "Chrissy Lopez"],
+      "looks": ["crew_cut", "arm_tattoo", "scar", "cold_eyes", "cocky_grin", "personalized_body_armor"],
+      "items": ["bullet_that_you_survived", "lost_friend_s_dog_tags", "trophy_from_a_defeated_enemy"],
+      "agendas": ["hero", "cover_up", "fear"]
+    },
+    {
+      "id": "colonial_marshal",
+      "page": 41,
+      "key_attribute": "wits",
+      "key_skills": ["observation", "ranged_combat", "manipulation"],
+      "talents": ["authority", "investigator", "subdue"],
+      "cash": { "dice": 1, "times": 100 },
+      "names": ["Jack Kitani", "Barrell Klein", "Ivan Mankov", "Akira Kano", "Angela Harris", "Lee-Ann Jenkins"],
+      "looks": ["chewing_a_toothpick", "cigarette_in_mouth", "impressive_mustache", "worn_cap", "scar_across_face", "graying_hair", "crew_cut", "inquisitive_gaze", "old_leather_jacket"],
+      "items": ["photo_of_a_loved_one", "dented_flask_with_an_inscrip", "news_clipping_of_an_unsolved"],
+      "agendas": ["partner", "badge", "past"]
+    },
+    {
+      "id": "company_agent",
+      "page": 43,
+      "key_attribute": "wits",
+      "key_skills": ["comtech", "observation", "manipulation"],
+      "talents": ["cunning", "personal_safety", "take_control"],
+      "cash": { "dice": 2, "times": 100 },
+      "names": ["Conrad Schmidt", "Alexander Balconi", "Ryan Middlebrook", "Michiko Nogumi", "Sheridan Lamara", "Mercedes Prince"],
+      "looks": ["icy_glare", "disarming_smile", "expensive_rolex", "unique_signet_ring", "tanned", "elaborate_hairstyle", "emotionless_stare", "monogrammed_silk_tie"],
+      "items": ["letter_of_corporate_authoriz", "divorce_papers", "employee_of_the_year_award"],
+      "agendas": ["power", "withheld", "blackmail"]
+    },
+    {
+      "id": "kid",
+      "page": 45,
+      "key_attribute": "agility",
+      "key_skills": ["mobility", "survival", "observation"],
+      "talents": ["beneath_notice", "dodge", "nimble"],
+      "cash": { "dice": 1, "times": 1 },
+      "names": ["Chip Harrington", "Hugo Turner", "Jakey Myers", "Meggie Wu", "Maisie Kelly", "Becca David"],
+      "looks": ["grubby_and_unkempt", "trendy_light_up_sneakers", "torn_denim_jeans", "band_t_shirt", "cargo_shorts", "ponytail", "bored_expression", "baseball_cap"],
+      "items": ["lunchbox_covered_in_stickers", "favorite_doll_or_action_figu", "bracelet_made_by_older_sibli"],
+      "agendas": ["trust", "alone", "fun"]
+    },
+    {
+      "id": "medic",
+      "page": 47,
+      "key_attribute": "empathy",
+      "key_skills": ["mobility", "observation", "medical_aid"],
+      "talents": ["calming_presence", "compassion", "field_surgeon"],
+      "cash": { "dice": 1, "times": 100 },
+      "names": ["Cho Hadfield", "Ken Ibana", "Sullivan Ward", "Ana Kasnavik", "Juno Blanchard", "Katie Aberly"],
+      "looks": ["sympathetic_smile", "short_tidy_hair", "warm_caring_eyes", "dark_bags_under_eyes", "fidgeting_hands", "calm_and_gentle_voice", "cold_unsympathetic_stare", "spectacles", "white_coat"],
+      "items": ["framed_medical_certificate", "letter_from_son_or_daughter", "last_psych_evaluation_all_cl"],
+      "agendas": ["painkiller", "reports", "oath"]
+    },
+    {
+      "id": "officer",
+      "page": 49,
+      "key_attribute": "empathy",
+      "key_skills": ["ranged_combat", "command", "manipulation"],
+      "talents": ["field_commander", "influence", "pull_rank"],
+      "cash": { "dice": 2, "times": 100 },
+      "names": ["Eugene Proctor", "Oliver Bryant", "Lloyd T. Darrington", "Wendy Stern", "Julia Kwang", "Camille Kirschner"],
+      "looks": ["crew_cut_or_tied_back_hair", "serious_intense_expression", "spotless_uniform", "overworked_and_strung_out", "stiff_posture", "relaxed_and_soothing_voice", "jumpsuit_with_mission_patch", "impatiently_taps_a_foot"],
+      "items": ["ship_s_cat", "letter_of_recommendation", "icc_commercial_flight_office"],
+      "agendas": ["promotion", "blame", "mistakes"]
+    },
+    {
+      "id": "pilot",
+      "page": 51,
+      "key_attribute": "agility",
+      "key_skills": ["piloting", "ranged_combat", "comtech"],
+      "talents": ["full_throttle", "like_the_back_of_your_hand", "reckless"],
+      "cash": { "dice": 1, "times": 100 },
+      "names": ["Casper Edmonton", "Sven Stackman", "Kiel Avari", "Fiona O'Neill", "Constance Navona", "Igraine Turner"],
+      "looks": ["arrogant_walk", "steely_blue_eyes", "multi_pocket_flight_suit", "sunglasses", "previous_mission_patches", "deadpan_expression", "chews_gum", "skeptical_look"],
+      "items": ["dashboard_dancer", "pilot_s_logbook", "pilot_shades"],
+      "agendas": ["limit", "stubborn", "loner"]
+    },
+    {
+      "id": "roughneck",
+      "page": 53,
+      "key_attribute": "strength",
+      "key_skills": ["heavy_machinery", "stamina", "close_combat"],
+      "talents": ["resilient", "the_long_haul", "true_grit"],
+      "cash": { "dice": 1, "times": 100 },
+      "names": ["Mac Masterton", "Kip Tranter", "Charlie Stead", "Sassy Diaz", "Kat Longridge", "Jayden Pace"],
+      "looks": ["tattoos", "scar", "broken_nose", "mirthless_eyes", "smirking_face", "loud_laugh", "bruised_and_calloused_hands", "safety_goggles", "filthy_clomping_boots", "wild_hair"],
+      "items": ["tool_belt", "photo_of_partner", "crucifix_or_other_religious"],
+      "agendas": ["thrills", "friends", "downtime"]
+    },
+    {
+      "id": "scientist",
+      "page": 55,
+      "key_attribute": "wits",
+      "key_skills": ["observation", "survival", "comtech"],
+      "talents": ["analysis", "breakthrough", "inquisitive"],
+      "cash": { "dice": 1, "times": 100 },
+      "names": ["Viggo Kowalski", "Drew Lancaster", "Travis Torrence", "Elena Sanchez", "Louise Mallory", "Karima Yusef"],
+      "looks": ["unkempt_appearance", "stained_lab_coat", "nervous_manner", "hands_in_pockets", "tidy_well_trimmed_hair", "thoughtful_gaze", "clears_throat_before_speakin", "bleary_overworked_eyes"],
+      "items": ["albert_einstein_award", "unfinished_scientific_paper", "blackmail_letters"],
+      "agendas": ["stolen", "authority", "delegate"]
+    }
   ]
 }

@@ -209,6 +209,7 @@ fn sprained_ankle_blocks_running() {
     let run = Command::PerformAction {
         actor: "a".into(),
         action: "run".into(),
+        target: None,
     };
     assert!(matches!(
         t.try_run(run.clone(), &[]),
@@ -232,6 +233,7 @@ fn capabilities_are_needed() {
         Command::PerformAction {
             actor: "a".into(),
             action: "dock".into(),
+            target: None,
         },
         &[],
     );
@@ -348,6 +350,7 @@ fn effects_with_their_own_duration() {
             modifies: Modified::Dice,
             change: Change::Add(-1),
             at_least: None,
+            when: None,
             lasts: Some(Lasts::Steps {
                 unit: Unit::Round,
                 count: 1,

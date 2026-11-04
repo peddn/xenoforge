@@ -28,18 +28,28 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 | `stop_panic` | Panik von Hand beenden, etwa Berserk, wenn das Ziel Broken ist | F-29 |
 | `step` | Zeitschritt: Runde, Turn oder Schicht, ggf. mit neuem Tag | Plan 9.1 |
 | `sleep` | Diese Charaktere schlafen (für Nightmares) | 101 |
-| `perform_action` | Aktion ausführen: prüft Sperren und Fähigkeiten, löst Auslöser aus | – |
+| `perform_action` | Aktion ausführen, wahlweise mit Ziel (Pull Rank): prüft Sperren und Fähigkeiten, löst Auslöser aus | 74–77 |
 | `use_signature_item` | Stress −1, einmal pro Akt bzw. Sitzung, gesperrt wie anderer Stressabbau | 104, F-31 |
 | `end_act`, `end_session` | Zähler zurücksetzen; nach der Sitzung die Trauma-Probe | 104 |
 
 ## Ablauf einer Fertigkeitsprobe
 
-1. **Pool bauen:** Wer Broken ist, kann keine Fertigkeitsprobe machen, der Death Roll bleibt erlaubt [S. 98–99]. Attribut + Fertigkeit + Modifikationen (Ausrüstung und Schwierigkeit vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit oder bestehen die Probe ohne Wurf (Breakthrough).
+1. **Pool bauen:** Wer Broken ist, kann keine Fertigkeitsprobe machen, der Death Roll bleibt erlaubt [S. 98–99]. Attribut + Fertigkeit + Modifikationen (Ausrüstung und Schwierigkeit vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit, bestehen die Probe ohne Wurf (Breakthrough) oder geben ihren Lage-Bonus (A-10): Talente wie Stealthy wirken nur, wenn sie für den Wurf angekreuzt sind, und nur bei passender Fertigkeit. Die Vorschau nennt alle passenden; verlangt ein Effekt die Probe, bietet die Engine sie wie Stoic vorher an.
 2. **Würfeln.** Grundwürfel zuerst, dann Stresswürfel.
 3. **Facehugger** auf Stresswürfeln: Mit The Long Haul fragt die Engine, ob es eingesetzt wird. Sonst gibt es keinen Push mehr, und es folgt sofort der Panikwurf; ab 10 ist die Aktion abgebrochen (F-44 für 1–9).
 4. **Push oder Story Point anbieten**, solange erlaubt. Ein Push kostet zuerst Stress +1, dann bleiben die 6er liegen, ein neuer Stresswürfel kommt dazu, und der Rest wird neu geworfen (F-20).
 5. **Ersatzfertigkeit:** Mit Authority wird COMMAND gewürfelt, samt den Modifikatoren für COMMAND; die Aktion bleibt die angefragte Fertigkeit (MANIPULATION) mit deren Gegenwurf, Folgen und Stunts (F-49). Die Stunt-Listen selbst kommen mit Phase 2.
 6. **Ergebnis:** ab einer 6 Erfolg, jede weitere 6 ein Stunt; beim vergleichenden Wurf zählt die Differenz, Gleichstand verliert der Angreifer [S. 64, 70]. Danach laufen Auslöser wie Crotch hit, und eine COMMAND-Probe zum Beenden einer Panik wirkt (F-36).
+
+## Talente als Aktion
+
+- **Investigator** und **Analysis** würfeln OBSERVATION; bei Erfolg geht ein Hinweis mit den Fragen ins Protokoll [S. 74, 77]. Analysis senkt bei Erfolg den Stress der anderen Spielercharaktere auf kurzer Distanz um eins und hebt ihn bei Misserfolg um eins; wer nah genug ist, wählt die Spielleitung (F-39).
+- **Pull Rank** braucht ein Ziel außer sich selbst: COMMAND gegen dessen MANIPULATION, mit Hothead +2 für das Ziel [S. 76, 78]. Der Stress +1 kommt nach dem Wurf (F-56). Androiden zahlen keinen Stress, die Spielleitung bekommt einen Hinweis (F-55).
+- **Tough** hebt die volle Health um 2 [S. 79]; `Engine::full_health` rechnet STRENGTH und solche Boni zusammen.
+
+## Erschaffung
+
+`Engine::check_creation` prüft einen Entwurf (`creation::Draft`) und nennt jedes Problem mit Schritt, Code und Buchseite, in der Reihenfolge des Buchs [S. 27–33]: Karriere; 14 Attributpunkte, je 2 bis 4, das Schlüsselattribut bis 5; 10 Fertigkeitspunkte, Schlüsselfertigkeiten bis 3, andere bis 1; alle Punkte verteilt (F-51); ein Talent der Karriere, ggf. mit Fahrzeug oder Waffe; Name, Aussehen, Agenda und Signature Item, das Androiden nicht brauchen. Androiden bekommen +3 auf zwei verschiedene Attribute (F-50). `creation_actor` baut daraus die Figur mit voller Health und Stresslevel 0, `roll_cash` würfelt das Startgeld der Karriere. Alle Grenzen stehen in `constants.json`.
 
 ## Panik
 
@@ -68,8 +78,7 @@ Die Engine liest die gewählte Option jeder Festlegung aus dem Zustand (`rulings
 | Was | Phase |
 | --- | --- |
 | Konten, Teams, Speichern, echte Zufallsquelle, Würfeln in der Oberfläche | 2 |
-| Talente als eigene Aktion (Analysis, Pull Rank, Personal Safety) | 2 |
-| Initiative, Aktionen pro Runde, Waffen, leeres Magazin nach Facehugger (S. 61, 96; F-38), Death Rolls mit Fristen | 3 |
+| Initiative, Aktionen pro Runde, Waffen, Personal Safety, leeres Magazin nach Facehugger (S. 61, 96; F-38), Death Rolls mit Fristen | 3 |
 | Ruhe pro Turn und Schicht (F-16), Banter, Calming Presence, Counselor, Zeitmodell mit Schichtmarker | 4 |
 | Effekte auf Schiffe und alle an Bord, Fähigkeiten von Modulen | 5 |
 | Raumkampf-Panik | 6 |

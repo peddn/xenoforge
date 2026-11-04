@@ -86,6 +86,9 @@ pub struct Actor {
     pub attributes: BTreeMap<Id, u8>,
     pub skills: BTreeMap<Id, u8>,
     pub talents: BTreeSet<Id>,
+    /// What a talent names, e.g. the vehicle of Like the Back of Your Hand
+    /// [p. 76]; a repeatable talent can name several.
+    pub talent_params: BTreeMap<Id, Vec<String>>,
     pub health: u8,
     /// STRESS LEVEL; only human PCs have one [p. 103, 105].
     pub stress: u8,
@@ -166,12 +169,6 @@ impl Actor {
     /// only [p. 29, 62, 105].
     pub fn human_pc(&self) -> bool {
         self.kind == ActorKind::Pc && !self.android
-    }
-
-    /// Full Health: equal to STRENGTH [p. 30]. Talents such as Tough come
-    /// with phase 2b.
-    pub fn full_health(&self) -> u8 {
-        self.attribute("strength")
     }
 
     /// Health 0 [p. 98].

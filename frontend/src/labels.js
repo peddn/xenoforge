@@ -51,3 +51,23 @@ export function modsText(mods, t, rules) {
     })
     .join(', ')
 }
+
+/** A problem of a draft as the engine names it, with the book page. */
+export function problemText(problem, t, rules) {
+  const params = {
+    name: problem.id ? rules.name(problem.id) : '',
+    value: problem.value,
+    limit: problem.limit,
+    min: rules.constant('creation_attribute_min'),
+  }
+  if (problem.code === 'talent_parameter') {
+    params.kind = t(`wizard.parameter.${rules.entry('talents', problem.id)?.parameter ?? 'vehicle'}`)
+  }
+  return `${t(`wizard.problem.${problem.code}`, params)} (${t('wizard.page', { page: problem.page })})`
+}
+
+/** Starting cash of a career as in the book, e.g. "$2D6 × 100". */
+export function cashFormula(cash, t) {
+  const dice = `${cash.dice > 1 ? cash.dice : ''}${t('wizard.die')}`
+  return t('wizard.cashFormula', { dice, times: cash.times > 1 ? ` × ${cash.times}` : '' })
+}

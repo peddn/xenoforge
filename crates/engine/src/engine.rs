@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::active::{self, ActiveEffect, Modification, RollMatch};
 use crate::data::effects::{
-    Blocked, Cold, Effect, EndEvent, Lasts, Op, ReplaceWith, Replaceable, RollSpec, TriggerEvent,
-    Unit, UsePeriod, Who,
+    ActorStat, Blocked, Change, Cold, Effect, EndEvent, Lasts, Op, ReplaceWith, Replaceable,
+    RollSpec, TriggerEvent, Unit, UsePeriod, Who,
 };
 use crate::data::model::{
     Condition, CriticalInjury, Healing, PanicResult, RollRange, RulingSwitch, Skill, Talent, Trauma,
@@ -66,8 +66,14 @@ pub enum Command {
     Step { step: Step },
     /// These characters sleep (for Nightmares, p. 101).
     Sleep { actors: Vec<ActorId> },
-    /// An actor performs an action; checks blocks and fires triggers.
-    PerformAction { actor: ActorId, action: Id },
+    /// An actor performs an action; checks blocks and fires triggers. Some
+    /// actions need someone to act on, e.g. the target of Pull Rank.
+    PerformAction {
+        actor: ActorId,
+        action: Id,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        target: Option<ActorId>,
+    },
     /// Stress −1 once per Act or session [p. 104].
     UseSignatureItem { actor: ActorId },
     /// End of an Act in Cinematic play.
@@ -325,6 +331,7 @@ impl Engine {
             dice,
             events: Vec::new(),
             queue: VecDeque::new(),
+            action_target: None,
         };
         ctx.command(command)?;
         ctx.run_queue()?;
@@ -342,10 +349,13 @@ impl Engine {
             dice: &mut dice,
             events: Vec::new(),
             queue: VecDeque::new(),
+            action_target: None,
         };
         let talents = match (&request.actor, &request.kind) {
             (Some(actor), crate::roll::RollKind::Skill { skill }) => {
-                ctx.fitting_talents(actor, skill)?
+                let mut talents = ctx.fitting_talents(actor, skill)?;
+                talents.extend(ctx.situational_talents(actor, skill)?);
+                talents
             }
             (Some(actor), crate::roll::RollKind::Death) => ctx.fitting_talents(actor, "stamina")?,
             (
@@ -477,6 +487,16 @@ impl Engine {
         effects.iter().collect()
     }
 
+    /// Whether a talent gives a bonus only in a situation the person ticks
+    /// (A-10).
+    pub(crate) fn has_situation(&self, talent: &str) -> bool {
+        self.talent(talent).is_some_and(|t| {
+            t.effects
+                .iter()
+                .any(|e| matches!(e, Effect::Modifier { when: Some(_), .. }))
+        })
+    }
+
     /// The period a talent's limited use refers to.
     fn use_period(&self, talent: &str) -> Option<UsePeriod> {
         self.talent(talent)?.effects.iter().find_map(|e| match e {
@@ -496,6 +516,27 @@ impl Engine {
 }
 
 impl Engine {
+    /// Full Health: STRENGTH plus what talents add, e.g. Tough +2 [p. 30,
+    /// 79].
+    pub fn full_health(&self, actor: &Actor) -> u8 {
+        let bonus: i16 = actor
+            .talents
+            .iter()
+            .filter_map(|t| self.talent(t))
+            .flat_map(|t| &t.effects)
+            .filter_map(|e| match e {
+                Effect::Modifier {
+                    applies_to,
+                    change: Change::Add(value),
+                    ..
+                } if applies_to.stats.contains(&ActorStat::HealthMax) => Some(i16::from(*value)),
+                _ => None,
+            })
+            .sum();
+        let full = i16::from(actor.attribute("strength")).saturating_add(bonus);
+        u8::try_from(full.max(0)).unwrap_or(u8::MAX)
+    }
+
     /// A value from `constants.json`. The data validation makes sure the
     /// engine's constants exist.
     pub fn constant(&self, id: &str) -> i16 {
@@ -564,6 +605,8 @@ pub(crate) struct Ctx<'a> {
     pub dice: &'a mut dyn Dice,
     pub events: Vec<Event>,
     pub queue: VecDeque<Task>,
+    /// Whom the action being performed is aimed at, if anyone.
+    pub action_target: Option<ActorId>,
 }
 
 impl<'a> Ctx<'a> {
@@ -641,7 +684,14 @@ impl<'a> Ctx<'a> {
                 }
                 Ok(())
             }
-            Command::PerformAction { actor, action } => self.perform_action(&actor, action),
+            Command::PerformAction {
+                actor,
+                action,
+                target,
+            } => {
+                self.action_target = target;
+                self.perform_action(&actor, action)
+            }
             Command::UseSignatureItem { actor } => self.use_signature_item(&actor),
             Command::EndAct => {
                 if self.state.mode != Mode::Cinematic {
@@ -926,10 +976,37 @@ impl<'a> Ctx<'a> {
                 });
                 Ok(())
             }
+            Op::Special { handler } if handler == "pull_rank" => self.pull_rank(actor),
             Op::Special { handler } => Err(RuleError::NotAllowed(format!(
                 "no special handler \"{handler}\""
             ))),
         }
+    }
+
+    /// Pull Rank: COMMAND against the target's MANIPULATION; Hothead helps
+    /// the target, since someone gives them an order [p. 76, 78]. The
+    /// stress comes after the throw (F-56), from the talent's next
+    /// operation. An android pays no stress; the game master gets a note
+    /// (F-55).
+    fn pull_rank(&mut self, actor: &str) -> Result<()> {
+        // perform_action has checked the target.
+        let target = self
+            .action_target
+            .clone()
+            .ok_or_else(|| RuleError::NotAllowed("Pull Rank needs a target".into()))?;
+        let defender = self.actor(&target)?;
+        let mut resist = RollRequest::skill(&target, "manipulation");
+        if defender.talents.contains("hothead") {
+            resist.talents.push("hothead".into());
+        }
+        if self.actor(actor)?.android {
+            self.emit(Event::Hint {
+                actor: actor.to_owned(),
+                text: "pull_rank.android".into(),
+                gm_only: true,
+            });
+        }
+        self.start_opposed(RollRequest::skill(actor, "command"), resist)
     }
 
     /// Proposes the friendly human player characters (F-39); the game
@@ -1246,8 +1323,30 @@ impl<'a> Ctx<'a> {
     // ---- actions, signature item, sessions -----------------------------------
 
     fn perform_action(&mut self, actor: &str, action: Id) -> Result<()> {
-        if !self.engine.rules.actions.iter().any(|a| a.id == action) {
+        let Some(entry) = self.engine.rules.actions.iter().find(|a| a.id == action) else {
             return Err(RuleError::UnknownEntry(action));
+        };
+        // A target only where the action aims at someone else.
+        match (&self.action_target, entry.target) {
+            (None, true) => {
+                return Err(RuleError::NotAllowed(format!(
+                    "\"{action}\" needs a target"
+                )));
+            }
+            (Some(target), true) if target == actor => {
+                return Err(RuleError::NotAllowed(format!(
+                    "\"{action}\" aims at someone else"
+                )));
+            }
+            (Some(_), false) => {
+                return Err(RuleError::NotAllowed(format!(
+                    "\"{action}\" takes no target"
+                )));
+            }
+            (Some(target), true) => {
+                self.actor(target)?;
+            }
+            (None, false) => {}
         }
         let effects = self.effects(actor)?;
         if let Some(by) = active::blocking(&effects, &Blocked::Action(action.clone())) {

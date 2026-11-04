@@ -38,6 +38,10 @@
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0
+        },
+        "target": {
+          "description": "Aimed at another character, e.g. the order of Pull Rank [p. 76].",
+          "type": "boolean"
         }
       },
       "additionalProperties": false,
@@ -79,6 +83,11 @@
           "description": "Space combat, engineer phase [p. 192].",
           "type": "string",
           "const": "space_engineer"
+        },
+        {
+          "description": "Takes a Turn or more outside the Round order, e.g. studying an\nartifact [p. 74, 77].",
+          "type": "string",
+          "const": "turn"
         }
       ]
     }

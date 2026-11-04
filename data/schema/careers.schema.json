@@ -24,27 +24,101 @@
   ],
   "$defs": {
     "Career": {
-      "description": "A career [p. 38–55]. Phase 0 only holds what the probe data needs.",
+      "description": "A career [p. 38–55].",
       "type": "object",
       "properties": {
+        "agendas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cash": {
+          "description": "Starting cash, rolled once at creation.",
+          "$ref": "#/$defs/Cash"
+        },
         "id": {
           "type": "string"
         },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "key_attribute": {
+          "description": "May go to 5 at creation [p. 28].",
           "type": "string"
+        },
+        "key_skills": {
+          "description": "May go to 3 at creation [p. 28].",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "looks": {
+          "description": "Suggestions for appearance, signature item and Personal Agenda.\nTheir texts are `<career>.look.<id>`, `<career>.item.<id>` and\n`<career>.agenda.<id>` (A-11).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "names": {
+          "description": "Suggested names as in the book [p. 30]; not translated.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "page": {
           "type": "integer",
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0
+        },
+        "talents": {
+          "description": "The three career talents; one is chosen at creation [p. 29, 74].",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false,
       "required": [
         "id",
         "page",
-        "key_attribute"
+        "key_attribute",
+        "key_skills",
+        "talents",
+        "cash",
+        "names",
+        "looks",
+        "items",
+        "agendas"
+      ]
+    },
+    "Cash": {
+      "description": "Starting cash: `dice` D6 times `times` dollars.",
+      "type": "object",
+      "properties": {
+        "dice": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "times": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "dice",
+        "times"
       ]
     }
   }

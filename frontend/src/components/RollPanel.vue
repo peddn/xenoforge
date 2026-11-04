@@ -10,7 +10,9 @@ import { useTeamStore } from '@/stores/team'
 
 // The content of the roll dialog (plan 6.1). The dice count comes from the server's
 // preview; this component computes no rules. The difficulty is the game
-// master's (A-08).
+// master's (A-08). Talents with a situational bonus are ticked by the player
+// (A-10); talents that grant an action, such as Analysis, are used from here
+// too [p. 74–77].
 const props = defineProps({ character: { type: Object, required: true } })
 const emit = defineEmits(['done'])
 const { t } = useI18n()
@@ -25,7 +27,23 @@ const talents = ref([])
 const note = ref('')
 const preview = ref(null)
 const error = ref('')
+const target = ref(null)
 let timer = null
+
+// The situation in which a talent's bonus counts, from its rule data.
+const situation = (id) => rules.entry('talents', id)?.effects?.find((e) => e.when)?.when
+const param = (id) => props.character.actor?.talent_params?.[id]?.join(', ')
+
+// Actions granted by the character's talents; `target` in the action data
+// says whether it aims at someone else.
+const talentActions = computed(() =>
+  (props.character.actor?.talents ?? []).flatMap((talent) =>
+    (rules.entry('talents', talent)?.effects ?? [])
+      .filter((e) => e.kind === 'capability' && rules.entry('actions', e.grants))
+      .map((e) => ({ talent, action: rules.entry('actions', e.grants) })),
+  ),
+)
+const others = computed(() => (team.view.characters ?? []).filter((c) => c.id !== props.character.id))
 
 const request = computed(() => {
   const [kind, id] = what.value.split(':')
@@ -63,13 +81,21 @@ watch(
   { immediate: true, deep: true },
 )
 
-async function roll() {
+async function send(command) {
   try {
-    await team.command({ command: 'roll', request: request.value }, note.value)
+    await team.command(command, note.value)
     emit('done')
   } catch (e) {
     error.value = e.message
   }
+}
+
+const roll = () => send({ command: 'roll', request: request.value })
+
+function perform(action) {
+  const command = { command: 'perform_action', actor: String(props.character.id), action: action.id }
+  if (action.target) command.target = target.value == null ? null : String(target.value)
+  send(command)
 }
 </script>
 
@@ -159,8 +185,13 @@ async function roll() {
           v-model="talents"
           type="checkbox"
           :value="id"
+          :data-test="`talent-${id}`"
         >
-        {{ rules.name(id) }}
+        {{ rules.name(id) }}<template v-if="param(id)"> ({{ param(id) }})</template>
+        <span
+          v-if="situation(id)"
+          class="text-dim"
+        >– {{ rules.text(situation(id)) }}</span>
       </label>
     </div>
     <p
@@ -173,6 +204,45 @@ async function roll() {
         class="text-dim"
       > · {{ modsText(preview.modifications, t, rules) }}</span>
     </p>
+    <div
+      v-if="talentActions.length"
+      class="grid gap-2 border-t border-dashed border-line pt-3"
+    >
+      <span class="text-sm text-dim uppercase">{{ t('roll.talentActions') }}</span>
+      <XField
+        v-if="talentActions.some((a) => a.action.target)"
+        :label="t('roll.target')"
+      >
+        <select
+          v-model="target"
+          class="justify-self-start"
+          data-test="target"
+        >
+          <option
+            v-for="c in others"
+            :key="c.id"
+            :value="c.id"
+          >
+            {{ c.name }}
+          </option>
+        </select>
+      </XField>
+      <div
+        v-for="{ talent, action } in talentActions"
+        :key="action.id"
+        class="grid gap-1"
+      >
+        <XButton
+          class="justify-self-start"
+          :disabled="action.target && target == null"
+          :data-test="`action-${action.id}`"
+          @click="perform(action)"
+        >
+          {{ rules.name(talent) }}: {{ rules.name(action.id) }}
+        </XButton>
+        <span class="text-sm text-dim">{{ rules.text(`${talent}.desc`) }} ({{ t('wizard.page', { page: action.page }) }})</span>
+      </div>
+    </div>
     <p
       v-if="error"
       class="text-red"

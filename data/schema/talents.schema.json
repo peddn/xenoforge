@@ -30,6 +30,16 @@
         "slow"
       ]
     },
+    "ActorStat": {
+      "description": "Values of a character that effects can change.",
+      "oneOf": [
+        {
+          "description": "Full Health, normally STRENGTH [p. 30].",
+          "type": "string",
+          "const": "health_max"
+        }
+      ]
+    },
     "Blocked": {
       "description": "Something a restriction or block op forbids.",
       "oneOf": [
@@ -190,6 +200,13 @@
             },
             "target": {
               "$ref": "#/$defs/Target"
+            },
+            "when": {
+              "description": "Applies only in a situation the app cannot see, e.g. \"when\nmoving undetected\"; the player ticks it for a roll (A-10).\nTranslation key of the situation.",
+              "type": [
+                "string",
+                "null"
+              ]
             }
           },
           "additionalProperties": false,
@@ -645,6 +662,31 @@
         }
       ]
     },
+    "Later": {
+      "description": "Parts of the app still to come (plan section 12).",
+      "oneOf": [
+        {
+          "description": "Equipment, phase 2c.",
+          "type": "string",
+          "const": "gear"
+        },
+        {
+          "description": "Combat, phase 3.",
+          "type": "string",
+          "const": "combat"
+        },
+        {
+          "description": "Time, rest and campaign, phase 4.",
+          "type": "string",
+          "const": "time"
+        },
+        {
+          "description": "Space combat, phase 6.",
+          "type": "string",
+          "const": "space_combat"
+        }
+      ]
+    },
     "ModTarget": {
       "description": "What a modifier applies to. At least one list must be filled.",
       "type": "object",
@@ -675,6 +717,13 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "stats": {
+          "description": "Values of a character.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ActorStat"
           }
         }
       },
@@ -1128,17 +1177,51 @@
         "id": {
           "type": "string"
         },
+        "later": {
+          "description": "The part of the app that will make the talent work; until then it\ncan be chosen and is shown, without effect.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Later"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "page": {
           "type": "integer",
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0
+        },
+        "parameter": {
+          "description": "The talent names something of its own: a vehicle or a weapon.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TalentParameter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repeatable": {
+          "description": "Can be taken more than once, each time for another parameter.",
+          "type": "boolean"
         }
       },
       "additionalProperties": false,
       "required": [
         "id",
         "page"
+      ]
+    },
+    "TalentParameter": {
+      "description": "What a talent names, e.g. Like the Back of Your Hand: one vehicle\n[p. 76].",
+      "type": "string",
+      "enum": [
+        "vehicle",
+        "weapon"
       ]
     },
     "Target": {
