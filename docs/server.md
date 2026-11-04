@@ -129,9 +129,9 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `POST /teams/{id}/commands` | `{ command }`, ein Engine-Befehl | neue Protokolleinträge, soweit sichtbar |
 | `POST /teams/{id}/preview` | Wurfanfrage wie in `roll` | Würfelzahl und Modifikatoren, ohne zu würfeln |
 | `POST /teams/{id}/undo` | – | Eintrag `undone` |
-| `GET /teams/{id}/events` | `Last-Event-ID` oder `?after=<id>` | Server-Sent Events, je Eintrag `{ id, visible_to, by, at, entry }` |
+| `GET /teams/{id}/events` | `Last-Event-ID` oder `?after=<id>` | Server-Sent Events, je Eintrag `{ id, batch, visible_to, by, at, entry }` |
 
-Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `character_joined`, `character_removed`, `corrected`, `undone`.
+Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `character_joined`, `character_removed`, `corrected`, `undone`. Alle Einträge eines Befehls tragen in `batch` die Nummer des ersten; die Oberfläche zeigt sie als einen Block.
 
 ### Regeldaten
 

@@ -8,25 +8,25 @@ import { originLabel } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
-// The game master's tools (plan section 3): engine commands by hand.
+// The game master's actions for one character (plan section 3): engine
+// commands by hand.
+const props = defineProps({ character: { type: Object, required: true } })
 const { t } = useI18n()
 const rules = useRulesStore()
 const team = useTeamStore()
 
-const target = ref(null)
 const amount = ref(1)
 const sourceKind = ref('trauma')
 const sourceId = ref('')
 const cold = ref('sub_zero')
-const pool = ref(8)
 const error = ref('')
 
-const characters = computed(() => team.view.characters)
-const actor = computed(() => target.value ?? String(characters.value[0]?.id ?? ''))
-const current = computed(() => characters.value.find((c) => String(c.id) === actor.value))
+const actor = computed(() => String(props.character.id))
 const entries = computed(() =>
   rules.list({ trauma: 'traumas', condition: 'conditions', injury: 'critical-injuries' }[sourceKind.value]),
 )
+// Whether the chosen condition asks for a cold level is read from its rule
+// data; the engine applies it.
 const needsCold = computed(() => {
   if (sourceKind.value !== 'condition') return false
   const condition = entries.value.find((c) => c.id === sourceId.value)
@@ -50,35 +50,11 @@ function apply() {
       : { [sourceKind.value]: id }
   run({ command: 'apply', actor: actor.value, source })
 }
-
-async function undo() {
-  error.value = ''
-  try {
-    await team.undo()
-  } catch (e) {
-    error.value = e.message
-  }
-}
 </script>
 
 <template>
-  <div class="panel">
-    <h3>{{ t('gm.tools') }}</h3>
+  <div class="stack">
     <div class="row">
-      <XField :label="t('crew.character')">
-        <select
-          :value="actor"
-          @change="target = $event.target.value"
-        >
-          <option
-            v-for="c in characters"
-            :key="c.id"
-            :value="String(c.id)"
-          >
-            {{ c.name }}
-          </option>
-        </select>
-      </XField>
       <XField :label="t('gm.amount')">
         <input
           v-model.number="amount"
@@ -86,12 +62,10 @@ async function undo() {
           min="1"
         >
       </XField>
-    </div>
-    <div
-      v-if="actor"
-      class="row"
-    >
-      <XButton @click="run({ command: 'change_stress', actors: [actor], delta: amount })">
+      <XButton
+        data-test="stress-up"
+        @click="run({ command: 'change_stress', actors: [actor], delta: amount })"
+      >
         {{ t('gm.stressUp') }}
       </XButton>
       <XButton @click="run({ command: 'change_stress', actors: [actor], delta: -amount })">
@@ -100,6 +74,8 @@ async function undo() {
       <XButton @click="run({ command: 'damage', actor, amount })">
         {{ t('gm.damage') }}
       </XButton>
+    </div>
+    <div class="row">
       <XButton @click="run({ command: 'panic_roll', actor })">
         {{ t('gm.panicRoll') }}
       </XButton>
@@ -110,10 +86,7 @@ async function undo() {
         {{ t('gm.signatureItem') }}
       </XButton>
     </div>
-    <div
-      v-if="actor"
-      class="row"
-    >
+    <div class="row">
       <XField :label="t('gm.source')">
         <select
           v-model="sourceKind"
@@ -160,11 +133,11 @@ async function undo() {
       </XButton>
     </div>
     <ul
-      v-if="current?.actor?.sources?.length"
+      v-if="character.actor?.sources?.length"
       class="list"
     >
       <li
-        v-for="(source, i) in current.actor.sources"
+        v-for="(source, i) in character.actor.sources"
         :key="i"
         class="row"
       >
@@ -177,36 +150,6 @@ async function undo() {
         </XButton>
       </li>
     </ul>
-    <div class="row">
-      <XField :label="t('gm.pool')">
-        <input
-          v-model.number="pool"
-          type="number"
-          min="1"
-        >
-      </XField>
-      <XButton @click="run({ command: 'roll', request: { actor: null, kind: { fixed_pool: { dice: pool } } } })">
-        {{ t('gm.rollPool') }}
-      </XButton>
-    </div>
-    <div class="row">
-      <XButton
-        v-if="team.view.mode === 'cinematic'"
-        @click="run({ command: 'end_act' })"
-      >
-        {{ t('gm.endAct') }}
-      </XButton>
-      <XButton @click="run({ command: 'end_session' })">
-        {{ t('gm.endSession') }}
-      </XButton>
-      <XButton
-        variant="danger"
-        data-test="undo"
-        @click="undo"
-      >
-        {{ t('gm.undo') }}
-      </XButton>
-    </div>
     <p
       v-if="error"
       class="error"

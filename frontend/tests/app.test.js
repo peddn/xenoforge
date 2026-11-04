@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import DecisionList from '@/components/DecisionList.vue'
+import LogList from '@/components/LogList.vue'
 import RollPanel from '@/components/RollPanel.vue'
 import { choiceLabel, modsText, originLabel } from '@/labels'
 import { guard, routes } from '@/router'
@@ -134,13 +135,15 @@ describe('rolling', () => {
         gm: { id: 1, name: 'Mother' },
         is_gm: true,
         members: [],
-        characters: [{ id: 9, name: 'Charlize', owner_id: 2, owner_name: 'Gina', actor, hints: [] }],
+        characters: [{ id: 9, name: 'Charlize', owner_id: 2, owner_name: 'Gina', actor, hints: [], broken: false, health_max: 3 }],
         pending: [],
-        story_points: {},
+        story_points: { 2: 1 },
         rulings: {},
       },
       'GET /characters': [],
       'PUT /teams/5/characters/9': [],
+      'POST /teams/5/commands': [],
+      'POST /teams/5/preview': { base_dice: 4, stress_dice: 1, modifications: [], talents: [], max_pushes: 1 },
     })
     const auth = useAuthStore()
     auth.user = { id: 1, name: 'Mother', role: 'gm' }
@@ -150,13 +153,27 @@ describe('rolling', () => {
     await r.isReady()
     const wrapper = mount(TeamView, { global: { plugins: [pinia, i18n, r] } })
     await flushPromises()
-    const correct = wrapper.findAll('button').find((b) => b.text() === 'Korrigieren')
-    await correct.trigger('click')
+    // The sheet opens as a dialog; the game master corrects from there.
+    await wrapper.get('[data-test="sheet-9"]').trigger('click')
+    expect(wrapper.find('dialog').exists()).toBe(true)
+    await wrapper.get('[data-test="correct"]').trigger('click')
     await wrapper.get('[data-test="attr-wits"]').setValue(5)
-    await wrapper.findAll('button').find((b) => b.text() === 'Speichern').trigger('click')
+    await wrapper.get('[data-test="save-correction"]').trigger('click')
     await flushPromises()
     const put = calls.find((c) => c.method === 'PUT')
     expect(put.body.actor.attributes.wits).toBe(5)
+
+    // Closing, then the actions for the same character.
+    await wrapper.get('[data-test="modal-close"]').trigger('click')
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    await wrapper.get('[data-test="actions-9"]').trigger('click')
+    await wrapper.get('[data-test="stress-up"]').trigger('click')
+    await flushPromises()
+    const command = calls.find((c) => c.path === '/teams/5/commands')
+    expect(command.body.command).toEqual({ command: 'change_stress', actors: ['9'], delta: 1 })
+
+    // Story Points in Cinematic play, full Health from the server.
+    expect(wrapper.get('[data-test="crew-9"]').text()).toContain('3/3')
   })
 
   it('reports an expired session', async () => {
@@ -183,6 +200,29 @@ describe('rolling', () => {
     await team.refresh()
     expect(team.view).toBe(null)
     expect(team.gone).toBe(true)
+  })
+})
+
+describe('log', () => {
+  it('shows each command as one block', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = { id: 5, characters: [{ id: 9, name: 'Charlize' }] }
+    const joined = (id, batch) => ({ id, batch, by: 'Gina', at: 0, entry: { type: 'character_joined', name: 'Charlize' } })
+    const stress = (id, batch) => ({
+      id,
+      batch,
+      by: 'Mother',
+      at: 60,
+      entry: { type: 'engine', event: { event: 'stress_changed', actor: '9', from: id - 2, to: id - 1 } },
+    })
+    // The first entry is older and has no batch.
+    team.log = [{ ...joined(1), batch: undefined }, stress(2, 2), stress(3, 2), joined(4, 4)]
+    const wrapper = mount(LogList, { global: { plugins: [pinia, i18n] } })
+    const blocks = wrapper.findAll('.log-block')
+    expect(blocks).toHaveLength(3)
+    expect(blocks[1].findAll('.log-entry')).toHaveLength(2)
+    expect(blocks[1].find('header').text()).toContain('Mother')
   })
 })
 

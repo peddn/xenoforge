@@ -27,7 +27,8 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "remove": "Remove",
-    "add": "Add"
+    "add": "Add",
+    "close": "Close"
   },
   "home": {
     "characters": "My characters",
@@ -51,7 +52,8 @@
     "health": "Health",
     "stress": "Stress",
     "android": "Android",
-    "talents": "Talents"
+    "talents": "Talents",
+    "title": "Sheet: {name}"
   },
   "join": {
     "title": "Invitation",
@@ -66,7 +68,10 @@
     "state": "State",
     "broken": "Broken",
     "panic": "Panic",
-    "hidden": "Only the game master sees the values."
+    "hidden": "Only the game master sees the values.",
+    "storyPoints": "Story Points",
+    "sheet": "Sheet",
+    "actions": "Actions"
   },
   "roll": {
     "roll": "Roll",
@@ -111,7 +116,6 @@
     "aboard": "everyone aboard"
   },
   "gm": {
-    "tools": "Game master tools",
     "amount": "Amount",
     "stressUp": "Stress +",
     "stressDown": "Stress −",
@@ -132,7 +136,7 @@
     "endSession": "End session",
     "undo": "Undo",
     "correct": "Correct",
-    "correctTitle": "Correct {name}"
+    "actionsTitle": "Actions: {name}"
   },
   "cold": {
     "above_freezing": "above freezing",
@@ -158,7 +162,8 @@
     "removeCharacter": "Remove from team",
     "goneTitle": "No longer in the team",
     "gone": "Your character was taken out of the team.",
-    "back": "Back to the overview"
+    "back": "Back to the overview",
+    "removeConfirm": "Really take {name} out of the team?"
   },
   "outcome": {
     "success": "Success",

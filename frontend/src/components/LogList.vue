@@ -9,8 +9,8 @@ import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The shared log: every roll with each die and each modification with its
-// source (plan 4.2).
-const { t } = useI18n()
+// source (plan 4.2). Everything one command caused forms one block.
+const { t, locale } = useI18n()
 const rules = useRulesStore()
 const team = useTeamStore()
 const box = ref(null)
@@ -90,7 +90,23 @@ function describe(entry) {
   }
 }
 
-const rows = computed(() => team.log.map((entry) => ({ id: entry.id, ...describe(entry) })))
+const time = (at) => new Date(at * 1000).toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
+
+// Entries of one command are consecutive; older ones without a batch stand
+// alone.
+const blocks = computed(() => {
+  const list = []
+  for (const entry of team.log) {
+    const batch = entry.batch ?? entry.id
+    let block = list.at(-1)
+    if (!block || block.batch !== batch) {
+      block = { batch, by: entry.by, at: time(entry.at), rows: [] }
+      list.push(block)
+    }
+    block.rows.push({ id: entry.id, ...describe(entry) })
+  }
+  return list
+})
 
 watch(
   () => team.log.length,
@@ -108,35 +124,44 @@ watch(
     aria-live="polite"
     data-test="log"
   >
-    <div
-      v-for="row in rows"
-      :key="row.id"
-      class="log-entry"
+    <section
+      v-for="block in blocks"
+      :key="block.batch"
+      class="log-block"
     >
-      <div v-if="row.status || row.text">
-        <XStatus
-          v-if="row.status"
-          :tone="row.status.tone"
-          :text="row.status.text"
-        />
-        {{ row.text }}
-      </div>
+      <header class="log-meta">
+        {{ block.by ?? '' }} · {{ block.at }}
+      </header>
       <div
-        v-if="row.dice"
-        class="dice"
+        v-for="row in block.rows"
+        :key="row.id"
+        class="log-entry"
       >
-        <XDie
-          v-for="(die, i) in row.dice"
-          :key="i"
-          :die="die"
-        />
+        <div v-if="row.status || row.text">
+          <XStatus
+            v-if="row.status"
+            :tone="row.status.tone"
+            :text="row.status.text"
+          />
+          {{ row.text }}
+        </div>
+        <div
+          v-if="row.dice"
+          class="dice"
+        >
+          <XDie
+            v-for="(die, i) in row.dice"
+            :key="i"
+            :die="die"
+          />
+        </div>
+        <div
+          v-if="row.detail"
+          class="log-meta"
+        >
+          {{ row.detail }}
+        </div>
       </div>
-      <div
-        v-if="row.detail"
-        class="log-meta"
-      >
-        {{ row.detail }}
-      </div>
-    </div>
+    </section>
   </div>
 </template>

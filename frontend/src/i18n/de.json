@@ -27,7 +27,8 @@
     "cancel": "Abbrechen",
     "confirm": "Bestätigen",
     "remove": "Entfernen",
-    "add": "Hinzufügen"
+    "add": "Hinzufügen",
+    "close": "Schließen"
   },
   "home": {
     "characters": "Meine Charaktere",
@@ -51,7 +52,8 @@
     "health": "Health",
     "stress": "Stress",
     "android": "Android",
-    "talents": "Talente"
+    "talents": "Talente",
+    "title": "Bogen: {name}"
   },
   "join": {
     "title": "Einladung",
@@ -66,7 +68,10 @@
     "state": "Zustand",
     "broken": "Broken",
     "panic": "Panik",
-    "hidden": "Werte sieht nur die Spielleitung."
+    "hidden": "Werte sieht nur die Spielleitung.",
+    "storyPoints": "Story Points",
+    "sheet": "Bogen",
+    "actions": "Aktionen"
   },
   "roll": {
     "roll": "Würfeln",
@@ -111,7 +116,6 @@
     "aboard": "alle an Bord"
   },
   "gm": {
-    "tools": "Werkzeuge der Spielleitung",
     "amount": "Wert",
     "stressUp": "Stress +",
     "stressDown": "Stress −",
@@ -132,7 +136,7 @@
     "endSession": "Sitzung beenden",
     "undo": "Rückgängig",
     "correct": "Korrigieren",
-    "correctTitle": "{name} korrigieren"
+    "actionsTitle": "Aktionen: {name}"
   },
   "cold": {
     "above_freezing": "über null",
@@ -158,7 +162,8 @@
     "removeCharacter": "Aus dem Team nehmen",
     "goneTitle": "Nicht mehr im Team",
     "gone": "Dein Charakter wurde aus dem Team genommen.",
-    "back": "Zur Übersicht"
+    "back": "Zur Übersicht",
+    "removeConfirm": "{name} wirklich aus dem Team nehmen?"
   },
   "outcome": {
     "success": "Erfolg",

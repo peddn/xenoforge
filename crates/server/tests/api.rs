@@ -347,6 +347,13 @@ async fn rolls_and_decisions() {
     let roll = json!({ "command": "roll", "request": { "actor": actor, "kind": { "skill": { "skill": "observation" } } } });
     let (status, entries) = player.command(team, roll.clone()).await;
     assert_eq!(status, StatusCode::OK, "{entries}");
+    // One command, one block: every entry names the first one.
+    let list = entries.as_array().unwrap();
+    assert!(list.len() > 1);
+    assert!(
+        list.iter().all(|e| e["batch"] == list[0]["id"]),
+        "{entries}"
+    );
     let events = events_of(&entries);
     let decision = events.iter().find(|e| e["event"] == "decision").unwrap();
     let pending = decision["pending"].as_u64().unwrap();
@@ -478,6 +485,7 @@ async fn roll_modifications_follow_a08() {
     assert_eq!(hard["base_dice"], 5, "WITS 4 + OBSERVATION 2 - 2 + help 1");
     let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
     assert_eq!(view["characters"][0]["broken"], false);
+    assert_eq!(view["characters"][0]["health_max"], 3);
 }
 
 /// Corrections and commands can be undone (plan section 3 and 10).

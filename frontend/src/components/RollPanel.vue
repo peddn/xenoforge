@@ -8,7 +8,7 @@ import { modsText } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
-// The roll dialog (plan 6.1). The dice count comes from the server's
+// The content of the roll dialog (plan 6.1). The dice count comes from the server's
 // preview; this component computes no rules. The difficulty is the game
 // master's (A-08).
 const props = defineProps({ character: { type: Object, required: true } })
@@ -73,8 +73,7 @@ async function roll() {
 </script>
 
 <template>
-  <div class="panel">
-    <h3>{{ t('roll.title', { name: character.name }) }}</h3>
+  <div class="stack">
     <div class="row">
       <XField :label="t('roll.what')">
         <select
