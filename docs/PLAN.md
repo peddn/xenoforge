@@ -97,7 +97,7 @@ Eine Seite zeigt der Spielleitung alles Wichtige auf einen Blick, sortiert nach 
 
 1. Was Leben bedroht, dann Einschränkungen, dann Hinweise, dann reine Infos (Stufen AUTO, HINWEIS, INFO aus 7.4).
 2. Wer ist wo, mit Sprechgruppen.
-3. Werte der Crew: Health, Stress, Panik, Zustände.
+3. Werte der Crew: Health, Stress, Story Points (Cinematic), Panik, Zustände; der Bogen jedes Charakters auf einen Klick.
 4. Was demnächst abläuft, zum Beispiel Notreparaturen oder Timer.
 5. Offene Reparaturen mit Proben und Ersatzteilen.
 
@@ -744,6 +744,8 @@ xenoforge/
 Die ganze App sieht aus wie die Bordcomputer der Filme: Monospace-Schrift, Grün oder Bernstein auf Schwarz, Statuscodes in Großbuchstaben, sparsam blinkende Warnungen. Es gibt ein einziges Design-System für alle Seiten, kein zweites Design nur für die Schiffsseite. Das Design-System entsteht in Phase 2 als Grundlage.
 
 - **Lesbarkeit:** ausreichender Kontrast, auch auf dem Handy; Farbe trägt nie allein die Bedeutung, dazu kommen immer Text und Symbol.
+- **Dialoge statt eingeschobener Blöcke:** Würfeln, Bogen und die Aktionen der Spielleitung öffnen sich über der Seite; auf dem Handy füllen sie den Bildschirm. Die Teamseite bleibt dadurch eine ruhige Übersicht aus Crew und Protokoll.
+- **Protokoll in Blöcken:** Alles, was ein Befehl auslöst, steht in einem abgesetzten Block mit Person und Uhrzeit.
 - **Keine fremden Marken:** keine Logos oder Grafiken aus den Filmen oder dem Buch, eigene Gestaltung.
 
 ## 12. Umsetzungsphasen

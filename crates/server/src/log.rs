@@ -52,6 +52,9 @@ pub enum Entry {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Stored {
     pub id: i64,
+    /// The command it came from: the id of that command's first entry.
+    /// The interface shows each command as one block.
+    pub batch: i64,
     #[serde(skip)]
     pub team_id: i64,
     /// `all` or `gm`.
@@ -65,6 +68,10 @@ pub struct Stored {
 #[derive(Serialize, Deserialize)]
 struct Payload {
     by: Option<String>,
+    /// Missing on a command's first entry, which is its own batch; older
+    /// entries have none either and stand alone.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    batch: Option<i64>,
     entry: Entry,
 }
 
@@ -90,12 +97,13 @@ pub async fn append(
     user: &User,
     entries: Vec<Entry>,
 ) -> ApiResult<Vec<Stored>> {
-    let mut stored = Vec::with_capacity(entries.len());
+    let mut stored: Vec<Stored> = Vec::with_capacity(entries.len());
     let at = now();
     for entry in entries {
         let visible_to = visibility(&entry).to_owned();
         let payload = Payload {
             by: Some(user.name.clone()),
+            batch: stored.first().map(|first| first.id),
             entry,
         };
         let id = sqlx::query(
@@ -111,6 +119,7 @@ pub async fn append(
         .last_insert_rowid();
         stored.push(Stored {
             id,
+            batch: payload.batch.unwrap_or(id),
             team_id,
             visible_to,
             by: payload.by,
@@ -171,8 +180,10 @@ async fn events(
     let mut replay = Vec::with_capacity(rows.len());
     for row in rows {
         let payload: Payload = serde_json::from_str(row.get("payload"))?;
+        let id: i64 = row.get("id");
         replay.push(Stored {
-            id: row.get("id"),
+            id,
+            batch: payload.batch.unwrap_or(id),
             team_id: row.get("team_id"),
             visible_to: row.get("visible_to"),
             by: payload.by,

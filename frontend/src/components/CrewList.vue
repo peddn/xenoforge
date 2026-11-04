@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
@@ -9,14 +10,18 @@ import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The crew part of the overview (plan 3.1). Players see the values of
-// their own characters only (A-01).
-const emit = defineEmits(['roll', 'correct'])
+// their own characters only (A-01). Rolling, the sheet and the game
+// master's actions open as dialogs.
+const emit = defineEmits(['roll', 'sheet', 'actions'])
 const { t } = useI18n()
 const auth = useAuthStore()
 const rules = useRulesStore()
 const team = useTeamStore()
 
 const mine = (c) => c.owner_id === auth.user?.id
+// Story Points exist in Cinematic play only (F-06) and belong to the player.
+const cinematic = computed(() => team.view.mode === 'cinematic')
+const storyPoints = (c) => team.view.story_points[String(c.owner_id)] ?? 0
 </script>
 
 <template>
@@ -27,6 +32,9 @@ const mine = (c) => c.owner_id === auth.user?.id
           <th>{{ t('crew.character') }}</th>
           <th>{{ t('sheet.health') }}</th>
           <th>{{ t('sheet.stress') }}</th>
+          <th v-if="cinematic">
+            {{ t('crew.storyPoints') }}
+          </th>
           <th>{{ t('crew.state') }}</th>
         </tr>
       </thead>
@@ -45,16 +53,24 @@ const mine = (c) => c.owner_id === auth.user?.id
               <XButton
                 v-if="mine(c) || team.view.is_gm"
                 :data-test="`roll-${c.id}`"
-                @click="emit('roll', c)"
+                @click="emit('roll', c.id)"
               >
                 {{ t('roll.roll') }}
               </XButton>
               <XButton
+                variant="quiet"
+                :data-test="`sheet-${c.id}`"
+                @click="emit('sheet', c.id)"
+              >
+                {{ t('crew.sheet') }}
+              </XButton>
+              <XButton
                 v-if="team.view.is_gm"
                 variant="quiet"
-                @click="emit('correct', c)"
+                :data-test="`actions-${c.id}`"
+                @click="emit('actions', c.id)"
               >
-                {{ t('gm.correct') }}
+                {{ t('crew.actions') }}
               </XButton>
             </div>
           </td>
@@ -65,9 +81,12 @@ const mine = (c) => c.owner_id === auth.user?.id
                 tone="alert"
                 :text="t('crew.broken')"
               />
-              <span v-else>{{ c.actor.health }}</span>
+              <span v-else>{{ c.actor.health }}/{{ c.health_max }}</span>
             </td>
             <td>{{ c.actor.android ? '–' : c.actor.stress }}</td>
+            <td v-if="cinematic">
+              {{ storyPoints(c) }}
+            </td>
             <td>
               <div v-if="c.actor.panic">
                 <XStatus
@@ -93,7 +112,7 @@ const mine = (c) => c.owner_id === auth.user?.id
           </template>
           <td
             v-else
-            colspan="3"
+            :colspan="cinematic ? 4 : 3"
             class="muted"
           >
             {{ t('crew.hidden') }}

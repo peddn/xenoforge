@@ -120,6 +120,8 @@ struct CharacterInTeam {
     actor: Option<Actor>,
     /// Broken as the engine sees it [p. 98], for the same people.
     broken: Option<bool>,
+    /// Full Health [p. 30], for the same people.
+    health_max: Option<u8>,
     /// Hints working on the character: (source, text key).
     hints: Vec<(String, String)>,
 }
@@ -188,6 +190,7 @@ async fn view(
             owner_name: name_of(&state, character.owner_id).await?,
             actor: sees.then(|| character.data.actor.clone()),
             broken: sees.then(|| character.data.actor.broken()),
+            health_max: sees.then(|| character.data.actor.full_health()),
             hints,
         });
     }
