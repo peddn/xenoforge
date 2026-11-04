@@ -39,7 +39,9 @@
     "noTeams": "Noch in keinem Team.",
     "newTeam": "Neues Team",
     "mode": "Spielart",
-    "teamsByGm": "Teams legt eine Spielleitung an und schickt dir einen Einladungslink."
+    "teamsByGm": "Teams legt eine Spielleitung an und schickt dir einen Einladungslink.",
+    "freeCharacter": "Frei anlegen (Spielleitung)",
+    "draft": "Entwurf"
   },
   "mode": {
     "cinematic": "Cinematic",
@@ -54,13 +56,22 @@
     "stress": "Stress",
     "android": "Android",
     "talents": "Talente",
-    "title": "Bogen: {name}"
+    "title": "Bogen: {name}",
+    "career": "Karriere",
+    "agenda": "Persönliche Agenda",
+    "buddy": "Buddy",
+    "rival": "Rival",
+    "signatureItem": "Signature Item",
+    "startCash": "Startgeld",
+    "cashRolled": "{amount} $ (gewürfelt: {dice})",
+    "edit": "Texte und Agenda bearbeiten",
+    "deleteConfirm": "{name} endgültig löschen?"
   },
   "join": {
     "title": "Einladung",
     "invited": "{gm} lädt dich in das Team {team} ein.",
     "character": "Mit welchem Charakter?",
-    "noFree": "Du hast keinen freien Charakter. Lege zuerst einen an:",
+    "noFree": "Du hast keinen fertigen freien Charakter. Lege zuerst einen an oder stelle deinen Entwurf fertig:",
     "join": "Beitreten",
     "decline": "Ablehnen"
   },
@@ -84,7 +95,9 @@
     "gear": "Ausrüstung",
     "helpers": "Helfer",
     "preview": "{base} Grundwürfel, {stress} Stresswürfel",
-    "difficultyByGm": "Eine Schwierigkeit legt die Spielleitung fest: Sie löst den Wurf dann für deinen Charakter aus."
+    "difficultyByGm": "Eine Schwierigkeit legt die Spielleitung fest: Sie löst den Wurf dann für deinen Charakter aus.",
+    "talentActions": "Talent einsetzen",
+    "target": "Ziel"
   },
   "decision": {
     "title": "Entscheidung",
@@ -208,7 +221,7 @@
     "item_dropped": "{actor} lässt etwas fallen; die Spielleitung wählt, was",
     "supply_rolled": "{actor}: Vorratswurf",
     "signature_item_used": "{actor} nutzt das Signature Item",
-    "action_performed": "{actor}: Aktion",
+    "action_performed": "{actor}: {action}",
     "roll_skipped": "{actor} ist Broken und würfelt nicht",
     "character_joined": "{name} kommt ins Team",
     "character_removed": "{name} verlässt das Team",
@@ -224,5 +237,74 @@
   "about": {
     "title": "Über Xenoforge",
     "license": "Code und eigene Texte stehen unter der Apache License 2.0. Zum Spielen braucht ihr das Regelwerk."
+  },
+  "wizard": {
+    "title": "Neuer Charakter",
+    "page": "S. {page}",
+    "saving": "Speichert …",
+    "saved": "Gespeichert",
+    "back": "Zurück",
+    "next": "Weiter",
+    "finish": "Fertigstellen",
+    "deleteConfirm": "Diesen Entwurf löschen?",
+    "step": {
+      "career": "Karriere",
+      "attributes": "Attribute",
+      "skills": "Fertigkeiten",
+      "talent": "Talent",
+      "name": "Name und Aussehen",
+      "agenda": "Agenda",
+      "relations": "Buddy und Rival",
+      "gear": "Signature Item",
+      "cash": "Startgeld",
+      "finish": "Abschluss"
+    },
+    "rule": {
+      "career": "Die Karriere bestimmt das Schlüsselattribut, drei Schlüsselfertigkeiten und drei Talente zur Wahl.",
+      "attributes": "Verteile {points} Punkte auf die vier Attribute: jedes {min} bis {max}, das Schlüsselattribut {key} bis {keyMax}. Alle Punkte werden verteilt.",
+      "skills": "Verteile {points} Punkte: Schlüsselfertigkeiten ({keys}) bis {keyMax}, alle anderen bis {otherMax}. Alle Punkte werden verteilt.",
+      "talent": "Wähle eines der drei Talente deiner Karriere.",
+      "name": "Ein Name und ein paar Stichworte zum Aussehen. Die Vorschläge stammen aus dem Buch; du kannst auch Eigenes schreiben.",
+      "agenda": "Was dein Charakter erreichen will. Nur du und die Spielleitung sehen die Agenda; du kannst sie später ändern.",
+      "relations": "Buddy und Rival sind andere Spielercharaktere. Du wählst sie im Team, wenn die anderen dabei sind; beide sind freiwillig.",
+      "gear": "Die Ausrüstung der Karriere kommt mit dem Ausrüstungskatalog in die App. Das Signature Item ist ein kleiner persönlicher Gegenstand.",
+      "cash": "Startgeld deiner Karriere: {formula}. Der Server würfelt es beim Fertigstellen.",
+      "finish": "Health entspricht der STÄRKE, der Stresslevel beginnt bei 0. Fertigstellen macht den Entwurf spielbar; danach ändern sich die Werte nur im Spiel."
+    },
+    "android": "Android (nach Absprache mit der Gruppe)",
+    "androidBonus": "Android: +{bonus} auf {count} verschiedene Attribute",
+    "androidItem": "Androiden brauchen kein Signature Item.",
+    "spent": "Verteilt: {spent} von {points}",
+    "suggestions": "Vorschläge",
+    "later": "Wirkt in der App erst mit {part}.",
+    "part": {
+      "gear": "der Ausrüstung",
+      "combat": "dem Kampf",
+      "time": "der Zeitrechnung",
+      "space_combat": "dem Raumkampf"
+    },
+    "parameter": {
+      "vehicle": "Fahrzeug",
+      "weapon": "Waffe"
+    },
+    "none": "Alle Schritte sind erfüllt.",
+    "die": "W6",
+    "cashFormula": "{dice}{times} $",
+    "problem": {
+      "career_missing": "Wähle eine Karriere.",
+      "unknown": "Unbekannter Eintrag {name}.",
+      "attribute_range": "{name} muss zwischen {min} und {limit} liegen.",
+      "attribute_points": "{value} von {limit} Attributpunkten verteilt.",
+      "android_bonus": "Wähle {limit} verschiedene Attribute für den Bonus.",
+      "skill_range": "{name} höchstens {limit}.",
+      "skill_points": "{value} von {limit} Fertigkeitspunkten verteilt.",
+      "talent_missing": "Wähle ein Talent.",
+      "talent_not_career": "{name} gehört nicht zu dieser Karriere.",
+      "talent_parameter": "{name} braucht eine Angabe: {kind}.",
+      "name_missing": "Der Charakter braucht einen Namen.",
+      "appearance_missing": "Beschreibe das Aussehen in ein paar Worten.",
+      "agenda_missing": "Lege eine persönliche Agenda fest.",
+      "signature_item_missing": "Wähle ein Signature Item."
+    }
   }
 }

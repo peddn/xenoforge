@@ -3,7 +3,18 @@ import { defineStore } from 'pinia'
 
 import { get } from '@/api'
 
-const FILES = ['attributes', 'skills', 'talents', 'traumas', 'conditions', 'critical-injuries', 'panic', 'constants']
+const FILES = [
+  'attributes',
+  'skills',
+  'careers',
+  'talents',
+  'actions',
+  'traumas',
+  'conditions',
+  'critical-injuries',
+  'panic',
+  'constants',
+]
 
 // Rule data and its texts, served from data/ (the interface computes no
 // rules; it only shows names and lists).
@@ -35,6 +46,11 @@ export const useRulesStore = defineStore('rules', () => {
     return texts.value[key] ?? key
   }
 
+  /** An entry of a rule file by id. */
+  function entry(file, id) {
+    return list(file).find((e) => e.id === id)
+  }
+
   function list(file) {
     return data.value[file] ?? []
   }
@@ -47,5 +63,5 @@ export const useRulesStore = defineStore('rules', () => {
     return list('constants').filter((c) => c.id.startsWith('difficulty_'))
   }
 
-  return { data, loaded, load, name, text, list, constant, difficulties }
+  return { data, loaded, load, name, text, entry, list, constant, difficulties }
 })

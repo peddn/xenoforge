@@ -26,12 +26,35 @@ export function mockApi(routes) {
 export const rulesData = {
   attributes: [{ id: 'wits', page: 27 }],
   skills: [{ id: 'observation', page: 58, attribute: 'wits' }],
-  talents: [{ id: 'stoic', page: 79, effects: [] }],
+  careers: [
+    {
+      id: 'officer',
+      page: 49,
+      key_attribute: 'wits',
+      key_skills: ['observation'],
+      talents: ['pull_rank'],
+      cash: { dice: 2, times: 100 },
+      names: ['Gorman'],
+      looks: ['cap'],
+      items: ['pen'],
+      agendas: ['order'],
+    },
+  ],
+  talents: [
+    { id: 'stoic', page: 79, effects: [] },
+    { id: 'watchful', page: 80, effects: [{ kind: 'modifier', applies_to: { skills: ['observation'] }, change: { add: 2 }, when: 'watchful.when' }] },
+    { id: 'pull_rank', page: 76, career: 'officer', effects: [{ kind: 'capability', grants: 'pull_rank_order' }] },
+  ],
+  actions: [{ id: 'pull_rank_order', page: 76, kind: 'slow', target: true }],
   traumas: [],
   conditions: [],
   'critical-injuries': [],
   panic: [],
-  constants: [{ id: 'difficulty_average', page: 63, value: 0 }],
+  constants: [
+    { id: 'difficulty_average', page: 63, value: 0 },
+    { id: 'creation_attribute_min', page: 28, value: 2 },
+    { id: 'creation_attribute_points', page: 28, value: 14 },
+  ],
 }
 
 /** Pinia, i18n and rule data ready to mount components. */

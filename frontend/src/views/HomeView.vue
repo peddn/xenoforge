@@ -28,10 +28,12 @@ onMounted(async () => {
 
 const teamName = (id) => teams.value.find((team) => team.id === id)?.name ?? `#${id}`
 
-async function createCharacter() {
+// Without a name a draft for the wizard; with one a character set up freely
+// by a game master (A-09).
+async function createCharacter(name) {
   error.value = ''
   try {
-    const character = await characters.create(newCharacter.value)
+    const character = await characters.create(name)
     newCharacter.value = ''
     router.push(`/characters/${character.id}`)
   } catch (e) {
@@ -59,8 +61,12 @@ async function createTeam() {
           :key="character.id"
         >
           <RouterLink :to="`/characters/${character.id}`">
-            {{ character.name }}
+            {{ character.name || t('wizard.title') }}
           </RouterLink>
+          <span
+            v-if="character.data.status === 'draft'"
+            class="text-amber"
+          > · {{ t('home.draft') }}</span>
           <span
             v-if="character.team_id"
             class="text-dim"
@@ -73,15 +79,24 @@ async function createTeam() {
           {{ t('home.noCharacters') }}
         </li>
       </ul>
+      <div class="flex flex-wrap items-center gap-2">
+        <XButton
+          data-test="new-character"
+          @click="createCharacter()"
+        >
+          {{ t('home.newCharacter') }}
+        </XButton>
+      </div>
       <form
-        class="flex flex-wrap items-center gap-2"
-        @submit.prevent="createCharacter"
+        v-if="auth.user?.role === 'gm'"
+        class="flex flex-wrap items-end gap-2"
+        @submit.prevent="createCharacter(newCharacter)"
       >
-        <XField :label="t('home.newCharacter')">
+        <XField :label="t('home.freeCharacter')">
           <input
             v-model="newCharacter"
             required
-            data-test="new-character"
+            data-test="free-character"
           >
         </XField>
         <XButton type="submit">

@@ -1,20 +1,23 @@
 <script setup>
-import { ref, toRaw } from 'vue'
+import { computed, ref, toRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import ActorEditor from '@/components/ActorEditor.vue'
+import CharacterSheet from '@/components/CharacterSheet.vue'
 import XButton from '@/ui/XButton.vue'
 import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import XStatus from '@/ui/XStatus.vue'
+import { put } from '@/api'
 import { originLabel } from '@/labels'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The sheet of a character in the team, for its owner and the game master.
-// The game master can correct values (logged, undoable); the owner can leave
-// the team with the character. The full sheet follows with 2b.
+// The game master can correct values (logged, undoable); the owner chooses
+// buddy and rival among the other characters (F-52) and can leave the team
+// with the character.
 const props = defineProps({ character: { type: Object, required: true } })
 const { t } = useI18n()
 const rules = useRulesStore()
@@ -24,6 +27,23 @@ const auth = useAuthStore()
 const editing = ref(null)
 const note = ref('')
 const error = ref('')
+
+const own = computed(() => props.character.owner_id === auth.user?.id)
+const others = computed(() => team.view.characters.filter((c) => c.id !== props.character.id))
+const buddy = ref(props.character.sheet?.buddy ?? null)
+const rival = ref(props.character.sheet?.rival ?? null)
+
+// The server takes the whole sheet; only buddy and rival change here.
+async function saveRelations() {
+  error.value = ''
+  try {
+    const sheet = { ...props.character.sheet, buddy: buddy.value ?? null, rival: rival.value ?? null }
+    await put(`/characters/${props.character.id}`, { name: props.character.name, data: { sheet } })
+    await team.refresh()
+  } catch (e) {
+    error.value = e.message
+  }
+}
 
 function startCorrection() {
   // A copy to edit; structuredClone refuses Vue's reactive proxies.
@@ -60,9 +80,10 @@ async function leave() {
       v-if="!editing"
       class="grid gap-3"
     >
-      <div class="flex flex-wrap items-center gap-2">
-        <span>{{ t('sheet.health') }}: {{ character.actor.health }}/{{ character.health_max }}</span>
-        <span v-if="!character.actor.android">{{ t('sheet.stress') }}: {{ character.actor.stress }}</span>
+      <div
+        v-if="character.broken || character.actor.panic"
+        class="flex flex-wrap items-center gap-2"
+      >
         <XStatus
           v-if="character.broken"
           tone="alert"
@@ -85,10 +106,63 @@ async function leave() {
           {{ originLabel(source.origin, t, rules) }}
         </li>
       </ul>
-      <ActorEditor
-        :model-value="character.actor"
-        disabled
+      <CharacterSheet
+        :sheet="character.sheet ?? {}"
+        :actor="character.actor"
+        :health-max="character.health_max"
+        :names="team.characterNames"
       />
+      <div
+        v-if="own && others.length"
+        class="flex flex-wrap items-end gap-2"
+      >
+        <XField :label="t('sheet.buddy')">
+          <select
+            v-model="buddy"
+            data-test="buddy"
+          >
+            <option :value="null">
+              –
+            </option>
+            <option
+              v-for="c in others"
+              :key="c.id"
+              :value="c.id"
+            >
+              {{ c.name }}
+            </option>
+          </select>
+        </XField>
+        <XField :label="t('sheet.rival')">
+          <select
+            v-model="rival"
+            data-test="rival"
+          >
+            <option :value="null">
+              –
+            </option>
+            <option
+              v-for="c in others"
+              :key="c.id"
+              :value="c.id"
+            >
+              {{ c.name }}
+            </option>
+          </select>
+        </XField>
+        <XButton
+          data-test="save-relations"
+          @click="saveRelations"
+        >
+          {{ t('common.save') }}
+        </XButton>
+      </div>
+      <RouterLink
+        v-if="own"
+        :to="`/characters/${character.id}`"
+      >
+        {{ t('sheet.edit') }}
+      </RouterLink>
     </div>
     <template v-else>
       <ActorEditor v-model="editing" />

@@ -39,7 +39,9 @@
     "noTeams": "Not in a team yet.",
     "newTeam": "New team",
     "mode": "Mode",
-    "teamsByGm": "A game master creates teams and sends you an invitation link."
+    "teamsByGm": "A game master creates teams and sends you an invitation link.",
+    "freeCharacter": "Set up freely (game master)",
+    "draft": "Draft"
   },
   "mode": {
     "cinematic": "Cinematic",
@@ -54,13 +56,22 @@
     "stress": "Stress",
     "android": "Android",
     "talents": "Talents",
-    "title": "Sheet: {name}"
+    "title": "Sheet: {name}",
+    "career": "Career",
+    "agenda": "Personal agenda",
+    "buddy": "Buddy",
+    "rival": "Rival",
+    "signatureItem": "Signature item",
+    "startCash": "Starting cash",
+    "cashRolled": "${amount} (rolled: {dice})",
+    "edit": "Edit texts and agenda",
+    "deleteConfirm": "Delete {name} for good?"
   },
   "join": {
     "title": "Invitation",
     "invited": "{gm} invites you to the team {team}.",
     "character": "With which character?",
-    "noFree": "You have no free character. Create one first:",
+    "noFree": "You have no finished free character. Create one first or finish your draft:",
     "join": "Join",
     "decline": "Decline"
   },
@@ -84,7 +95,9 @@
     "gear": "Gear",
     "helpers": "Helpers",
     "preview": "{base} Base Dice, {stress} Stress Dice",
-    "difficultyByGm": "Difficulty is up to the game master, who then starts the roll for your character."
+    "difficultyByGm": "Difficulty is up to the game master, who then starts the roll for your character.",
+    "talentActions": "Use a talent",
+    "target": "Target"
   },
   "decision": {
     "title": "Decision",
@@ -208,7 +221,7 @@
     "item_dropped": "{actor} drops something; the game master picks what",
     "supply_rolled": "{actor}: supply roll",
     "signature_item_used": "{actor} uses the signature item",
-    "action_performed": "{actor}: action",
+    "action_performed": "{actor}: {action}",
     "roll_skipped": "{actor} is Broken and does not roll",
     "character_joined": "{name} joins the team",
     "character_removed": "{name} leaves the team",
@@ -224,5 +237,74 @@
   "about": {
     "title": "About Xenoforge",
     "license": "Code and our own texts are under the Apache License 2.0. You need the rulebook to play."
+  },
+  "wizard": {
+    "title": "New character",
+    "page": "p. {page}",
+    "saving": "Saving …",
+    "saved": "Saved",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "deleteConfirm": "Delete this draft?",
+    "step": {
+      "career": "Career",
+      "attributes": "Attributes",
+      "skills": "Skills",
+      "talent": "Talent",
+      "name": "Name and appearance",
+      "agenda": "Agenda",
+      "relations": "Buddy and rival",
+      "gear": "Signature item",
+      "cash": "Starting cash",
+      "finish": "Done"
+    },
+    "rule": {
+      "career": "Your career sets the key attribute, three key skills and three talents to choose from.",
+      "attributes": "Spread {points} points over the four attributes: each {min} to {max}, the key attribute {key} up to {keyMax}. All points are spent.",
+      "skills": "Spread {points} points: key skills ({keys}) up to {keyMax}, all others up to {otherMax}. All points are spent.",
+      "talent": "Pick one of the three talents of your career.",
+      "name": "A name and a few words on looks. The suggestions are from the book; you may write your own.",
+      "agenda": "What your character is after. Only you and the game master see the agenda; you can change it later.",
+      "relations": "Buddy and rival are other player characters. You pick them in the team once the others have joined; both are optional.",
+      "gear": "The career gear comes to the app with the gear catalog. The signature item is a small personal object.",
+      "cash": "Starting cash of your career: {formula}. The server rolls it when you finish.",
+      "finish": "Health equals STRENGTH, the stress level starts at 0. Finishing makes the draft playable; after that the values change in play only."
+    },
+    "android": "Android (agreed with the group)",
+    "androidBonus": "Android: +{bonus} on {count} different attributes",
+    "androidItem": "Androids need no signature item.",
+    "spent": "Spent: {spent} of {points}",
+    "suggestions": "Suggestions",
+    "later": "Takes effect in the app with {part}.",
+    "part": {
+      "gear": "gear",
+      "combat": "combat",
+      "time": "time keeping",
+      "space_combat": "space combat"
+    },
+    "parameter": {
+      "vehicle": "Vehicle",
+      "weapon": "Weapon"
+    },
+    "none": "All steps are done.",
+    "die": "D6",
+    "cashFormula": "${dice}{times}",
+    "problem": {
+      "career_missing": "Pick a career.",
+      "unknown": "Unknown entry {name}.",
+      "attribute_range": "{name} must be between {min} and {limit}.",
+      "attribute_points": "{value} of {limit} attribute points spent.",
+      "android_bonus": "Pick {limit} different attributes for the bonus.",
+      "skill_range": "{name} at most {limit}.",
+      "skill_points": "{value} of {limit} skill points spent.",
+      "talent_missing": "Pick a talent.",
+      "talent_not_career": "{name} is not a talent of this career.",
+      "talent_parameter": "{name} needs one more detail: {kind}.",
+      "name_missing": "The character needs a name.",
+      "appearance_missing": "Describe the looks in a few words.",
+      "agenda_missing": "Set a personal agenda.",
+      "signature_item_missing": "Pick a signature item."
+    }
   }
 }

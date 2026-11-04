@@ -9,16 +9,20 @@ import DecisionDialog from '@/components/DecisionDialog.vue'
 import GmBar from '@/components/GmBar.vue'
 import LogList from '@/components/LogList.vue'
 import CharacterActions from '@/components/CharacterActions.vue'
+import CharacterSheet from '@/components/CharacterSheet.vue'
+import CreationWizard from '@/components/CreationWizard.vue'
 import RollPanel from '@/components/RollPanel.vue'
 import SheetDialog from '@/components/SheetDialog.vue'
-import { choiceLabel, modsText, originLabel } from '@/labels'
+import { cashFormula, choiceLabel, modsText, originLabel, problemText } from '@/labels'
 import { guard, routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
+import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 import LoginView from '@/views/LoginView.vue'
 import TeamView from '@/views/TeamView.vue'
 
 import { mockApi, setup } from './helpers'
+import { createAppI18n } from '@/i18n'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -425,5 +429,150 @@ describe('translations', () => {
     const keys = (obj, prefix = '') =>
       Object.entries(obj).flatMap(([k, v]) => (typeof v === 'object' ? keys(v, `${prefix}${k}.`) : [`${prefix}${k}`]))
     expect(keys(en).sort()).toEqual(keys(de).sort())
+  })
+})
+
+describe('creation wizard', () => {
+  const draft = (problems) => ({
+    id: 7,
+    name: '',
+    owner_id: 2,
+    team_id: null,
+    data: { status: 'draft', draft: {}, sheet: {}, actor: { attributes: {}, health: 0 } },
+    problems,
+  })
+  const missing = (step, code, page) => ({ step, code, page })
+
+  it('saves each change and opens the next step when the engine is content (plan 5.2)', async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    const calls = mockApi({
+      'PUT /characters/7': (body) => ({
+        ...draft(body.data.draft.career ? [{ ...missing('attributes', 'attribute_points', 28), value: 2, limit: 14 }] : []),
+        data: { status: 'draft', draft: body.data.draft, sheet: {}, actor: { attributes: { wits: 2 }, health: 2 } },
+      }),
+    })
+    const wrapper = mount(CreationWizard, {
+      props: { character: draft([missing('career', 'career_missing', 27)]) },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(wrapper.text()).toContain('Wähle eine Karriere. (S. 27)')
+    expect(wrapper.get('[data-test="next"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-test="step-skills"]').attributes('disabled')).toBeDefined()
+
+    await wrapper.get('[data-test="career-officer"]').setValue(true)
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+    expect(calls[0].body.data.draft.career).toBe('officer')
+    await wrapper.get('[data-test="next"]').trigger('click')
+    // Attributes start at the lowest value; the engine counts the points.
+    expect(wrapper.get('[data-test="attr-wits"]').element.value).toBe('2')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+    expect(calls.at(-1).body.data.draft.attributes).toEqual({ wits: 2 })
+    expect(wrapper.get('[data-test="step-problems"]').text()).toContain('von 14 Attributpunkten')
+    expect(wrapper.get('[data-test="next"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('finishes a complete draft; the server rolls the cash', async () => {
+    const { pinia, i18n } = setup()
+    const finished = { ...draft([]), data: { status: 'finished', sheet: {}, actor: {}, start_cash: { dice: [3, 4], amount: 700 } } }
+    const calls = mockApi({ 'POST /characters/7/finish': finished })
+    const wrapper = mount(CreationWizard, { props: { character: draft([]) }, global: { plugins: [pinia, i18n] } })
+    expect(wrapper.text()).toContain('Alle Schritte sind erfüllt.')
+    await wrapper.get('[data-test="finish"]').trigger('click')
+    await flushPromises()
+    expect(calls[0]).toMatchObject({ method: 'POST', path: '/characters/7/finish' })
+    expect(wrapper.emitted('finished')[0][0].data.start_cash.amount).toBe(700)
+  })
+
+  it('names problems and cash as the book does', () => {
+    const { i18n } = setup()
+    const rules = useRulesStore()
+    const t = i18n.global.t
+    expect(problemText({ step: 'skills', code: 'skill_range', page: 28, id: 'observation', value: 2, limit: 1 }, t, rules)).toBe(
+      'observation höchstens 1. (S. 28)',
+    )
+    expect(cashFormula({ dice: 2, times: 100 }, t)).toBe('2W6 × 100 $')
+    const en = createAppI18n('en').global.t
+    expect(cashFormula({ dice: 1, times: 1 }, en)).toBe('$D6')
+    expect(en('sheet.cashRolled', { amount: 400, dice: '4' })).toBe('$400 (rolled: 4)')
+  })
+})
+
+describe('sheet and talents', () => {
+  const gorman = {
+    id: 3,
+    name: 'Gorman',
+    owner_id: 2,
+    owner_name: 'Gina',
+    actor: { attributes: { wits: 4 }, skills: { observation: 2 }, talents: ['pull_rank', 'watchful'], health: 4, stress: 1 },
+    sheet: { career: 'officer', agenda: 'Bring them home.', buddy: null, rival: 9 },
+    health_max: 4,
+    hints: [],
+  }
+  const charlize = { id: 9, name: 'Charlize', owner_id: 5, owner_name: 'Ada', actor: null, hints: [] }
+
+  it('shows the sheet with buddy and rival by name', () => {
+    const { pinia, i18n } = setup()
+    const wrapper = mount(CharacterSheet, {
+      props: { sheet: gorman.sheet, actor: gorman.actor, healthMax: 4, names: { 9: 'Charlize' }, startCash: { dice: [5], amount: 500 } },
+      global: { plugins: [pinia, i18n] },
+    })
+    const text = wrapper.text()
+    expect(text).toContain('Bring them home.')
+    expect(text).toContain('RivalCharlize')
+    expect(text).toContain('4/4')
+    expect(text).toContain('500 $ (gewürfelt: 5)')
+    expect(wrapper.get('[data-test="sheet-wits"]').text()).toContain('observation2')
+  })
+
+  it('lets the owner choose buddy and rival in the team (F-52)', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'PUT /characters/3': {}, 'GET /teams/5': { id: 5, characters: [] } })
+    useAuthStore().user = { id: 2, name: 'Gina', role: 'player' }
+    useTeamStore().view = { id: 5, is_gm: false, characters: [gorman, charlize] }
+    const wrapper = mount(SheetDialog, { props: { character: gorman }, global: { plugins: [pinia, i18n] } })
+    await wrapper.get('[data-test="buddy"]').setValue(9)
+    await wrapper.get('[data-test="rival"]').findAll('option')[0].setSelected()
+    await wrapper.get('[data-test="save-relations"]').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({
+      name: 'Gorman',
+      data: { sheet: { career: 'officer', agenda: 'Bring them home.', buddy: 9, rival: null } },
+    })
+  })
+
+  it('offers situational talents with their situation and talent actions with a target (A-10)', async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    const calls = mockApi({
+      'POST /teams/5/preview': { base_dice: 6, stress_dice: 1, modifications: [], talents: ['watchful'], max_pushes: 1 },
+      'POST /teams/5/commands': [],
+    })
+    useTeamStore().view = { id: 5, is_gm: false, characters: [gorman, charlize] }
+    const wrapper = mount(RollPanel, { props: { character: gorman }, global: { plugins: [pinia, i18n] } })
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    expect(wrapper.get('[data-test="talent-watchful"]').element.closest('label').textContent).toContain('watchful.when')
+    expect(wrapper.get('[data-test="action-pull_rank_order"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-test="target"]').setValue(9)
+    await wrapper.get('[data-test="action-pull_rank_order"]').trigger('click')
+    await flushPromises()
+    const command = calls.find((c) => c.path === '/teams/5/commands')
+    expect(command.body.command).toEqual({ command: 'perform_action', actor: '3', action: 'pull_rank_order', target: '9' })
+  })
+
+  it('names the character and the action in the log', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = { id: 5, characters: [gorman] }
+    team.log = [
+      { id: 1, batch: 1, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'action_performed', actor: '3', action: 'pull_rank_order' } } },
+      { id: 2, batch: 2, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'signature_item_used', actor: '3' } } },
+    ]
+    const text = mount(LogList, { global: { plugins: [pinia, i18n] } }).text()
+    expect(text).toContain('Gorman: pull_rank_order')
+    expect(text).toContain('Gorman nutzt das Signature Item')
   })
 })

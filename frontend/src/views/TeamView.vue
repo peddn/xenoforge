@@ -40,7 +40,7 @@ onUnmounted(() => team.close())
 const inviteLink = computed(() =>
   team.view?.invite_token ? `${location.origin}/join/${team.view.invite_token}` : '',
 )
-const freeOwn = computed(() => characters.list.filter((c) => !c.team_id))
+const freeOwn = computed(() => characters.list.filter((c) => !c.team_id && c.data.status !== 'draft'))
 // Looked up live, so the dialog shows current values; it closes when the
 // character leaves the team or the decision is made.
 const current = computed(() => {
