@@ -305,6 +305,8 @@
       "appearance_missing": "Beschreibe das Aussehen in ein paar Worten.",
       "agenda_missing": "Lege eine persönliche Agenda fest.",
       "signature_item_missing": "Wähle ein Signature Item."
-    }
+    },
+    "keyAttribute": "Schlüsselattribut",
+    "keySkills": "Schlüsselfertigkeiten"
   }
 }

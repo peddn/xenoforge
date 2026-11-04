@@ -3,6 +3,7 @@ import { computed, onUnmounted, ref, toRaw, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
+import XFacts from '@/ui/XFacts.vue'
 import XField from '@/ui/XField.vue'
 import { cashFormula, problemText } from '@/labels'
 import { useCharactersStore } from '@/stores/characters'
@@ -91,6 +92,22 @@ watch(
 
 function setNumber(group, id, value) {
   draft.value[group][id] = Math.max(0, Math.trunc(Number(value) || 0))
+}
+
+// What a career sets, labelled [p. 38–55]; talents with their description
+// as tooltip.
+const careerFacts = (entry) => [
+  [t('wizard.keyAttribute'), rules.name(entry.key_attribute)],
+  [t('wizard.keySkills'), entry.key_skills.map(rules.name).join(', ')],
+  [t('sheet.talents'), entry.talents.map((id) => ({ text: rules.name(id), title: rules.text(`${id}.desc`) }))],
+  [t('sheet.startCash'), cashFormula(entry.cash, t)],
+]
+
+// The whole box chooses the career; the radio button stays for the keyboard.
+function chooseCareer(id) {
+  if (draft.value.career === id) return
+  draft.value.career = id
+  careerChanged()
 }
 
 function careerChanged() {
@@ -192,26 +209,32 @@ async function finish() {
 
     <template v-if="step.id === 'career'">
       <div class="grid cols-auto gap-2">
-        <label
+        <div
           v-for="entry in rules.list('careers')"
           :key="entry.id"
-          class="flex items-start gap-2 border border-line p-2"
+          class="grid cursor-pointer content-start gap-2 border p-2"
+          :class="draft.career === entry.id ? 'border-fg' : 'border-line'"
+          @click="chooseCareer(entry.id)"
         >
-          <input
-            v-model="draft.career"
-            type="radio"
-            :value="entry.id"
-            :data-test="`career-${entry.id}`"
-            @change="careerChanged"
-          >
-          <span class="grid gap-0.5">
-            <span class="text-strong uppercase">{{ rules.name(entry.id) }}</span>
-            <span class="text-sm text-dim">
-              {{ rules.name(entry.key_attribute) }} · {{ entry.key_skills.map(rules.name).join(', ') }}
-              · {{ entry.talents.map(rules.name).join(', ') }} · {{ t('wizard.page', { page: entry.page }) }}
-            </span>
+          <span class="flex items-center justify-between gap-2">
+            <label class="flex cursor-pointer items-center gap-2 text-strong uppercase">
+              <input
+                v-model="draft.career"
+                type="radio"
+                :value="entry.id"
+                :data-test="`career-${entry.id}`"
+                @change="careerChanged"
+              >
+              {{ rules.name(entry.id) }}
+            </label>
+            <span class="text-sm text-dim">{{ t('wizard.page', { page: entry.page }) }}</span>
           </span>
-        </label>
+          <XFacts
+            stacked
+            :items="careerFacts(entry)"
+            :data-test="`career-facts-${entry.id}`"
+          />
+        </div>
       </div>
       <label class="flex flex-wrap items-center gap-2">
         <input

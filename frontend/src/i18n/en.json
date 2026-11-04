@@ -305,6 +305,8 @@
       "appearance_missing": "Describe the looks in a few words.",
       "agenda_missing": "Set a personal agenda.",
       "signature_item_missing": "Pick a signature item."
-    }
+    },
+    "keyAttribute": "Key attribute",
+    "keySkills": "Key skills"
   }
 }
