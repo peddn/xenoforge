@@ -8,13 +8,194 @@
     "de": "Deutsch",
     "en": "English"
   },
-  "status": {
-    "heading": "Systemstatus",
-    "server": "Server",
-    "version": "Version",
-    "checking": "PRÜFE",
-    "online": "ONLINE",
-    "offline": "KEINE VERBINDUNG",
-    "retry": "Erneut prüfen"
+  "auth": {
+    "login": "Anmelden",
+    "register": "Konto anlegen",
+    "logout": "Abmelden",
+    "name": "Name",
+    "password": "Passwort (mind. 8 Zeichen)",
+    "role": "Rolle",
+    "player": "Spieler",
+    "gm": "Spielleitung",
+    "roleHint": "Nur Spielleitungs-Konten legen Teams an. Spielen kann jedes Konto."
+  },
+  "common": {
+    "create": "Anlegen",
+    "save": "Speichern",
+    "saved": "Gespeichert",
+    "delete": "Löschen",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "remove": "Entfernen",
+    "add": "Hinzufügen"
+  },
+  "home": {
+    "characters": "Meine Charaktere",
+    "noCharacters": "Noch keine Charaktere.",
+    "newCharacter": "Neuer Charakter",
+    "teams": "Meine Teams",
+    "noTeams": "Noch in keinem Team.",
+    "newTeam": "Neues Team",
+    "mode": "Spielart",
+    "teamsByGm": "Teams legt eine Spielleitung an und schickt dir einen Einladungslink."
+  },
+  "mode": {
+    "cinematic": "Cinematic",
+    "campaign": "Campaign"
+  },
+  "sheet": {
+    "name": "Name",
+    "appearance": "Aussehen",
+    "notes": "Notizen",
+    "inTeam": "Im Team ändern sich die Werte nur im Spiel; Korrekturen macht die Spielleitung.",
+    "health": "Health",
+    "stress": "Stress",
+    "android": "Android",
+    "talents": "Talente"
+  },
+  "join": {
+    "title": "Einladung",
+    "invited": "{gm} lädt dich in das Team {team} ein.",
+    "character": "Mit welchem Charakter?",
+    "noFree": "Du hast keinen freien Charakter. Lege zuerst einen an:",
+    "join": "Beitreten",
+    "decline": "Ablehnen"
+  },
+  "crew": {
+    "character": "Charakter",
+    "state": "Zustand",
+    "broken": "Broken",
+    "panic": "Panik",
+    "hidden": "Werte sieht nur die Spielleitung."
+  },
+  "roll": {
+    "roll": "Würfeln",
+    "title": "Probe für {name}",
+    "what": "Probe",
+    "attributeOnly": "Nur {name}",
+    "death": "Death Roll",
+    "difficulty": "Schwierigkeit",
+    "gear": "Ausrüstung",
+    "helpers": "Helfer",
+    "preview": "{base} Grundwürfel, {stress} Stresswürfel"
+  },
+  "decision": {
+    "title": "Entscheidung",
+    "targets": "Wer ist betroffen: {who}?",
+    "kind": {
+      "roll": "Wurf: pushen oder annehmen?",
+      "start_roll": "Vor dem Wurf: Talent einsetzen?",
+      "overkill": "Overkill?",
+      "question": "Frage",
+      "targets": "Ziele"
+    }
+  },
+  "choice": {
+    "accept": "Weiter",
+    "push": "Pushen",
+    "ignore_facehuggers": "Facehugger ignorieren",
+    "story_point": "Story Point",
+    "overkill": "Overkill",
+    "use_talent": "Mit {talent}",
+    "yes": "Ja",
+    "no": "Nein",
+    "targets": "Auswählen"
+  },
+  "who": {
+    "bearer": "selbst",
+    "friendly_pcs_short_range": "befreundete SC auf kurzer Distanz",
+    "friendly_who_hear": "wer es hört",
+    "friendly_who_see": "wer es sieht",
+    "friendly_who_witness": "wer es miterlebt",
+    "aboard": "alle an Bord"
+  },
+  "gm": {
+    "tools": "Werkzeuge der Spielleitung",
+    "amount": "Wert",
+    "stressUp": "Stress +",
+    "stressDown": "Stress −",
+    "damage": "Schaden",
+    "panicRoll": "Panikwurf",
+    "stopPanic": "Panik beenden",
+    "signatureItem": "Signature Item",
+    "source": "Art",
+    "trauma": "Trauma",
+    "condition": "Zustand",
+    "injury": "Kritische Verletzung",
+    "entry": "Eintrag",
+    "cold": "Kälte",
+    "apply": "Setzen",
+    "pool": "Würfel",
+    "rollPool": "Pool würfeln",
+    "endAct": "Akt beenden",
+    "endSession": "Sitzung beenden",
+    "undo": "Rückgängig",
+    "correct": "Korrigieren",
+    "correctTitle": "{name} korrigieren"
+  },
+  "cold": {
+    "above_freezing": "über null",
+    "sub_zero": "unter null",
+    "deep_space": "All"
+  },
+  "origin": {
+    "block": "{name}: {blocks} gesperrt"
+  },
+  "blocks": {
+    "stress_relief": "Stressabbau",
+    "health_recovery": "Heilung"
+  },
+  "team": {
+    "live": "Live",
+    "offline": "Keine Verbindung",
+    "gm": "Spielleitung",
+    "invite": "Einladungslink",
+    "newInvite": "Neuer Link",
+    "addOwn": "Eigener Charakter",
+    "crew": "Crew",
+    "log": "Protokoll",
+    "removeCharacter": "Aus dem Team nehmen"
+  },
+  "outcome": {
+    "success": "Erfolg",
+    "failure": "Fehlschlag",
+    "cancelled": "Abgebrochen"
+  },
+  "dice": {
+    "base": "Grundwürfel",
+    "stress": "Stresswürfel",
+    "success": "Erfolg",
+    "facehugger": "Facehugger"
+  },
+  "log": {
+    "pool": "einen Pool",
+    "roll_started": "{actor} würfelt {what}: {base} Grundwürfel, {stress} Stresswürfel",
+    "roll_finished": "{successes} Erfolge, {stunts} Stunts",
+    "against": "gegen {against} Erfolge",
+    "decision": "Wartet auf {actor}: {options}",
+    "question": "Frage an {actor}: {question}",
+    "choose_targets": "Die Spielleitung wählt, wer betroffen ist: {who}",
+    "stress_changed": "{actor}: Stress {from} → {to}",
+    "damaged": "{actor} erleidet {amount} Schaden, Health {health}",
+    "panic_rolled": "{actor}: Panikwurf W6 {d6} + Stress {stress} = {value}",
+    "raised": "angehoben von {from}",
+    "panic_stopped": "{actor}: Panik endet",
+    "source_applied": "{actor}: {source}",
+    "source_ended": "{actor}: {source} endet",
+    "talent_used": "{actor} nutzt {talent}",
+    "trauma": "{actor}: Trauma {trauma}",
+    "no_trauma": "{actor}: kein Trauma",
+    "pushed": "{actor} pusht",
+    "story_point_spent": "Story Point eingesetzt",
+    "next_slow_action_lost": "{actor} verliert die nächste langsame Aktion",
+    "item_dropped": "{actor} lässt etwas fallen; die Spielleitung wählt, was",
+    "supply_rolled": "{actor}: Vorratswurf",
+    "signature_item_used": "{actor} nutzt das Signature Item",
+    "action_performed": "{actor}: Aktion",
+    "roll_skipped": "{actor} ist Broken und würfelt nicht",
+    "character_joined": "{name} kommt ins Team",
+    "character_removed": "{name} verlässt das Team",
+    "corrected": "Die Spielleitung korrigiert {name}",
+    "undone": "Letzter Schritt zurückgenommen"
   }
 }

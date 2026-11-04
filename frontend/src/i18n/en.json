@@ -8,13 +8,194 @@
     "de": "Deutsch",
     "en": "English"
   },
-  "status": {
-    "heading": "System status",
-    "server": "Server",
-    "version": "Version",
-    "checking": "CHECKING",
-    "online": "ONLINE",
-    "offline": "NO CONNECTION",
-    "retry": "Check again"
+  "auth": {
+    "login": "Log in",
+    "register": "Create account",
+    "logout": "Log out",
+    "name": "Name",
+    "password": "Password (at least 8 characters)",
+    "role": "Role",
+    "player": "Player",
+    "gm": "Game master",
+    "roleHint": "Only game master accounts create teams. Every account can play."
+  },
+  "common": {
+    "create": "Create",
+    "save": "Save",
+    "saved": "Saved",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "remove": "Remove",
+    "add": "Add"
+  },
+  "home": {
+    "characters": "My characters",
+    "noCharacters": "No characters yet.",
+    "newCharacter": "New character",
+    "teams": "My teams",
+    "noTeams": "Not in a team yet.",
+    "newTeam": "New team",
+    "mode": "Mode",
+    "teamsByGm": "A game master creates teams and sends you an invitation link."
+  },
+  "mode": {
+    "cinematic": "Cinematic",
+    "campaign": "Campaign"
+  },
+  "sheet": {
+    "name": "Name",
+    "appearance": "Appearance",
+    "notes": "Notes",
+    "inTeam": "In a team the values change only in play; the game master makes corrections.",
+    "health": "Health",
+    "stress": "Stress",
+    "android": "Android",
+    "talents": "Talents"
+  },
+  "join": {
+    "title": "Invitation",
+    "invited": "{gm} invites you to the team {team}.",
+    "character": "With which character?",
+    "noFree": "You have no free character. Create one first:",
+    "join": "Join",
+    "decline": "Decline"
+  },
+  "crew": {
+    "character": "Character",
+    "state": "State",
+    "broken": "Broken",
+    "panic": "Panic",
+    "hidden": "Only the game master sees the values."
+  },
+  "roll": {
+    "roll": "Roll",
+    "title": "Roll for {name}",
+    "what": "Roll",
+    "attributeOnly": "{name} only",
+    "death": "Death Roll",
+    "difficulty": "Difficulty",
+    "gear": "Gear",
+    "helpers": "Helpers",
+    "preview": "{base} Base Dice, {stress} Stress Dice"
+  },
+  "decision": {
+    "title": "Decision",
+    "targets": "Who is affected: {who}?",
+    "kind": {
+      "roll": "Roll: push or accept?",
+      "start_roll": "Before the roll: use a talent?",
+      "overkill": "Overkill?",
+      "question": "Question",
+      "targets": "Targets"
+    }
+  },
+  "choice": {
+    "accept": "Go on",
+    "push": "Push",
+    "ignore_facehuggers": "Ignore facehuggers",
+    "story_point": "Story Point",
+    "overkill": "Overkill",
+    "use_talent": "With {talent}",
+    "yes": "Yes",
+    "no": "No",
+    "targets": "Choose"
+  },
+  "who": {
+    "bearer": "self",
+    "friendly_pcs_short_range": "friendly PCs at short range",
+    "friendly_who_hear": "who hears it",
+    "friendly_who_see": "who sees it",
+    "friendly_who_witness": "who witnesses it",
+    "aboard": "everyone aboard"
+  },
+  "gm": {
+    "tools": "Game master tools",
+    "amount": "Amount",
+    "stressUp": "Stress +",
+    "stressDown": "Stress −",
+    "damage": "Damage",
+    "panicRoll": "Panic Roll",
+    "stopPanic": "Stop panic",
+    "signatureItem": "Signature item",
+    "source": "Kind",
+    "trauma": "Trauma",
+    "condition": "Condition",
+    "injury": "Critical injury",
+    "entry": "Entry",
+    "cold": "Cold",
+    "apply": "Apply",
+    "pool": "Dice",
+    "rollPool": "Roll pool",
+    "endAct": "End act",
+    "endSession": "End session",
+    "undo": "Undo",
+    "correct": "Correct",
+    "correctTitle": "Correct {name}"
+  },
+  "cold": {
+    "above_freezing": "above freezing",
+    "sub_zero": "sub-zero",
+    "deep_space": "deep space"
+  },
+  "origin": {
+    "block": "{name}: {blocks} blocked"
+  },
+  "blocks": {
+    "stress_relief": "stress relief",
+    "health_recovery": "health recovery"
+  },
+  "team": {
+    "live": "Live",
+    "offline": "No connection",
+    "gm": "Game master",
+    "invite": "Invitation link",
+    "newInvite": "New link",
+    "addOwn": "Own character",
+    "crew": "Crew",
+    "log": "Log",
+    "removeCharacter": "Remove from team"
+  },
+  "outcome": {
+    "success": "Success",
+    "failure": "Failure",
+    "cancelled": "Cancelled"
+  },
+  "dice": {
+    "base": "Base Die",
+    "stress": "Stress Die",
+    "success": "success",
+    "facehugger": "facehugger"
+  },
+  "log": {
+    "pool": "a pool",
+    "roll_started": "{actor} rolls {what}: {base} Base Dice, {stress} Stress Dice",
+    "roll_finished": "{successes} successes, {stunts} stunts",
+    "against": "against {against} successes",
+    "decision": "Waiting for {actor}: {options}",
+    "question": "Question for {actor}: {question}",
+    "choose_targets": "The game master chooses who is affected: {who}",
+    "stress_changed": "{actor}: stress {from} → {to}",
+    "damaged": "{actor} suffers {amount} damage, Health {health}",
+    "panic_rolled": "{actor}: Panic Roll D6 {d6} + stress {stress} = {value}",
+    "raised": "raised from {from}",
+    "panic_stopped": "{actor}: panic stops",
+    "source_applied": "{actor}: {source}",
+    "source_ended": "{actor}: {source} ends",
+    "talent_used": "{actor} uses {talent}",
+    "trauma": "{actor}: trauma {trauma}",
+    "no_trauma": "{actor}: no trauma",
+    "pushed": "{actor} pushes",
+    "story_point_spent": "Story Point spent",
+    "next_slow_action_lost": "{actor} loses the next slow action",
+    "item_dropped": "{actor} drops something; the game master picks what",
+    "supply_rolled": "{actor}: supply roll",
+    "signature_item_used": "{actor} uses the signature item",
+    "action_performed": "{actor}: action",
+    "roll_skipped": "{actor} is Broken and does not roll",
+    "character_joined": "{name} joins the team",
+    "character_removed": "{name} leaves the team",
+    "corrected": "The game master corrects {name}",
+    "undone": "Last step undone"
   }
 }

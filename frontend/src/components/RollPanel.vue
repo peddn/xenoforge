@@ -1,0 +1,177 @@
+<script setup>
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+import XButton from '@/ui/XButton.vue'
+import XField from '@/ui/XField.vue'
+import { modsText } from '@/labels'
+import { useRulesStore } from '@/stores/rules'
+import { useTeamStore } from '@/stores/team'
+
+// The roll dialog (plan 6.1). The dice count comes from the server's
+// preview; this component computes no rules.
+const props = defineProps({ character: { type: Object, required: true } })
+const emit = defineEmits(['done'])
+const { t } = useI18n()
+const rules = useRulesStore()
+const team = useTeamStore()
+
+const what = ref('skill:observation')
+const difficulty = ref('difficulty_average')
+const gear = ref(0)
+const helpers = ref(0)
+const talents = ref([])
+const preview = ref(null)
+const error = ref('')
+let timer = null
+
+const request = computed(() => {
+  const [kind, id] = what.value.split(':')
+  const modifiers = []
+  const level = rules.difficulties().find((d) => d.id === difficulty.value)
+  if (level && level.value !== 0) modifiers.push({ source: rules.name(level.id), value: level.value })
+  if (Number(gear.value)) modifiers.push({ source: t('roll.gear'), value: Number(gear.value) })
+  const kinds = { skill: { skill: { skill: id } }, attribute: { attribute: { attribute: id } }, death: 'death' }
+  return {
+    actor: String(props.character.id),
+    kind: kinds[kind],
+    modifiers,
+    helpers: Number(helpers.value) || 0,
+    talents: talents.value,
+  }
+})
+
+watch(
+  request,
+  () => {
+    clearTimeout(timer)
+    timer = setTimeout(async () => {
+      try {
+        preview.value = await team.preview(request.value)
+        talents.value = talents.value.filter((id) => preview.value.talents.includes(id))
+        error.value = ''
+      } catch (e) {
+        preview.value = null
+        error.value = e.message
+      }
+    }, 150)
+  },
+  { immediate: true, deep: true },
+)
+
+async function roll() {
+  try {
+    await team.command({ command: 'roll', request: request.value })
+    emit('done')
+  } catch (e) {
+    error.value = e.message
+  }
+}
+</script>
+
+<template>
+  <div class="panel">
+    <h3>{{ t('roll.title', { name: character.name }) }}</h3>
+    <div class="row">
+      <XField :label="t('roll.what')">
+        <select
+          v-model="what"
+          data-test="roll-what"
+        >
+          <optgroup
+            v-for="attribute in rules.list('attributes')"
+            :key="attribute.id"
+            :label="rules.name(attribute.id)"
+          >
+            <option
+              v-for="skill in rules.list('skills').filter((s) => s.attribute === attribute.id)"
+              :key="skill.id"
+              :value="`skill:${skill.id}`"
+            >
+              {{ rules.name(skill.id) }}
+            </option>
+            <option :value="`attribute:${attribute.id}`">
+              {{ t('roll.attributeOnly', { name: rules.name(attribute.id) }) }}
+            </option>
+          </optgroup>
+          <option value="death:">
+            {{ t('roll.death') }}
+          </option>
+        </select>
+      </XField>
+      <XField :label="t('roll.difficulty')">
+        <select v-model="difficulty">
+          <option
+            v-for="level in rules.difficulties()"
+            :key="level.id"
+            :value="level.id"
+          >
+            {{ rules.name(level.id) }} ({{ level.value > 0 ? '+' : '' }}{{ level.value }})
+          </option>
+        </select>
+      </XField>
+      <XField :label="t('roll.gear')">
+        <input
+          v-model="gear"
+          type="number"
+        >
+      </XField>
+      <XField :label="t('roll.helpers')">
+        <input
+          v-model="helpers"
+          type="number"
+          min="0"
+        >
+      </XField>
+    </div>
+    <div
+      v-if="preview?.talents.length"
+      class="row"
+    >
+      <label
+        v-for="id in preview.talents"
+        :key="id"
+        class="row"
+      >
+        <input
+          v-model="talents"
+          type="checkbox"
+          :value="id"
+        >
+        {{ rules.name(id) }}
+      </label>
+    </div>
+    <p
+      v-if="preview"
+      data-test="preview"
+    >
+      {{ t('roll.preview', { base: preview.base_dice, stress: preview.stress_dice }) }}
+      <span
+        v-if="preview.modifications.length"
+        class="muted"
+      > · {{ modsText(preview.modifications, rules) }}</span>
+    </p>
+    <p
+      v-if="error"
+      class="error"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+    <div class="row">
+      <XButton
+        variant="primary"
+        data-test="roll-go"
+        @click="roll"
+      >
+        {{ t('roll.roll') }}
+      </XButton>
+      <XButton
+        variant="quiet"
+        @click="emit('done')"
+      >
+        {{ t('common.cancel') }}
+      </XButton>
+    </div>
+  </div>
+</template>

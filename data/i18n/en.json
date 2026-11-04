@@ -250,5 +250,12 @@
   "F-48.ends_at_once": "Ends at once",
   "F-48.runs_on": "Runs on",
   "F-49.name": "Authority",
-  "F-49.command_dice": "Roll COMMAND, otherwise MANIPULATION"
+  "F-49.command_dice": "Roll COMMAND, otherwise MANIPULATION",
+  "difficulty_trivial.name": "Trivial",
+  "difficulty_simple.name": "Simple",
+  "difficulty_easy.name": "Easy",
+  "difficulty_average.name": "Average",
+  "difficulty_demanding.name": "Demanding",
+  "difficulty_hard.name": "Hard",
+  "difficulty_formidable.name": "Formidable"
 }

@@ -1,0 +1,142 @@
+<script setup>
+import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+import XDie from '@/ui/XDie.vue'
+import XStatus from '@/ui/XStatus.vue'
+import { choiceLabel, modsText, originLabel } from '@/labels'
+import { useRulesStore } from '@/stores/rules'
+import { useTeamStore } from '@/stores/team'
+
+// The shared log: every roll with each die and each modification with its
+// source (plan 4.2).
+const { t } = useI18n()
+const rules = useRulesStore()
+const team = useTeamStore()
+const box = ref(null)
+
+const name = (id) => team.characterNames[id] ?? (id ? `#${id}` : t('auth.gm'))
+
+// Which character a roll belongs to, from its start event.
+const rollActors = computed(() => {
+  const map = {}
+  for (const entry of team.log) {
+    const event = entry.entry.event
+    if (event?.event === 'roll_started') map[event.roll] = event.actor
+  }
+  return map
+})
+
+function what(event) {
+  if (event.skill) return rules.name(event.skill)
+  if (event.attribute) return rules.name(event.attribute)
+  return t('log.pool')
+}
+
+function describe(entry) {
+  const e = entry.entry
+  if (e.type !== 'engine') return { text: t(`log.${e.type}`, { name: e.name ?? '' }) }
+  const ev = e.event
+  const actor = name(ev.actor ?? rollActors.value[ev.roll])
+  switch (ev.event) {
+    case 'roll_started':
+      return {
+        text: t('log.roll_started', { actor, what: what(ev), base: ev.base_dice, stress: ev.stress_dice }),
+        detail: modsText(ev.modifications, rules),
+      }
+    case 'dice_thrown':
+      return { dice: ev.dice }
+    case 'roll_finished':
+      return {
+        status: { tone: ev.outcome === 'success' ? 'ok' : 'warn', text: t(`outcome.${ev.outcome}`) },
+        text: t('log.roll_finished', { successes: ev.successes, stunts: ev.stunts }),
+        detail: ev.against != null ? t('log.against', { against: ev.against }) : '',
+      }
+    case 'decision':
+      return { text: t('log.decision', { actor, options: ev.options.map((o) => choiceLabel(o, t, rules)).join(' / ') }) }
+    case 'question':
+      return { text: t('log.question', { actor, question: rules.text(ev.question) }) }
+    case 'choose_targets':
+      return { text: t('log.choose_targets', { who: t(`who.${ev.who}`) }) }
+    case 'stress_changed':
+      return { text: t('log.stress_changed', { actor, from: ev.from, to: ev.to }) }
+    case 'damaged':
+      return { text: t('log.damaged', { actor, amount: ev.amount, health: ev.health }) }
+    case 'broken':
+      return { status: { tone: 'alert', text: t('crew.broken') }, text: actor }
+    case 'panic_rolled':
+      return {
+        text: t('log.panic_rolled', { actor, d6: ev.d6, stress: ev.stress, value: ev.value }),
+        detail: [modsText(ev.modifications, rules), ev.raised_from != null ? t('log.raised', { from: ev.raised_from }) : '']
+          .filter(Boolean)
+          .join(' · '),
+      }
+    case 'panic_effect':
+      return { status: { tone: ev.value >= 10 ? 'alert' : 'warn', text: rules.name(ev.effect) }, text: actor }
+    case 'panic_stopped':
+      return { text: t('log.panic_stopped', { actor }) }
+    case 'source_applied':
+      return { text: t('log.source_applied', { actor, source: originLabel(ev.origin, t, rules) }) }
+    case 'source_ended':
+      return { text: t('log.source_ended', { actor, source: originLabel(ev.origin, t, rules) }) }
+    case 'hint':
+      return { text: `${actor}: ${rules.text(ev.text)}` }
+    case 'talent_used':
+      return { text: t('log.talent_used', { actor, talent: rules.name(ev.talent) }) }
+    case 'trauma_check':
+      return { dice: ev.dice, text: ev.trauma ? t('log.trauma', { actor, trauma: rules.name(ev.trauma) }) : t('log.no_trauma', { actor }) }
+    default:
+      return { text: t(`log.${ev.event}`, { actor, ...ev }) }
+  }
+}
+
+const rows = computed(() => team.log.map((entry) => ({ id: entry.id, ...describe(entry) })))
+
+watch(
+  () => team.log.length,
+  async () => {
+    await nextTick()
+    if (box.value) box.value.scrollTop = box.value.scrollHeight
+  },
+)
+</script>
+
+<template>
+  <div
+    ref="box"
+    class="log"
+    aria-live="polite"
+    data-test="log"
+  >
+    <div
+      v-for="row in rows"
+      :key="row.id"
+      class="log-entry"
+    >
+      <div v-if="row.status || row.text">
+        <XStatus
+          v-if="row.status"
+          :tone="row.status.tone"
+          :text="row.status.text"
+        />
+        {{ row.text }}
+      </div>
+      <div
+        v-if="row.dice"
+        class="dice"
+      >
+        <XDie
+          v-for="(die, i) in row.dice"
+          :key="i"
+          :die="die"
+        />
+      </div>
+      <div
+        v-if="row.detail"
+        class="log-meta"
+      >
+        {{ row.detail }}
+      </div>
+    </div>
+  </div>
+</template>

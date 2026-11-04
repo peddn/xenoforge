@@ -250,5 +250,12 @@
   "F-48.ends_at_once": "Endet sofort",
   "F-48.runs_on": "Läuft weiter",
   "F-49.name": "Authority",
-  "F-49.command_dice": "COMMAND würfeln, sonst MANIPULATION"
+  "F-49.command_dice": "COMMAND würfeln, sonst MANIPULATION",
+  "difficulty_trivial.name": "Trivial",
+  "difficulty_simple.name": "Einfach",
+  "difficulty_easy.name": "Leicht",
+  "difficulty_average.name": "Durchschnittlich",
+  "difficulty_demanding.name": "Anspruchsvoll",
+  "difficulty_hard.name": "Schwer",
+  "difficulty_formidable.name": "Gewaltig"
 }

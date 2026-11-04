@@ -186,11 +186,19 @@ async fn update(
         let new = body.data.actor;
         check_actor(&state, &new)?;
         let actor = &mut character.data.actor;
+        // A character at full Health stays at full Health when STRENGTH
+        // changes, unless Health itself was changed [p. 30].
+        let was_full = actor.health == actor.full_health();
+        let health_untouched = new.health == actor.health;
         actor.android = new.android;
         actor.attributes = new.attributes;
         actor.skills = new.skills;
         actor.talents = new.talents;
-        actor.health = new.health;
+        actor.health = if was_full && health_untouched {
+            actor.full_health()
+        } else {
+            new.health
+        };
         actor.stress = new.stress;
     }
     let mut tx = state.pool.begin().await?;

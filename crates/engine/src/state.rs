@@ -168,6 +168,12 @@ impl Actor {
         self.kind == ActorKind::Pc && !self.android
     }
 
+    /// Full Health: equal to STRENGTH [p. 30]. Talents such as Tough come
+    /// with phase 2b.
+    pub fn full_health(&self) -> u8 {
+        self.attribute("strength")
+    }
+
     /// Health 0 [p. 98].
     pub fn broken(&self) -> bool {
         self.health == 0

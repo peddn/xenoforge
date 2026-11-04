@@ -1,0 +1,105 @@
+<script setup>
+import { useI18n } from 'vue-i18n'
+
+import XButton from '@/ui/XButton.vue'
+import XStatus from '@/ui/XStatus.vue'
+import { originLabel } from '@/labels'
+import { useAuthStore } from '@/stores/auth'
+import { useRulesStore } from '@/stores/rules'
+import { useTeamStore } from '@/stores/team'
+
+// The crew part of the overview (plan 3.1). Players see the values of
+// their own characters only (A-01).
+const emit = defineEmits(['roll', 'correct'])
+const { t } = useI18n()
+const auth = useAuthStore()
+const rules = useRulesStore()
+const team = useTeamStore()
+
+const mine = (c) => c.owner_id === auth.user?.id
+</script>
+
+<template>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ t('crew.character') }}</th>
+          <th>{{ t('sheet.health') }}</th>
+          <th>{{ t('sheet.stress') }}</th>
+          <th>{{ t('crew.state') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="c in team.view.characters"
+          :key="c.id"
+          :data-test="`crew-${c.id}`"
+        >
+          <td>
+            {{ c.name }}<br><span class="muted">{{ c.owner_name }}</span>
+            <div
+              v-if="c.actor"
+              class="row actions"
+            >
+              <XButton
+                v-if="mine(c) || team.view.is_gm"
+                :data-test="`roll-${c.id}`"
+                @click="emit('roll', c)"
+              >
+                {{ t('roll.roll') }}
+              </XButton>
+              <XButton
+                v-if="team.view.is_gm"
+                variant="quiet"
+                @click="emit('correct', c)"
+              >
+                {{ t('gm.correct') }}
+              </XButton>
+            </div>
+          </td>
+          <template v-if="c.actor">
+            <td>
+              <XStatus
+                v-if="c.actor.health === 0"
+                tone="alert"
+                :text="t('crew.broken')"
+              />
+              <span v-else>{{ c.actor.health }}</span>
+            </td>
+            <td>{{ c.actor.android ? '–' : c.actor.stress }}</td>
+            <td>
+              <div v-if="c.actor.panic">
+                <XStatus
+                  tone="warn"
+                  :text="`${t('crew.panic')} ${c.actor.panic.value} · ${rules.name(c.actor.panic.effect)}`"
+                />
+              </div>
+              <div
+                v-for="(source, i) in c.actor.sources"
+                :key="i"
+              >
+                {{ originLabel(source.origin, t, rules) }}
+              </div>
+              <div
+                v-for="([label, text], i) in c.hints"
+                :key="`h${i}`"
+                class="muted"
+                :title="label"
+              >
+                ▲ {{ rules.text(text) }}
+              </div>
+            </td>
+          </template>
+          <td
+            v-else
+            colspan="3"
+            class="muted"
+          >
+            {{ t('crew.hidden') }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>

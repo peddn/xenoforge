@@ -5,6 +5,13 @@
     { "id": "help_max", "page": 63, "value": 3 },
     { "id": "panic_effect_from", "page": 104, "value": 7 },
     { "id": "shifts_per_day", "page": 83, "value": 4 },
-    { "id": "supply_dice_max", "page": 34, "value": 6 }
+    { "id": "supply_dice_max", "page": 34, "value": 6 },
+    { "id": "difficulty_trivial", "page": 63, "value": 3 },
+    { "id": "difficulty_simple", "page": 63, "value": 2 },
+    { "id": "difficulty_easy", "page": 63, "value": 1 },
+    { "id": "difficulty_average", "page": 63, "value": 0 },
+    { "id": "difficulty_demanding", "page": 63, "value": -1 },
+    { "id": "difficulty_hard", "page": 63, "value": -2 },
+    { "id": "difficulty_formidable", "page": 63, "value": -3 }
   ]
 }
