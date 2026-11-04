@@ -25,8 +25,7 @@ pub const REQUIRED_CONSTANTS: &[&str] = &[
 ];
 
 /// Names of the engine functions that `special` operations may call.
-/// Phase 0 has none yet.
-pub const SPECIAL_HANDLERS: &[&str] = &[];
+pub const SPECIAL_HANDLERS: &[&str] = &["pull_rank"];
 
 /// A problem found by [`validate`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -217,6 +216,7 @@ impl<'a> Checker<'a> {
             && target.based_on.is_empty()
             && target.rolls.is_empty()
             && target.ship_stats.is_empty()
+            && target.stats.is_empty()
         {
             self.problem(at, "modifier applies to nothing");
         }
@@ -242,13 +242,21 @@ impl<'a> Checker<'a> {
                 applies_to,
                 modifies,
                 change,
+                when,
                 lasts,
                 ..
             } => {
                 self.mod_target(at, applies_to);
+                if let Some(key) = when {
+                    self.text_key(at, owner, key);
+                    if applies_to.skills.is_empty() && applies_to.based_on.is_empty() {
+                        self.problem(at, "a situation applies to skill rolls only");
+                    }
+                }
                 let ship_only = applies_to.skills.is_empty()
                     && applies_to.based_on.is_empty()
-                    && applies_to.rolls.is_empty();
+                    && applies_to.rolls.is_empty()
+                    && applies_to.stats.is_empty();
                 match change {
                     Change::Add(0) => self.problem(at, "adding 0 changes nothing"),
                     Change::Multiply(n) | Change::Divide(n) if *n < 2 => {
@@ -414,12 +422,27 @@ impl<'a> Checker<'a> {
             );
         }
         for career in &rules.careers {
-            let at = format!("careers/{}", career.id);
-            self.reference(&at, "attribute", &career.key_attribute);
+            self.career(career);
         }
         for talent in &rules.talents {
+            let at = format!("talents/{}", talent.id);
             if let Some(career) = &talent.career {
-                self.reference(&format!("talents/{}", talent.id), "career", career);
+                self.reference(&at, "career", career);
+                let listed = rules
+                    .careers
+                    .iter()
+                    .any(|c| c.id == *career && c.talents.contains(&talent.id));
+                if !listed {
+                    self.problem(&at, format!("not listed as a talent of \"{career}\""));
+                }
+            }
+            // A talent works now or names the part of the app that will
+            // make it work, not both.
+            if talent.effects.is_empty() == talent.later.is_none() {
+                self.problem(&at, "needs either effects or `later`");
+            }
+            if talent.repeatable && talent.parameter.is_none() {
+                self.problem(&at, "a repeatable talent needs a parameter");
             }
         }
 
@@ -519,6 +542,48 @@ impl<'a> Checker<'a> {
 
     /// The panic table starts at 1, has no gaps and ends with an open
     /// range [p. 105].
+    /// A career: its key values, its three talents and its suggestions
+    /// [p. 38–55].
+    fn career(&mut self, career: &crate::data::model::Career) {
+        let rules = &self.data.rules;
+        let at = format!("careers/{}", career.id);
+        self.reference(&at, "attribute", &career.key_attribute);
+        if career.key_skills.len() != 3 {
+            self.problem(&at, "a career has three key skills");
+        }
+        for skill in &career.key_skills {
+            self.reference(&at, "skill", skill);
+        }
+        if career.talents.len() != 3 {
+            self.problem(&at, "a career has three career talents");
+        }
+        for id in &career.talents {
+            match rules.talents.iter().find(|t| t.id == *id) {
+                Some(t) if t.career.as_deref() == Some(career.id.as_str()) => {}
+                Some(_) => self.problem(&at, format!("talent \"{id}\" belongs to another career")),
+                None => self.problem(&at, format!("unknown talent \"{id}\"")),
+            }
+        }
+        if career.cash.dice == 0 || career.cash.times == 0 {
+            self.problem(&at, "cash needs dice and a factor");
+        }
+        if career.names.is_empty() {
+            self.problem(&at, "no suggested names");
+        }
+        for (kind, ids) in [
+            ("look", &career.looks),
+            ("item", &career.items),
+            ("agenda", &career.agendas),
+        ] {
+            if ids.is_empty() {
+                self.problem(&at, format!("no suggestions of kind {kind}"));
+            }
+            for id in ids {
+                self.require_key(&at, &format!("{}.{kind}.{id}", career.id));
+            }
+        }
+    }
+
     fn panic_table(&mut self) {
         let data = self.data;
         let mut rows: Vec<_> = data

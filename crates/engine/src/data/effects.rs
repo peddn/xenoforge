@@ -126,6 +126,17 @@ pub struct ModTarget {
     /// Ship stats.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ship_stats: Vec<ShipStat>,
+    /// Values of a character.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stats: Vec<ActorStat>,
+}
+
+/// Values of a character that effects can change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ActorStat {
+    /// Full Health, normally STRENGTH [p. 30].
+    HealthMax,
 }
 
 /// How a modifier changes a value.
@@ -276,6 +287,11 @@ pub enum Effect {
         /// one die" [p. 78].
         #[serde(default, skip_serializing_if = "Option::is_none")]
         at_least: Option<u8>,
+        /// Applies only in a situation the app cannot see, e.g. "when
+        /// moving undetected"; the player ticks it for a roll (A-10).
+        /// Translation key of the situation.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        when: Option<Id>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         lasts: Option<Lasts>,
         #[serde(default, skip_serializing_if = "is_false")]

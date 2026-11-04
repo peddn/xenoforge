@@ -34,13 +34,36 @@ pub struct Attribute {
     pub page: Page,
 }
 
-/// A career [p. 38–55]. Phase 0 only holds what the probe data needs.
+/// A career [p. 38–55].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Career {
     pub id: Id,
     pub page: Page,
+    /// May go to 5 at creation [p. 28].
     pub key_attribute: Id,
+    /// May go to 3 at creation [p. 28].
+    pub key_skills: Vec<Id>,
+    /// The three career talents; one is chosen at creation [p. 29, 74].
+    pub talents: Vec<Id>,
+    /// Starting cash, rolled once at creation.
+    pub cash: Cash,
+    /// Suggested names as in the book [p. 30]; not translated.
+    pub names: Vec<String>,
+    /// Suggestions for appearance, signature item and Personal Agenda.
+    /// Their texts are `<career>.look.<id>`, `<career>.item.<id>` and
+    /// `<career>.agenda.<id>` (A-11).
+    pub looks: Vec<Id>,
+    pub items: Vec<Id>,
+    pub agendas: Vec<Id>,
+}
+
+/// Starting cash: `dice` D6 times `times` dollars.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Cash {
+    pub dice: u8,
+    pub times: u32,
 }
 
 /// A skill and the attribute it is based on [p. 58].
@@ -68,6 +91,9 @@ pub enum ActionKind {
     SpaceGunner,
     /// Space combat, engineer phase [p. 192].
     SpaceEngineer,
+    /// Takes a Turn or more outside the Round order, e.g. studying an
+    /// artifact [p. 74, 77].
+    Turn,
 }
 
 /// An action that effects can block, grant or listen to.
@@ -219,6 +245,39 @@ pub struct Talent {
     pub career: Option<Id>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub effects: Vec<Effect>,
+    /// The talent names something of its own: a vehicle or a weapon.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameter: Option<TalentParameter>,
+    /// Can be taken more than once, each time for another parameter.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub repeatable: bool,
+    /// The part of the app that will make the talent work; until then it
+    /// can be chosen and is shown, without effect.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub later: Option<Later>,
+}
+
+/// What a talent names, e.g. Like the Back of Your Hand: one vehicle
+/// [p. 76].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TalentParameter {
+    Vehicle,
+    Weapon,
+}
+
+/// Parts of the app still to come (plan section 12).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Later {
+    /// Equipment, phase 2c.
+    Gear,
+    /// Combat, phase 3.
+    Combat,
+    /// Time, rest and campaign, phase 4.
+    Time,
+    /// Space combat, phase 6.
+    SpaceCombat,
 }
 
 /// Group of a ship system.

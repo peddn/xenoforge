@@ -348,6 +348,7 @@ fn effects_with_their_own_duration() {
             modifies: Modified::Dice,
             change: Change::Add(-1),
             at_least: None,
+            when: None,
             lasts: Some(Lasts::Steps {
                 unit: Unit::Round,
                 count: 1,

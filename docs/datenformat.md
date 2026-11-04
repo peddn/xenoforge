@@ -30,14 +30,14 @@ Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editore
 | --- | --- | --- |
 | `constants.json` | Einzelne Regelwerte, die die Engine braucht: höchstens drei Helfer, sechs Würfel beim Vorratswurf, ein Push, Panikeffekt ab 7, vier Schichten pro Tag | `value` |
 | `attributes.json` | Attribute | – |
-| `careers.json` | Karrieren | `key_attribute` |
+| `careers.json` | Karrieren | `key_attribute`, `key_skills` (drei), `talents` (die drei Karrieretalente), `cash` (`dice` W6 mal `times` Dollar), `names` (Namensvorschläge wie im Buch), `looks`, `items`, `agendas` (Vorschläge für Aussehen, Signature Item und Agenda; Texte unter `<karriere>.look.<id>`, `.item.<id>`, `.agenda.<id>`, A-11) |
 | `skills.json` | Fertigkeiten | `attribute` |
-| `actions.json` | Aktionen, auf die Effekte verweisen | `kind`: `slow`, `fast`, `space_sensor`, `space_pilot`, `space_gunner`, `space_engineer` |
+| `actions.json` | Aktionen, auf die Effekte verweisen | `kind`: `slow`, `fast`, `turn` (dauert einen Turn oder länger, außerhalb der Runden), `space_sensor`, `space_pilot`, `space_gunner`, `space_engineer` |
 | `panic.json` | Paniktabelle und Panikeffekte außerhalb der Tabelle (Overkill) | `roll` (fehlt außerhalb der Tabelle), `cancels_action` (10+), `trauma_check` (13+), `on_apply`, `effects`, `lasts` |
 | `traumas.json` | Dauerhafte Traumata | `d6`, `effects`, `ruling` |
 | `critical-injuries.json` | Kritische Verletzungen | `d66`, `fatal`, `instant_death`, `healing`, `on_apply`, `effects` |
 | `conditions.json` | Zustände wie Freezing | `effects`, `ends` |
-| `talents.json` | Talente | `career` (fehlt bei allgemeinen Talenten), `effects` |
+| `talents.json` | Talente | `career` (fehlt bei allgemeinen Talenten), `effects`; `parameter` (`vehicle` oder `weapon`) und `repeatable`, wenn das Talent etwas Eigenes benennt und mehrfach genommen werden kann; `later` (`gear`, `combat`, `time`, `space_combat`), solange der Teil der App fehlt, der das Talent wirken lässt. Ein Talent hat entweder `effects` oder `later` |
 | `ship-systems.json` | Kernkomponenten, Module, sonstige Systeme | `category`: `core`, `module`, `other`; `effects` |
 | `ship-damage.json` | Komponentenschäden | `table`: `minor`, `major`; `roll`, `system`, `repair`, `ruling`, `on_apply`, `effects` |
 | `rulings.json` | Festlegungen F-NN aus dem Katalog | `pages`, `options`, `default` |
@@ -83,7 +83,7 @@ Die acht Effektarten:
 
 | `kind` | Wirkung | Felder | Beispiel |
 | --- | --- | --- | --- |
-| `modifier` | ändert Würfelpool, Push-Anzahl oder Schiffswert | `applies_to` (`skills`, `based_on`, `rolls`, `ship_stats`), `modifies` (`dice` oder `pushes`), `change` (`add`, `multiply`, `divide`) | Tremble: −2 auf alles unter AGILITY. Past the Limit: ein Push mehr bei STRENGTH |
+| `modifier` | ändert Würfelpool, Push-Anzahl, einen Wert des Charakters oder Schiffswert | `applies_to` (`skills`, `based_on`, `rolls`, `stats`, `ship_stats`), `modifies` (`dice` oder `pushes`), `change` (`add`, `multiply`, `divide`), `when` | Tremble: −2 auf alles unter AGILITY. Past the Limit: ein Push mehr bei STRENGTH. Tough: volle Health +2 |
 | `restriction` | verbietet etwas | `blocks`: `{ "action": "run" }`, `"stress_relief"`, `"health_recovery"` | Sprained ankle: kein Rennen |
 | `trigger` | Operationen bei einem Ereignis | `on`: `{ "skill_roll": [...] }`, `{ "action": "run" }`, `"sleep"`; `then` | Crotch hit: 1 Schaden bei jeder MOBILITY-Probe |
 | `periodic` | Operationen bei jedem Zeitschritt | `every`: `{ "step": "shift" }` oder `{ "by_cold": {...} }`; `then` | Alcoholism: Frage jede Schicht |
@@ -92,7 +92,7 @@ Die acht Effektarten:
 | `capability` | ermöglicht eine Aktion | `grants` | Docking Umbilical: Andocken |
 | `hint` | Hinweis für die Spielleitung | `text`, `tier`: `hint` (handeln) oder `info` (ohne Spielfolge) | Intercoms disabled |
 
-**Modifikatoren im Einzelnen.** `skills` und `based_on` gelten für Proben mit einer Fertigkeit, auch den Death Roll (eine STAMINA-Probe). Maßgeblich sind Fertigkeit und Attribut, mit denen tatsächlich gewürfelt wird (F-35). `rolls` nennt andere Wurfarten: `panic` (verändert das Ergebnis), `air_supply`, `food_supply`, `water_supply`, `power_supply` (verändern die Zahl der Stresswürfel, mindestens einer, Reihenfolge nach F-09). Multiplizieren und Teilen gibt es nur für Schiffswerte; `pushes` nur für Proben mit Fertigkeit. `at_least` setzt eine Untergrenze für den veränderten Wert, etwa „mindestens ein Würfel“ bei Calm Breather.
+**Modifikatoren im Einzelnen.** `skills` und `based_on` gelten für Proben mit einer Fertigkeit, auch den Death Roll (eine STAMINA-Probe). Maßgeblich sind Fertigkeit und Attribut, mit denen tatsächlich gewürfelt wird (F-35). `rolls` nennt andere Wurfarten: `panic` (verändert das Ergebnis), `air_supply`, `food_supply`, `water_supply`, `power_supply` (verändern die Zahl der Stresswürfel, mindestens einer, Reihenfolge nach F-09). Multiplizieren und Teilen gibt es nur für Schiffswerte; `pushes` nur für Proben mit Fertigkeit. `at_least` setzt eine Untergrenze für den veränderten Wert, etwa „mindestens ein Würfel“ bei Calm Breather. `stats` nennt Werte des Charakters: `health_max` (volle Health, sonst STRENGTH). `when` ist der Textschlüssel einer Lage, die die App nicht sieht, etwa „bewegt sich unbemerkt“ bei Stealthy: Der Modifikator gilt nur, wenn die Person sie im Würfeldialog ankreuzt (A-10).
 
 **Ersetzungen im Einzelnen.** Zu jeder Art von `replaces` passt genau eine Art von `with`:
 
@@ -125,7 +125,7 @@ Die Stufen AUTO, HINWEIS und INFO aus dem Plan (Abschnitt 7.4) ergeben sich dara
 
 `who` ist `bearer` (Standard), `friendly_pcs_short_range`, `friendly_who_hear`, `friendly_who_see`, `friendly_who_witness` oder `aboard`. Die App kennt keine Positionen; Gruppen, die von Entfernung, Hören oder Sehen abhängen, schlägt sie vor und die Spielleitung bestätigt.
 
-`special` ist für Regeln, die sich mit dem Vokabular nicht sauber ausdrücken lassen. Jeder Name muss in der Engine existieren (`SPECIAL_HANDLERS`); bisher gibt es noch keinen.
+`special` ist für Regeln, die sich mit dem Vokabular nicht sauber ausdrücken lassen. Jeder Name muss in der Engine existieren (`SPECIAL_HANDLERS`). Bisher gibt es `pull_rank`: der vergleichende Wurf von Pull Rank, COMMAND gegen die MANIPULATION des Ziels (S. 76); das Ziel nennt der Befehl, der die Aktion auslöst.
 
 ### Dauer
 

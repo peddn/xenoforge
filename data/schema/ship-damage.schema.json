@@ -30,6 +30,16 @@
         "slow"
       ]
     },
+    "ActorStat": {
+      "description": "Values of a character that effects can change.",
+      "oneOf": [
+        {
+          "description": "Full Health, normally STRENGTH [p. 30].",
+          "type": "string",
+          "const": "health_max"
+        }
+      ]
+    },
     "Blocked": {
       "description": "Something a restriction or block op forbids.",
       "oneOf": [
@@ -205,6 +215,13 @@
             },
             "target": {
               "$ref": "#/$defs/Target"
+            },
+            "when": {
+              "description": "Applies only in a situation the app cannot see, e.g. \"when\nmoving undetected\"; the player ticks it for a roll (A-10).\nTranslation key of the situation.",
+              "type": [
+                "string",
+                "null"
+              ]
             }
           },
           "additionalProperties": false,
@@ -690,6 +707,13 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "stats": {
+          "description": "Values of a character.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ActorStat"
           }
         }
       },
