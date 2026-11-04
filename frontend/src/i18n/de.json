@@ -154,7 +154,10 @@
     "addOwn": "Eigener Charakter",
     "crew": "Crew",
     "log": "Protokoll",
-    "removeCharacter": "Aus dem Team nehmen"
+    "removeCharacter": "Aus dem Team nehmen",
+    "goneTitle": "Nicht mehr im Team",
+    "gone": "Dein Charakter wurde aus dem Team genommen.",
+    "back": "Zur Übersicht"
   },
   "outcome": {
     "success": "Erfolg",

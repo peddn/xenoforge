@@ -315,6 +315,22 @@ async fn remove(
         .bind(id)
         .execute(&mut *tx)
         .await?;
+    // A player without a character in the team no longer sees it.
+    sqlx::query(
+        "DELETE FROM members WHERE team_id = ? AND user_id = ? AND NOT EXISTS \
+         (SELECT 1 FROM characters WHERE team_id = ? AND owner_id = ?)",
+    )
+    .bind(id)
+    .bind(character.owner_id)
+    .bind(id)
+    .bind(character.owner_id)
+    .execute(&mut *tx)
+    .await?;
+    // Older states still refer to the character; undo stops here.
+    sqlx::query("DELETE FROM snapshots WHERE team_id = ?")
+        .bind(id)
+        .execute(&mut *tx)
+        .await?;
     let entry = Entry::CharacterRemoved {
         character: character.id,
         name: character.name.clone(),

@@ -25,6 +25,7 @@ Begleit-App für das ALIEN RPG (Free League, Grundregelwerk 1. Auflage 2019). De
 - Der Server würfelt; die Oberfläche rechnet keine Regeln selbst.
 - Format der Regeldaten: `docs/datenformat.md`. Die Rust-Typen sind die Quelle, die Schemas in `data/schema/` werden erzeugt.
 - Regel-Engine: `docs/engine.md`. Befehle rein, Ereignisse raus; Entscheidungen der Spieler als offene Entscheidungen, nie still.
+- Server: `docs/server.md`. Rechte und Sichtbarkeit prüft nur der Server; Befehle per HTTP, Ereignisse per Server-Sent Events.
 
 ## Befehle
 

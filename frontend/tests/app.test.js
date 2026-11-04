@@ -106,6 +106,19 @@ describe('rolling', () => {
     const wrapper = mount(DecisionList, { global: { plugins: [pinia, i18n] } })
     expect(wrapper.find('[data-test="decisions"]').exists()).toBe(false)
   })
+
+  it('lets go of a team that is no longer visible', async () => {
+    setup()
+    mockApi({})
+    const team = useTeamStore()
+    await team.open(5)
+    expect(team.gone).toBe(true)
+    team.view = { id: 5 }
+    team.gone = false
+    await team.refresh()
+    expect(team.view).toBe(null)
+    expect(team.gone).toBe(true)
+  })
 })
 
 describe('labels', () => {

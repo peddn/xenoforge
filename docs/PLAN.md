@@ -814,7 +814,7 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 | Regelfragen | Festgelegt in Abschnitt 2 und im Katalog; weitere Unklarheiten entscheidet jede Phase für ihren Bereich |
 | Sichtbarkeit | Spieler sehen nur den eigenen Bogen; Würfe und Ereignisse stehen im gemeinsamen Protokoll |
 | Verdeckte Würfe | Nur für NSC und Kreaturen; Spieler würfeln immer offen, weil sie über den Push entscheiden |
-| Teams | Ein Team ist die ganze Spielrunde (Kampagne oder Szenario); Charaktere gehören den Spielern, die Spielleitung ordnet sie zu |
+| Teams | Ein Team ist die ganze Spielrunde (Kampagne oder Szenario); nur die Spielleitung legt es an; Charaktere gehören den Spielern und kommen über den Einladungslink ins Team, jeder in höchstens eines (A-04, A-07) |
 | Gestaltung | Terminal-Stil der Filmcomputer für die ganze App |
 | Schiffsstatus | Alle Systeme mit Zustand und Folgen (AUTO, HINWEIS, INFO); Spieler sehen ihn ohne Geheimes (7.4) |
 | Schiffsschäden | Nur Einträge aus dem Buch, auch beim Setzen von Hand; Science Lab und Tractor Hitch verlieren bei Ausfall nur ihre Funktion (F-15) |
@@ -824,4 +824,4 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 
 Offen:
 
-Derzeit keine. Phase 0 ist abgeschlossen (PR #1). Nächster Schritt ist der Plan für Phase 1.
+Derzeit keine. Phasen 0 und 1 sind abgeschlossen (PR #1, #2); Phase 2a liegt als Pull Request vor. Nächster Schritt ist der Plan für Phase 2b.

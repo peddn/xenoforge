@@ -9,6 +9,9 @@ export const useTeamStore = defineStore('team', () => {
   const view = ref(null)
   const log = ref([])
   const connected = ref(false)
+  // Set when the team is no longer visible, e.g. after one's character was
+  // taken out of it.
+  const gone = ref(false)
   let source = null
   let refreshTimer = null
 
@@ -17,19 +20,34 @@ export const useTeamStore = defineStore('team', () => {
   )
 
   async function refresh() {
-    if (view.value) view.value = await get(`/teams/${view.value.id}`)
+    if (!view.value) return
+    try {
+      view.value = await get(`/teams/${view.value.id}`)
+    } catch (e) {
+      if (e.status !== 404) throw e
+      close()
+      view.value = null
+      gone.value = true
+    }
   }
 
   // Many events come in bursts; refresh the view once per burst.
   function scheduleRefresh() {
     clearTimeout(refreshTimer)
-    refreshTimer = setTimeout(refresh, 150)
+    refreshTimer = setTimeout(() => refresh().catch(() => {}), 150)
   }
 
   async function open(id) {
     close()
     log.value = []
-    view.value = await get(`/teams/${id}`)
+    gone.value = false
+    try {
+      view.value = await get(`/teams/${id}`)
+    } catch (e) {
+      if (e.status !== 404) throw e
+      gone.value = true
+      return
+    }
     source = new EventSource(`/api/teams/${id}/events`)
     source.onopen = () => (connected.value = true)
     source.onerror = () => (connected.value = false)
@@ -41,6 +59,7 @@ export const useTeamStore = defineStore('team', () => {
   }
 
   function close() {
+    clearTimeout(refreshTimer)
     source?.close()
     source = null
     connected.value = false
@@ -67,5 +86,5 @@ export const useTeamStore = defineStore('team', () => {
     await refresh()
   }
 
-  return { view, log, connected, characterNames, open, close, refresh, command, preview, undo, correct, newInvite }
+  return { view, log, connected, gone, characterNames, open, close, refresh, command, preview, undo, correct, newInvite }
 })

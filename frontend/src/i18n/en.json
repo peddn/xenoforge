@@ -154,7 +154,10 @@
     "addOwn": "Own character",
     "crew": "Crew",
     "log": "Log",
-    "removeCharacter": "Remove from team"
+    "removeCharacter": "Remove from team",
+    "goneTitle": "No longer in the team",
+    "gone": "Your character was taken out of the team.",
+    "back": "Back to the overview"
   },
   "outcome": {
     "success": "Success",

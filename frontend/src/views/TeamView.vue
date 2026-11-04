@@ -29,7 +29,7 @@ const error = ref('')
 
 onMounted(async () => {
   await team.open(route.params.id)
-  if (team.view.is_gm) await characters.load()
+  if (team.view?.is_gm) await characters.load()
 })
 onUnmounted(() => team.close())
 
@@ -179,4 +179,13 @@ async function removeCharacter(character) {
       {{ error }}
     </p>
   </template>
+  <XPanel
+    v-else-if="team.gone"
+    :title="t('team.goneTitle')"
+  >
+    <p>{{ t('team.gone') }}</p>
+    <RouterLink to="/">
+      {{ t('team.back') }}
+    </RouterLink>
+  </XPanel>
 </template>

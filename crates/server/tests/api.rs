@@ -316,6 +316,11 @@ async fn teams_and_rights() {
         None,
     )
     .await;
+    // Without a character in the team the player no longer sees it.
+    let (status, _) = member
+        .call("GET", &format!("/api/teams/{team}"), None)
+        .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
     member
         .ok("DELETE", &format!("/api/characters/{character}"), None)
         .await;
@@ -444,14 +449,31 @@ async fn correction_and_undo() {
         .call("POST", &format!("/api/teams/{team}/undo"), None)
         .await;
     assert_eq!(status, StatusCode::FORBIDDEN);
+
+    // Removing a character ends the undo history: older states would
+    // still refer to it.
+    gm.command(
+        team,
+        json!({ "command": "change_stress", "actors": [actor], "delta": 1 }),
+    )
+    .await;
+    gm.ok(
+        "DELETE",
+        &format!("/api/teams/{team}/characters/{character}"),
+        None,
+    )
+    .await;
+    let (status, _) = gm
+        .call("POST", &format!("/api/teams/{team}/undo"), None)
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
 }
 
 /// The event stream replays the log from the start.
 #[tokio::test]
 async fn event_stream_replays_the_log() {
     let server = server("sse").await;
-    let (gm, mut player, team, character) = table(&server).await;
-    drop(gm);
+    let (mut gm, mut player, team, character) = table(&server).await;
     player
         .command(
             team,
@@ -480,4 +502,21 @@ async fn event_stream_replays_the_log() {
         }
     }
     assert!(text.contains("id: 1"), "{text}");
+
+    // When a character leaves, the stream ends after telling so.
+    gm.ok(
+        "DELETE",
+        &format!("/api/teams/{team}/characters/{character}"),
+        None,
+    )
+    .await;
+    while let Some(frame) = tokio::time::timeout(Duration::from_secs(2), body.frame())
+        .await
+        .expect("the stream ends")
+    {
+        if let Some(data) = frame.unwrap().data_ref() {
+            text.push_str(std::str::from_utf8(data).unwrap());
+        }
+    }
+    assert!(text.contains("character_removed"), "{text}");
 }

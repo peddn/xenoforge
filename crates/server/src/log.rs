@@ -190,15 +190,21 @@ async fn events(
             .map(|s| to_sse(&s)),
     );
     // A stream that falls behind ends; the browser reconnects and catches
-    // up from the log.
+    // up from the log. After a character leaves the stream ends as well, so
+    // the reconnect checks again who may still read along.
     let live = BroadcastStream::new(receiver)
         .take_while(|item| std::future::ready(item.is_ok()))
         .filter_map(move |item| {
             let ready = item
                 .ok()
-                .filter(|s| s.team_id == id && s.id > last && visible(s, is_gm))
-                .map(|s| to_sse(&s));
+                .filter(|s| s.team_id == id && s.id > last && visible(s, is_gm));
             std::future::ready(ready)
-        });
+        })
+        .flat_map(|stored| {
+            let leaves = matches!(stored.entry, Entry::CharacterRemoved { .. });
+            stream::iter(std::iter::once(Some(stored)).chain(leaves.then_some(None)))
+        })
+        .take_while(|item| std::future::ready(item.is_some()))
+        .filter_map(|item| std::future::ready(item.map(|s| to_sse(&s))));
     Ok(Sse::new(replay.chain(live)).keep_alive(KeepAlive::default()))
 }
