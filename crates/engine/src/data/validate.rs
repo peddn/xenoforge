@@ -19,6 +19,7 @@ pub const REQUIRED_CONSTANTS: &[&str] = &[
     "android_attribute_bonus",
     "android_bonus_attributes",
     "base_pushes",
+    "cinematic_acts",
     "creation_attribute_max",
     "creation_attribute_min",
     "creation_attribute_points",
@@ -30,6 +31,7 @@ pub const REQUIRED_CONSTANTS: &[&str] = &[
     "help_max",
     "panic_effect_from",
     "shifts_per_day",
+    "story_points_max",
     "supply_dice_max",
 ];
 

@@ -504,6 +504,8 @@
   "creation_attribute_max.name": "Größter Attributwert bei der Erschaffung",
   "creation_key_attribute_max.name": "Größter Wert des Schlüsselattributs",
   "creation_skill_points.name": "Fertigkeitspunkte bei der Erschaffung",
+  "story_points_max.name": "Höchstzahl Story Points",
+  "cinematic_acts.name": "Akte eines Cinematic-Szenarios",
   "creation_key_skill_max.name": "Größte Schlüsselfertigkeit bei der Erschaffung",
   "creation_other_skill_max.name": "Größte andere Fertigkeit bei der Erschaffung",
   "android_attribute_bonus.name": "Attributbonus für Androiden",

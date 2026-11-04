@@ -144,13 +144,16 @@ fn signature_item_once_per_act() {
     let mut t = Table::new(Mode::Cinematic).with("a", pc().stress(3));
     signature(&mut t, "a").unwrap();
     assert!(signature(&mut t, "a").is_err());
-    assert_eq!(t.run(Command::EndAct, &[]), vec![Event::ActEnded]);
+    assert_eq!(
+        t.run(Command::EndAct { agenda: vec![] }, &[]),
+        vec![Event::ActEnded { act: 1 }]
+    );
     signature(&mut t, "a").unwrap();
     assert_eq!(t.actor("a").stress, 1);
 
     let mut t = Table::new(Mode::Campaign).with("a", pc().stress(3));
     assert!(
-        t.try_run(Command::EndAct, &[]).is_err(),
+        t.try_run(Command::EndAct { agenda: vec![] }, &[]).is_err(),
         "no Acts in Campaign play"
     );
 }

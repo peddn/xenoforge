@@ -31,6 +31,10 @@ pub struct GameState {
     pub actors: BTreeMap<ActorId, Actor>,
     /// Story Points belong to the player, not the character [p. 61].
     pub story_points: BTreeMap<PlayerId, u8>,
+    /// Acts ended so far in Cinematic play; the current Act is the next
+    /// one [p. 216].
+    #[serde(default)]
+    pub acts_ended: u8,
     /// Decisions the engine waits for.
     pub pending: BTreeMap<PendingId, Pending>,
     pub next_pending: PendingId,

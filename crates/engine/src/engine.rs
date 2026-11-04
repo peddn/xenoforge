@@ -24,8 +24,8 @@ use crate::dice::{Dice, Die, throw};
 use crate::panic::{PanicCause, StopReason};
 use crate::roll::{Outcome, RollRequest};
 use crate::state::{
-    ActiveSource, Actor, ActorId, Ending, GameState, Mode, Origin, Pending, PendingId, PlayerId,
-    Supply,
+    ActiveSource, Actor, ActorId, ActorKind, Ending, GameState, Mode, Origin, Pending, PendingId,
+    PlayerId, Supply,
 };
 
 /// The rule engine. It owns the rule data and holds no game state.
@@ -76,8 +76,16 @@ pub enum Command {
     },
     /// Stress −1 once per Act or session [p. 104].
     UseSignatureItem { actor: ActorId },
-    /// End of an Act in Cinematic play.
-    EndAct,
+    /// End of an Act in Cinematic play. The characters named furthered
+    /// their Personal Agenda: each one's player gets a Story Point
+    /// [p. 31, 216].
+    EndAct {
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        agenda: Vec<ActorId>,
+    },
+    /// Sets a player's Story Points, e.g. those brought from the last
+    /// scenario (F-53) [p. 61, 383].
+    SetStoryPoints { player: PlayerId, points: u8 },
     /// End of a game session: resets uses, trauma checks [p. 104].
     EndSession,
 }
@@ -246,8 +254,19 @@ pub enum Event {
         dice: Vec<Die>,
         trauma: Option<Id>,
     },
-    /// An Act ended: uses per Act are free again [p. 76, 104].
-    ActEnded,
+    /// An Act ended: uses per Act are free again [p. 76, 104]. `act` is
+    /// the Act that ended, counted from 1.
+    ActEnded {
+        #[serde(default)]
+        act: u8,
+    },
+    /// A player's Story Points changed: awarded at the end of an Act, or
+    /// set by the game master [p. 61, 216].
+    StoryPointsChanged {
+        player: PlayerId,
+        from: u8,
+        to: u8,
+    },
     /// A game session ended: uses per session are free again, trauma
     /// checks follow [p. 76, 77, 104].
     SessionEnded,
@@ -693,14 +712,15 @@ impl<'a> Ctx<'a> {
                 self.perform_action(&actor, action)
             }
             Command::UseSignatureItem { actor } => self.use_signature_item(&actor),
-            Command::EndAct => {
-                if self.state.mode != Mode::Cinematic {
+            Command::EndAct { agenda } => self.end_act(&agenda),
+            Command::SetStoryPoints { player, points } => {
+                self.cinematic("Story Points")?;
+                if points > self.engine.constant_u8("story_points_max") {
                     return Err(RuleError::NotAllowed(
-                        "Acts exist only in Cinematic play".into(),
+                        "a player has at most three Story Points".into(),
                     ));
                 }
-                self.emit(Event::ActEnded);
-                self.reset_uses(false);
+                self.set_story_points(&player, points);
                 Ok(())
             }
             Command::EndSession => self.end_session(),
@@ -1408,6 +1428,64 @@ impl<'a> Ctx<'a> {
             actor.uses.retain(|talent, _| {
                 let period = engine.use_period(talent);
                 !(session || period == Some(UsePeriod::ActOrSession))
+            });
+        }
+    }
+
+    /// Story Points and Acts exist only in Cinematic play (F-06).
+    fn cinematic(&self, what: &str) -> Result<()> {
+        if self.state.mode == Mode::Cinematic {
+            Ok(())
+        } else {
+            Err(RuleError::NotAllowed(format!(
+                "{what} exist only in Cinematic play"
+            )))
+        }
+    }
+
+    /// End of an Act: a Story Point for each player whose character
+    /// furthered their Agenda, once per player, at most three
+    /// [p. 61, 216]; uses per Act are free again.
+    fn end_act(&mut self, agenda: &[ActorId]) -> Result<()> {
+        self.cinematic("Acts")?;
+        let mut players: Vec<PlayerId> = Vec::new();
+        for id in agenda {
+            let actor = self.actor(id)?;
+            if actor.kind != ActorKind::Pc {
+                return Err(RuleError::NotAllowed(format!(
+                    "\"{id}\" is no player character and has no Agenda"
+                )));
+            }
+            let player = actor
+                .player
+                .clone()
+                .ok_or_else(|| RuleError::NotAllowed(format!("\"{id}\" has no player")))?;
+            if !players.contains(&player) {
+                players.push(player);
+            }
+        }
+        self.state.acts_ended = self.state.acts_ended.saturating_add(1);
+        self.emit(Event::ActEnded {
+            act: self.state.acts_ended,
+        });
+        for player in players {
+            let now = self.state.story_points.get(&player).copied().unwrap_or(0);
+            self.set_story_points(&player, now.saturating_add(1));
+        }
+        self.reset_uses(false);
+        Ok(())
+    }
+
+    /// At most `story_points_max`; a change is reported.
+    fn set_story_points(&mut self, player: &str, points: u8) {
+        let to = points.min(self.engine.constant_u8("story_points_max"));
+        let from = self.state.story_points.get(player).copied().unwrap_or(0);
+        self.state.story_points.insert(player.to_owned(), to);
+        if from != to {
+            self.emit(Event::StoryPointsChanged {
+                player: player.to_owned(),
+                from,
+                to,
             });
         }
     }
