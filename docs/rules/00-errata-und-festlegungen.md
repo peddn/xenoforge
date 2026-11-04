@@ -79,7 +79,7 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-54 | Agenda in der Kampagne ändern, S. 31 | Keine Regel dazu (01-A8) | Jederzeit änderbar; die Spielleitung sieht sie im Bogen | – |
 | F-55 | Android und Talente mit Stress als Preis, S. 29, 75, 76 | Pull Rank und Personal Safety kosten Stress, den Androiden nicht haben (01-A30) | Kein Stress; die App weist die Spielleitung im Protokoll darauf hin, sie entscheidet über Folgen | – |
 | F-56 | Stress bei Pull Rank, S. 76 | Offen, ob der Stress vor oder nach dem Wurf steigt; davor gäbe er einen Stresswürfel mehr | Nach dem Wurf, bei Erfolg wie Misserfolg. Der Wurf hat die Stresswürfel von vorher; ein Push bringt wie immer genau einen Stresswürfel dazu | – |
-| F-57 | Pull Rank als Aktion, S. 71, 76 | S. 76 nennt keine Art der Aktion; Befehle mit COMMAND sind eine langsame Aktion (S. 71) | Langsame Aktion wie ein Befehl; zählt erst mit den Runden des Kampfs (Phase 3) | – |
+| F-57 | Talente mit eigener Probe als Aktion, S. 87, 88 | Manche Talente sagen, wie sie im Kampf zählen (keine Aktion, schnell statt langsam, einmal pro Turn), andere nicht, etwa Pull Rank (S. 76) | Ein Talent mit eigener Probe ohne eigene Angabe ist eine langsame Aktion, denn eine Fertigkeitsprobe ist in der Regel langsam (S. 87); Pull Rank entspricht „Befehle geben“ (S. 88). Zählt erst mit den Runden des Kampfs (Phase 3) | – |
 
 ## Entscheidungen zur App
 
