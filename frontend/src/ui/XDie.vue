@@ -12,11 +12,17 @@ const label = computed(() => {
   const mark = success.value ? t('dice.success') : facehugger.value ? t('dice.facehugger') : ''
   return `${kind} ${props.die.face}${mark ? `, ${mark}` : ''}`
 })
+const look = computed(() => {
+  const stress = props.die.kind === 'stress'
+  if (facehugger.value) return 'border-red bg-red text-bg'
+  if (success.value) return `${stress ? 'border-amber' : 'border-dim'} bg-fg text-bg`
+  return stress ? 'border-dashed border-amber text-amber' : 'border-dim'
+})
 </script>
 
 <template>
   <span
-    :class="['die', `die-${die.kind}`, { 'die-success': success, 'die-facehugger': facehugger, 'die-locked': die.locked }]"
+    :class="['inline-grid size-7 place-items-center border', look, { 'outline-1 outline-offset-2 outline-strong outline-dotted': die.locked }]"
     :title="label"
     :aria-label="label"
   >{{ success ? '✶' : facehugger ? '☣' : die.face }}</span>

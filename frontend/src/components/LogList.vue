@@ -72,7 +72,7 @@ function describe(entry) {
           .join(' · '),
       }
     case 'panic_effect':
-      return { status: { tone: 'alert', text: rules.name(ev.effect) }, text: actor }
+      return { status: { tone: 'warn', text: rules.name(ev.effect) }, text: actor }
     case 'panic_stopped':
       return { text: t('log.panic_stopped', { actor }) }
     case 'source_applied':
@@ -120,22 +120,24 @@ watch(
 <template>
   <div
     ref="box"
-    class="log"
+    class="grid max-h-[60vh] content-start gap-2 overflow-y-auto"
     aria-live="polite"
     data-test="log"
   >
     <section
       v-for="block in blocks"
       :key="block.batch"
-      class="log-block"
+      class="grid gap-1.5 border border-l-[3px] border-line border-l-dim bg-bg px-2.5 py-1.5"
+      data-test="log-block"
     >
-      <header class="log-meta">
+      <header class="text-xs text-dim">
         {{ block.by ?? '' }} · {{ block.at }}
       </header>
       <div
         v-for="row in block.rows"
         :key="row.id"
-        class="log-entry"
+        class="grid gap-1"
+        data-test="log-entry"
       >
         <div v-if="row.status || row.text">
           <XStatus
@@ -147,7 +149,7 @@ watch(
         </div>
         <div
           v-if="row.dice"
-          class="dice"
+          class="flex flex-wrap gap-1"
         >
           <XDie
             v-for="(die, i) in row.dice"
@@ -157,7 +159,7 @@ watch(
         </div>
         <div
           v-if="row.detail"
-          class="log-meta"
+          class="text-xs text-dim"
         >
           {{ row.detail }}
         </div>

@@ -22,6 +22,7 @@ Begleit-App für das ALIEN RPG (Free League, Grundregelwerk 1. Auflage 2019). De
 
 - Server: Rust (Cargo-Workspace). `crates/engine` ist eine reine Bibliothek ohne Netz und Datenbank; `crates/server` nutzt axum, sqlx und SQLite.
 - Oberfläche: Vue 3 mit Pinia und Vue Router, **JavaScript, kein TypeScript**, Build mit Vite, Texte über vue-i18n (Deutsch und Englisch).
+- Gestaltung mit Tailwind CSS 4: Farben und Schrift als Theme in `frontend/src/style.css`, sonst Utility-Klassen in den Vorlagen. Wiederkehrendes steckt in den Bausteinen unter `frontend/src/ui/`, nicht in eigenen CSS-Klassen.
 - Der Server würfelt; die Oberfläche rechnet keine Regeln selbst.
 - Format der Regeldaten: `docs/datenformat.md`. Die Rust-Typen sind die Quelle, die Schemas in `data/schema/` werden erzeugt.
 - Regel-Engine: `docs/engine.md`. Befehle rein, Ereignisse raus; Entscheidungen der Spieler als offene Entscheidungen, nie still.

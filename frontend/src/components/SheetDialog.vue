@@ -51,15 +51,15 @@ async function remove() {
 </script>
 
 <template>
-  <div class="stack">
-    <p class="muted">
+  <div class="grid gap-3">
+    <p class="text-dim">
       {{ character.owner_name }}
     </p>
     <div
       v-if="!editing"
-      class="stack"
+      class="grid gap-3"
     >
-      <div class="row">
+      <div class="flex flex-wrap items-center gap-2">
         <span>{{ t('sheet.health') }}: {{ character.actor.health }}/{{ character.health_max }}</span>
         <span v-if="!character.actor.android">{{ t('sheet.stress') }}: {{ character.actor.stress }}</span>
         <XStatus
@@ -75,7 +75,7 @@ async function remove() {
       </div>
       <ul
         v-if="character.actor.sources?.length"
-        class="list"
+        class="grid gap-1.5"
       >
         <li
           v-for="(source, i) in character.actor.sources"
@@ -95,7 +95,7 @@ async function remove() {
     />
     <div
       v-if="team.view.is_gm"
-      class="row"
+      class="flex flex-wrap items-center gap-2"
     >
       <template v-if="editing">
         <XButton
@@ -146,7 +146,7 @@ async function remove() {
     </div>
     <p
       v-if="error"
-      class="error"
+      class="text-red"
       role="alert"
     >
       {{ error }}

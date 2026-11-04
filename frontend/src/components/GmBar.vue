@@ -37,10 +37,10 @@ async function confirm() {
 </script>
 
 <template>
-  <div class="stack">
+  <div class="grid gap-3">
     <div
       v-if="!confirming"
-      class="row"
+      class="flex flex-wrap items-center gap-2"
     >
       <XField :label="t('gm.pool')">
         <input
@@ -75,7 +75,7 @@ async function confirm() {
     </div>
     <div
       v-else
-      class="row"
+      class="flex flex-wrap items-center gap-2"
       role="alertdialog"
     >
       <span>{{ t(questions[confirming]) }}</span>
@@ -95,7 +95,7 @@ async function confirm() {
     </div>
     <p
       v-if="error"
-      class="error"
+      class="text-red"
       role="alert"
     >
       {{ error }}

@@ -42,14 +42,14 @@ async function decide(pending, choice) {
 <template>
   <div
     v-if="mine.length"
-    class="panel"
+    class="grid content-start gap-3 border border-line p-3"
     data-test="decisions"
   >
     <h3>{{ t('decision.title') }}</h3>
     <div
       v-for="p in mine"
       :key="p.id"
-      class="panel"
+      class="grid content-start gap-3 border border-line p-3"
     >
       <p>
         <strong>{{ p.actor ? team.characterNames[p.actor] : t('auth.gm') }}</strong>
@@ -59,12 +59,12 @@ async function decide(pending, choice) {
       </p>
       <div
         v-if="p.kind === 'targets'"
-        class="row"
+        class="flex flex-wrap items-center gap-2"
       >
         <label
           v-for="id in p.candidates"
           :key="id"
-          class="row"
+          class="flex flex-wrap items-center gap-2"
         >
           <input
             type="checkbox"
@@ -79,7 +79,7 @@ async function decide(pending, choice) {
       </div>
       <div
         v-else
-        class="row"
+        class="flex flex-wrap items-center gap-2"
       >
         <XButton
           v-for="(option, i) in p.options"
@@ -94,7 +94,7 @@ async function decide(pending, choice) {
     </div>
     <p
       v-if="error"
-      class="error"
+      class="text-red"
       role="alert"
     >
       {{ error }}

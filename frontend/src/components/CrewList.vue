@@ -25,7 +25,7 @@ const storyPoints = (c) => team.view.story_points[String(c.owner_id)] ?? 0
 </script>
 
 <template>
-  <div class="table-wrap">
+  <div class="overflow-x-auto">
     <table>
       <thead>
         <tr>
@@ -45,13 +45,14 @@ const storyPoints = (c) => team.view.story_points[String(c.owner_id)] ?? 0
           :data-test="`crew-${c.id}`"
         >
           <td>
-            {{ c.name }}<br><span class="muted">{{ c.owner_name }}</span>
+            {{ c.name }}<br><span class="text-dim">{{ c.owner_name }}</span>
             <div
               v-if="c.actor"
-              class="row actions"
+              class="mt-1 flex flex-wrap items-center gap-1"
             >
               <XButton
                 v-if="mine(c) || team.view.is_gm"
+                size="small"
                 :data-test="`roll-${c.id}`"
                 @click="emit('roll', c.id)"
               >
@@ -59,6 +60,7 @@ const storyPoints = (c) => team.view.story_points[String(c.owner_id)] ?? 0
               </XButton>
               <XButton
                 variant="quiet"
+                size="small"
                 :data-test="`sheet-${c.id}`"
                 @click="emit('sheet', c.id)"
               >
@@ -67,6 +69,7 @@ const storyPoints = (c) => team.view.story_points[String(c.owner_id)] ?? 0
               <XButton
                 v-if="team.view.is_gm"
                 variant="quiet"
+                size="small"
                 :data-test="`actions-${c.id}`"
                 @click="emit('actions', c.id)"
               >
@@ -103,7 +106,7 @@ const storyPoints = (c) => team.view.story_points[String(c.owner_id)] ?? 0
               <div
                 v-for="([label, text], i) in c.hints"
                 :key="`h${i}`"
-                class="muted"
+                class="text-dim"
                 :title="label"
               >
                 ▲ {{ rules.text(text) }}
@@ -113,7 +116,7 @@ const storyPoints = (c) => team.view.story_points[String(c.owner_id)] ?? 0
           <td
             v-else
             :colspan="cinematic ? 4 : 3"
-            class="muted"
+            class="text-dim"
           >
             {{ t('crew.hidden') }}
           </td>

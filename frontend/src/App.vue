@@ -31,15 +31,15 @@ async function logout() {
 </script>
 
 <template>
-  <header class="bar">
+  <header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-2.5">
     <RouterLink
       to="/"
-      class="brand"
+      class="font-bold tracking-[0.3em] no-underline"
     >
       XENOFORGE
     </RouterLink>
-    <span class="muted">{{ t('app.tagline') }}</span>
-    <div class="bar-right">
+    <span class="text-dim">{{ t('app.tagline') }}</span>
+    <div class="ml-auto flex flex-wrap items-center gap-2">
       <template v-if="auth.user">
         <span data-test="user">{{ auth.user.name }} · {{ t(auth.user.role === 'gm' ? 'auth.gm' : 'auth.player') }}</span>
         <XButton
@@ -50,7 +50,7 @@ async function logout() {
         </XButton>
       </template>
       <nav
-        class="row"
+        class="flex flex-wrap items-center gap-2"
         :aria-label="t('language.label')"
       >
         <XButton
@@ -65,10 +65,10 @@ async function logout() {
       </nav>
     </div>
   </header>
-  <main>
+  <main class="mx-auto grid w-full max-w-6xl flex-1 content-start gap-3 p-4">
     <RouterView v-if="rules.loaded" />
   </main>
-  <footer class="disclaimer">
+  <footer class="border-t border-line px-4 py-2.5 text-xs text-dim">
     {{ t('app.disclaimer') }}
   </footer>
 </template>

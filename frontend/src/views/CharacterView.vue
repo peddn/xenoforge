@@ -70,7 +70,7 @@ async function remove() {
     </XField>
     <p
       v-if="character.team_id"
-      class="muted"
+      class="text-dim"
     >
       {{ t('sheet.inTeam') }}
     </p>
@@ -78,7 +78,7 @@ async function remove() {
       v-model="character.data.actor"
       :disabled="!!character.team_id"
     />
-    <div class="row">
+    <div class="flex flex-wrap items-center gap-2">
       <XButton
         variant="primary"
         data-test="save"
@@ -95,19 +95,19 @@ async function remove() {
       </XButton>
       <span
         v-if="message"
-        class="muted"
+        class="text-dim"
         role="status"
       >{{ message }}</span>
       <span
         v-if="error"
-        class="error"
+        class="text-red"
         role="alert"
       >{{ error }}</span>
     </div>
   </XPanel>
   <p
     v-else-if="error"
-    class="error"
+    class="text-red"
     role="alert"
   >
     {{ error }}
