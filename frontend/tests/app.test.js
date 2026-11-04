@@ -9,6 +9,7 @@ import DecisionDialog from '@/components/DecisionDialog.vue'
 import GmBar from '@/components/GmBar.vue'
 import LogList from '@/components/LogList.vue'
 import CharacterActions from '@/components/CharacterActions.vue'
+import CrewList from '@/components/CrewList.vue'
 import CharacterSheet from '@/components/CharacterSheet.vue'
 import CreationWizard from '@/components/CreationWizard.vue'
 import RollPanel from '@/components/RollPanel.vue'
@@ -19,6 +20,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 import LoginView from '@/views/LoginView.vue'
+import JoinView from '@/views/JoinView.vue'
 import TeamView from '@/views/TeamView.vue'
 
 import { mockApi, setup } from './helpers'
@@ -331,7 +333,7 @@ describe('team members', () => {
   it('takes a character out after asking, with a note for actions', async () => {
     const { pinia, i18n } = setup()
     const calls = mockApi({ 'POST /teams/5/commands': [], 'DELETE /teams/5/characters/9': [], 'GET /teams/5': {} })
-    useTeamStore().view = { id: 5, is_gm: true, characters: [charlize] }
+    useTeamStore().view = { id: 5, is_gm: true, mode: 'campaign', gm: { id: 1, name: 'Mother' }, members: [], characters: [charlize] }
     const wrapper = mount(CharacterActions, { props: { character: charlize }, global: { plugins: [pinia, i18n] } })
     await wrapper.get('[data-test="action-note"]').setValue('Säureblut')
     await wrapper.findAll('button').find((b) => b.text() === 'Schaden').trigger('click')
@@ -588,3 +590,133 @@ describe('sheet and talents', () => {
     expect(text).toContain('Gorman nutzt das Signature Item')
   })
 })
+
+describe('choosing and Acts (A-12, A-13)', () => {
+  const gm = { id: 1, name: 'Mother' }
+  const nat = {
+    id: 9,
+    name: 'Nat',
+    owner_id: 1,
+    owner_name: 'Mother',
+    offered: true,
+    actor: { attributes: {}, skills: {}, talents: [], health: 3, stress: 0, sources: [] },
+    sheet: {},
+    agendas: ['Survive.'],
+    health_max: 3,
+    hints: [],
+  }
+  const ripley = { ...nat, id: 7, name: 'Ripley', owner_id: 2, owner_name: 'Ann', offered: false, agenda: 'Save the girl.' }
+  const view = (isGm) => ({
+    id: 5,
+    is_gm: isGm,
+    mode: 'cinematic',
+    act: 2,
+    gm,
+    members: [{ id: 2, name: 'Ann' }],
+    characters: [nat, ripley],
+    story_points: { 2: 1 },
+    pending: [],
+  })
+
+  it('joins without a character', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({
+      'GET /join/abc': { team: 'Hope', gm: 'Mother', mode: 'cinematic' },
+      'GET /characters': [],
+      'POST /join/abc': { team: 5 },
+    })
+    const r = router()
+    useAuthStore().user = { id: 2, name: 'Ann', role: 'player' }
+    useAuthStore().checked = true
+    await r.push('/join/abc')
+    const wrapper = mount(JoinView, { global: { plugins: [pinia, i18n, r] } })
+    await flushPromises()
+    expect(wrapper.get('[data-test="join-character"]').element.value).toBe('none')
+    await wrapper.findAll('button').find((b) => b.text() === 'Beitreten').trigger('click')
+    await flushPromises()
+    expect(calls.find((c) => c.method === 'POST').body).toEqual({ character: null })
+  })
+
+  it('lets a player take an offered character', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/characters/9/claim': [], 'GET /teams/5': view(false) })
+    useAuthStore().user = { id: 2, name: 'Ann', role: 'player' }
+    useTeamStore().view = view(false)
+    const wrapper = mount(CrewList, { global: { plugins: [pinia, i18n] } })
+    expect(wrapper.get('[data-test="crew-9"]').text()).toContain('Zur Wahl')
+    await wrapper.get('[data-test="claim-9"]').trigger('click')
+    await flushPromises()
+    expect(calls[0]).toMatchObject({ method: 'POST', path: '/teams/5/characters/9/claim' })
+  })
+
+  it('ends an Act with Story Points for those who furthered their Agenda', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/commands': [] })
+    useTeamStore().view = view(true)
+    const wrapper = mount(GmBar, { global: { plugins: [pinia, i18n] } })
+    await wrapper.get('[data-test="end-act"]').trigger('click')
+    expect(wrapper.get('[data-test="end-act-form"]').text()).toContain('Akt 2 beenden')
+    expect(wrapper.find('[data-test="agenda-9"]').exists()).toBe(false)
+    await wrapper.get('[data-test="agenda-7"]').setValue(true)
+    await wrapper.get('[data-test="end-act-confirm"]').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({ command: { command: 'end_act', agenda: ['7'] } })
+  })
+
+  it('lets the game master offer, hand over, set Agendas and Story Points', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({
+      'PUT /teams/5/characters/9/offer': [],
+      'PUT /teams/5/characters/9/owner': [],
+      'PUT /teams/5/characters/9/agendas': [],
+      'POST /teams/5/commands': [],
+    })
+    useTeamStore().view = view(true)
+    const wrapper = mount(CharacterActions, { props: { character: nat }, global: { plugins: [pinia, i18n] } })
+    await wrapper.get('[data-test="offer"]').trigger('click')
+    await wrapper.get('[data-test="new-owner"]').setValue(2)
+    await wrapper.get('[data-test="hand-over"]').trigger('click')
+    await wrapper.get('[data-test="agenda-act-2"]').setValue('Escape.')
+    await wrapper.get('[data-test="save-agendas"]').trigger('click')
+    await flushPromises()
+    expect(calls.map((c) => [c.path, c.body])).toEqual([
+      ['/teams/5/characters/9/offer', { offered: false }],
+      ['/teams/5/characters/9/owner', { owner: 2 }],
+      ['/teams/5/characters/9/agendas', { agendas: ['Survive.', 'Escape.', ''] }],
+    ])
+    expect(wrapper.find('[data-test="story-points"]').exists()).toBe(false, 'the GM has no Story Points')
+
+    const other = mount(CharacterActions, { props: { character: ripley }, global: { plugins: [pinia, i18n] } })
+    expect(other.find('[data-test="offer"]').exists()).toBe(false)
+    expect(other.get('[data-test="story-points"]').element.value).toBe('1')
+    await other.get('[data-test="story-points"]').setValue(3)
+    await other.get('[data-test="set-story-points"]').trigger('click')
+    await flushPromises()
+    expect(calls.at(-1).body.command).toEqual({ command: 'set_story_points', player: '2', points: 3 })
+  })
+
+  it('shows the Agenda of the current Act on the sheet', () => {
+    const { pinia, i18n } = setup()
+    mockApi({})
+    useAuthStore().user = { id: 2, name: 'Ann', role: 'player' }
+    useTeamStore().view = view(false)
+    const wrapper = mount(SheetDialog, { props: { character: ripley }, global: { plugins: [pinia, i18n] } })
+    expect(wrapper.text()).toContain('Save the girl.')
+  })
+
+  it('names who chose, who got Story Points and which Act ended', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = view(true)
+    team.log = [
+      { id: 1, batch: 1, by: 'Ann', at: 0, entry: { type: 'character_claimed', character: 9, name: 'Nat' } },
+      { id: 2, batch: 2, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'act_ended', act: 2 } } },
+      { id: 3, batch: 2, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'story_points_changed', player: '2', from: 1, to: 2 } } },
+    ]
+    const text = mount(LogList, { global: { plugins: [pinia, i18n] } }).text()
+    expect(text).toContain('Ann spielt jetzt Nat')
+    expect(text).toContain('Akt 2 beendet')
+    expect(text).toContain('Ann: Story Points 1 → 2')
+  })
+})
+

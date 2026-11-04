@@ -40,6 +40,10 @@ onUnmounted(() => team.close())
 const inviteLink = computed(() =>
   team.view?.invite_token ? `${location.origin}/join/${team.view.invite_token}` : '',
 )
+// Members without a character in the team, e.g. before choosing (A-12).
+const waiting = computed(() =>
+  team.view.members.filter((m) => !team.view.characters.some((c) => c.owner_id === m.id)).map((m) => m.name),
+)
 const freeOwn = computed(() => characters.list.filter((c) => !c.team_id && c.data.status !== 'draft'))
 // Looked up live, so the dialog shows current values; it closes when the
 // character leaves the team or the decision is made.
@@ -106,7 +110,16 @@ async function addOwn() {
           />
         </template>
         <p class="text-dim">
-          {{ t(`mode.${team.view.mode}`) }} · {{ t('team.gm') }}: {{ team.view.gm.name }}
+          {{ t(`mode.${team.view.mode}`) }}<template v-if="team.view.act">
+            · {{ t('team.act', { act: team.view.act }) }}
+          </template> · {{ t('team.gm') }}: {{ team.view.gm.name }}
+        </p>
+        <p
+          v-if="waiting.length"
+          class="text-dim"
+          data-test="waiting"
+        >
+          {{ t('team.waiting', { names: waiting.join(', ') }) }}
         </p>
         <template v-if="team.view.is_gm">
           <div class="flex flex-wrap items-center gap-2">
