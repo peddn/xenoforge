@@ -6,7 +6,7 @@
 //! writes everything back in one transaction. Each value is stored in one
 //! place only.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::PoisonError;
 
 use axum::extract::{Path, State};
@@ -37,17 +37,33 @@ pub struct Team {
     pub name: String,
     pub invite_token: String,
     pub state: GameState,
+    /// Agendas per Act by character id, in Cinematic play (A-13).
+    pub agendas: BTreeMap<i64, Vec<String>>,
 }
 
 fn team_from_row(row: &sqlx::sqlite::SqliteRow) -> ApiResult<Team> {
     let state: String = row.get("state");
+    let agendas: String = row.get("agendas");
     Ok(Team {
         id: row.get("id"),
         gm_id: row.get("gm_id"),
         name: row.get("name"),
         invite_token: row.get("invite_token"),
         state: serde_json::from_str(&state)?,
+        agendas: serde_json::from_str(&agendas)?,
     })
+}
+
+impl Team {
+    /// The Agenda of the current Act, if the game master set one.
+    pub fn agenda_now(&self, character: i64) -> Option<String> {
+        let act = usize::from(self.state.acts_ended);
+        self.agendas
+            .get(&character)
+            .and_then(|list| list.get(act))
+            .filter(|text| !text.is_empty())
+            .cloned()
+    }
 }
 
 pub async fn load_team(pool: &SqlitePool, id: i64) -> ApiResult<Team> {
@@ -57,6 +73,16 @@ pub async fn load_team(pool: &SqlitePool, id: i64) -> ApiResult<Team> {
         .await?
         .ok_or_else(|| ApiError::not_found("team"))?;
     team_from_row(&row)
+}
+
+/// Writes the team's Agendas per Act (A-13).
+pub async fn save_agendas(tx: &mut Transaction<'_, Sqlite>, team: &Team) -> ApiResult<()> {
+    sqlx::query("UPDATE teams SET agendas = ? WHERE id = ?")
+        .bind(serde_json::to_string(&team.agendas)?)
+        .bind(team.id)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
 }
 
 async fn load_team_tx(tx: &mut Transaction<'_, Sqlite>, id: i64) -> ApiResult<Team> {

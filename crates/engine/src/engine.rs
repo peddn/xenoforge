@@ -567,7 +567,7 @@ impl Engine {
             .unwrap_or_else(|| panic!("constant \"{id}\" is missing in constants.json"))
     }
 
-    pub(crate) fn constant_u8(&self, id: &str) -> u8 {
+    pub fn constant_u8(&self, id: &str) -> u8 {
         u8::try_from(self.constant(id)).unwrap_or(0)
     }
 

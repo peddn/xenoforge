@@ -45,6 +45,35 @@ pub enum Entry {
         character: i64,
         name: String,
     },
+    /// A player joined without a character, to choose one in the team
+    /// (A-12).
+    MemberJoined {
+        name: String,
+    },
+    /// The game master offers a character to choose, or takes the offer
+    /// back.
+    CharacterOffered {
+        character: i64,
+        name: String,
+        offered: bool,
+    },
+    /// A player chose an offered character and owns it now.
+    CharacterClaimed {
+        character: i64,
+        name: String,
+    },
+    /// The game master gave a character to someone, or took it over.
+    CharacterHandedOver {
+        character: i64,
+        name: String,
+        to: String,
+    },
+    /// The game master changed the Agendas of a character; what they say
+    /// stays hidden (A-13).
+    AgendaChanged {
+        character: i64,
+        name: String,
+    },
     /// The game master changed values by hand.
     Corrected {
         character: i64,

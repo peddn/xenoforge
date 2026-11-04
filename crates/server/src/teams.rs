@@ -116,11 +116,19 @@ struct CharacterInTeam {
     name: String,
     owner_id: i64,
     owner_name: String,
-    /// Values only for the game master and the owner (A-01).
+    /// Values only for the game master and the owner (A-01), and for
+    /// everyone while it is offered to choose (A-12).
     actor: Option<Actor>,
-    /// Career, agenda, buddy and rival and the other texts, for the same
-    /// people [p. 31].
+    /// Career, buddy and rival and the other texts, for the same people;
+    /// the Campaign agenda only for the game master and the owner [p. 31].
     sheet: Option<characters::Sheet>,
+    /// Offered to choose (A-12).
+    offered: bool,
+    /// The Agenda of the current Act, for the game master and the owner
+    /// (A-13).
+    agenda: Option<String>,
+    /// All Agendas per Act, for the game master.
+    agendas: Option<Vec<String>>,
     /// Broken as the engine sees it [p. 98], for the same people.
     broken: Option<bool>,
     /// Full Health [p. 30], for the same people.
@@ -136,6 +144,8 @@ struct TeamView {
     mode: Mode,
     gm: Person,
     is_gm: bool,
+    /// The current Act in Cinematic play, counted from 1 [p. 216].
+    act: Option<u8>,
     /// Only for the game master.
     invite_token: Option<String>,
     members: Vec<Person>,
@@ -146,7 +156,7 @@ struct TeamView {
     rulings: BTreeMap<String, String>,
 }
 
-async fn name_of(state: &AppState, user_id: i64) -> ApiResult<String> {
+pub async fn name_of(state: &AppState, user_id: i64) -> ApiResult<String> {
     Ok(sqlx::query("SELECT name FROM users WHERE id = ?")
         .bind(user_id)
         .fetch_one(&state.pool)
@@ -173,8 +183,10 @@ async fn view(
     tx.rollback().await?;
     let game_state = game::assemble(&team, &characters);
     let mut in_team = Vec::new();
+    let cinematic = team.state.mode == Mode::Cinematic;
     for character in &characters {
-        let sees = is_gm || character.owner_id == user.id;
+        let own = is_gm || character.owner_id == user.id;
+        let sees = own || character.data.offered;
         let hints = if sees {
             state
                 .engine
@@ -192,7 +204,19 @@ async fn view(
             owner_id: character.owner_id,
             owner_name: name_of(&state, character.owner_id).await?,
             actor: sees.then(|| character.data.actor.clone()),
-            sheet: sees.then(|| character.data.sheet.clone()),
+            sheet: sees.then(|| {
+                let mut sheet = character.data.sheet.clone();
+                if !own {
+                    sheet.agenda.clear();
+                }
+                sheet
+            }),
+            offered: character.data.offered,
+            agenda: (own && cinematic)
+                .then(|| team.agenda_now(character.id))
+                .flatten(),
+            agendas: (is_gm && cinematic)
+                .then(|| team.agendas.get(&character.id).cloned().unwrap_or_default()),
             broken: sees.then(|| character.data.actor.broken()),
             health_max: sees.then(|| state.engine.full_health(&character.data.actor)),
             hints,
@@ -208,6 +232,7 @@ async fn view(
             name: name_of(&state, team.gm_id).await?,
         },
         is_gm,
+        act: cinematic.then(|| team.state.acts_ended.saturating_add(1)),
         invite_token: is_gm.then(|| team.invite_token.clone()),
         members: members
             .iter()
@@ -333,6 +358,10 @@ async fn remove(
     }
     let mut tx = begin_write(&state.pool).await?;
     character.team_id = None;
+    character.data.offered = false;
+    if team.agendas.remove(&character.id).is_some() {
+        game::save_agendas(&mut tx, &team).await?;
+    }
     // Buddy and rival exist only within the team (F-52).
     character.data.sheet.buddy = None;
     character.data.sheet.rival = None;
@@ -415,14 +444,46 @@ async fn join_info(
     }))
 }
 
-/// A player joins with one of their free characters.
+#[derive(Deserialize)]
+struct Join {
+    character: Option<i64>,
+}
+
+/// A player joins with one of their free characters, or without one to
+/// choose a character the game master offers (A-12).
 async fn join(
     State(state): State<AppState>,
     user: User,
     Path(token): Path<String>,
-    Json(body): Json<Bring>,
+    Json(body): Json<Join>,
 ) -> ApiResult<Json<serde_json::Value>> {
     let team = team_by_token(&state, &token).await?;
-    bring(&state, &team, &user, body.character).await?;
+    match body.character {
+        Some(character) => {
+            bring(&state, &team, &user, character).await?;
+        }
+        None if team.gm_id != user.id => {
+            let _guard = state.lock.lock().await;
+            let mut tx = begin_write(&state.pool).await?;
+            let added =
+                sqlx::query("INSERT OR IGNORE INTO members (team_id, user_id) VALUES (?, ?)")
+                    .bind(team.id)
+                    .bind(user.id)
+                    .execute(&mut *tx)
+                    .await?
+                    .rows_affected();
+            let stored = if added > 0 {
+                let entry = Entry::MemberJoined {
+                    name: user.name.clone(),
+                };
+                log::append(&mut tx, team.id, &user, vec![entry], None).await?
+            } else {
+                Vec::new()
+            };
+            tx.commit().await?;
+            log::publish(&state, &stored);
+        }
+        None => {}
+    }
     Ok(Json(serde_json::json!({ "team": team.id })))
 }

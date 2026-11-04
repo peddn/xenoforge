@@ -65,6 +65,9 @@ pub struct CharacterData {
     /// Starting cash as rolled when finishing [p. 39–55].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_cash: Option<Cash>,
+    /// Offered in its team for a player to choose (A-12).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub offered: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -136,7 +139,8 @@ pub async fn load(pool: &sqlx::SqlitePool, id: i64) -> ApiResult<Character> {
 }
 
 pub async fn save(tx: &mut Transaction<'_, Sqlite>, character: &Character) -> ApiResult<()> {
-    sqlx::query("UPDATE characters SET name = ?, team_id = ?, data = ? WHERE id = ?")
+    sqlx::query("UPDATE characters SET owner_id = ?, name = ?, team_id = ?, data = ? WHERE id = ?")
+        .bind(character.owner_id)
         .bind(&character.name)
         .bind(character.team_id)
         .bind(serde_json::to_string(&character.data)?)
@@ -159,9 +163,9 @@ fn check_name(name: &str) -> ApiResult<String> {
 }
 
 /// The longest sheet text, in characters.
-const TEXT_MAX: usize = 4000;
+pub const TEXT_MAX: usize = 4000;
 
-fn check_texts(texts: &[&str]) -> ApiResult<()> {
+pub fn check_texts(texts: &[&str]) -> ApiResult<()> {
     if texts.iter().any(|t| t.chars().count() > TEXT_MAX) {
         return Err(ApiError::bad_request(format!(
             "a text has at most {TEXT_MAX} characters"
@@ -462,6 +466,7 @@ async fn finish(
         },
         actor: state.engine.creation_actor(&draft),
         start_cash,
+        offered: false,
     };
     let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;

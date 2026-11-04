@@ -6,6 +6,7 @@
 //! rights and filters what each person may see.
 
 pub mod auth;
+pub mod cast;
 pub mod characters;
 pub mod error;
 pub mod game;
@@ -119,7 +120,10 @@ pub fn router(state: AppState, static_dir: &Path, data_dir: &Path) -> Router {
         .nest("/characters", characters::routes())
         .nest(
             "/teams",
-            teams::routes().merge(game::routes()).merge(log::routes()),
+            teams::routes()
+                .merge(game::routes())
+                .merge(log::routes())
+                .merge(cast::routes()),
         )
         .nest("/join", teams::join_routes())
         .nest_service("/data", ServeDir::new(data_dir))
