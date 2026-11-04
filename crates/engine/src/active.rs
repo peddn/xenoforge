@@ -249,11 +249,37 @@ pub fn roll_modifiers(effects: &[ActiveEffect], roll: RollMatch) -> Vec<Modifica
                 applies_to,
                 modifies: Modified::Dice,
                 change: crate::data::effects::Change::Add(value),
+                when: None,
                 ..
             } if matches_roll(applies_to, roll) => Some(Modification {
                 source: active.label.clone(),
                 value: *value,
             }),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Modifiers that need a situation the app cannot see, by the talent or
+/// source they come from (A-10). They count only when the person ticks
+/// them for a roll.
+pub fn situational(effects: &[ActiveEffect], roll: RollMatch) -> Vec<(String, Modification)> {
+    effects
+        .iter()
+        .filter_map(|active| match active.effect.as_ref() {
+            Effect::Modifier {
+                applies_to,
+                modifies: Modified::Dice,
+                change: crate::data::effects::Change::Add(value),
+                when: Some(_),
+                ..
+            } if matches_roll(applies_to, roll) => Some((
+                active.owner.clone(),
+                Modification {
+                    source: active.label.clone(),
+                    value: *value,
+                },
+            )),
             _ => None,
         })
         .collect()

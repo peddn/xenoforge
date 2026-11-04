@@ -130,7 +130,7 @@
       "career": "officer",
       "effects": [
         { "kind": "capability", "grants": "pull_rank_order" },
-        { "kind": "trigger", "on": { "action": "pull_rank_order" }, "then": [{ "op": "stress", "delta": 1 }, { "op": "special", "handler": "pull_rank" }] }
+        { "kind": "trigger", "on": { "action": "pull_rank_order" }, "then": [{ "op": "special", "handler": "pull_rank" }, { "op": "stress", "delta": 1 }] }
       ]
     },
     {

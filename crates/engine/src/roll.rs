@@ -258,9 +258,12 @@ impl Ctx<'_> {
                 });
                 return Ok(());
             }
+            // Situational talents are offered here as in the roll dialog
+            // (A-10).
             let mut options: Vec<Choice> = self
                 .fitting_talents(&actor, skill)?
                 .into_iter()
+                .chain(self.situational_talents(&actor, skill)?)
                 .map(Choice::UseTalent)
                 .collect();
             if !options.is_empty() {
@@ -302,6 +305,26 @@ impl Ctx<'_> {
                 talents.push(usable.owner);
             }
         }
+        Ok(talents)
+    }
+
+    /// Talents with a situational bonus that fits a skill roll (A-10).
+    pub(crate) fn situational_talents(&self, actor: &str, skill: &str) -> Result<Vec<Id>> {
+        let attribute = self
+            .engine
+            .skill(skill)
+            .map(|s| s.attribute.clone())
+            .ok_or_else(|| RuleError::UnknownEntry(skill.to_owned()))?;
+        let matcher = RollMatch {
+            skill: Some(skill),
+            attribute: Some(&attribute),
+            kind: None,
+        };
+        let mut talents: Vec<Id> = active::situational(&self.effects(actor)?, matcher)
+            .into_iter()
+            .map(|(owner, _)| owner)
+            .collect();
+        talents.dedup();
         Ok(talents)
     }
 
@@ -383,8 +406,10 @@ impl Ctx<'_> {
             _ => (None, None),
         };
 
-        // Talents chosen before the roll.
+        // Talents chosen before the roll. Those with a situational bonus
+        // (A-10) count once skill and attribute are settled.
         let mut automatic = false;
+        let mut situational = Vec::new();
         for talent in &request.talents {
             let actor_id = actor_id.as_deref().unwrap_or_default();
             let Some(a) = &actor else {
@@ -433,6 +458,7 @@ impl Ctx<'_> {
                     self.spend_use(actor_id, talent)?;
                     automatic = true;
                 }
+                _ if engine.has_situation(talent) => situational.push(talent.clone()),
                 _ => {
                     return Err(RuleError::NotAllowed(format!(
                         "\"{talent}\" does not apply to this roll"
@@ -474,6 +500,19 @@ impl Ctx<'_> {
         let mut max_pushes = 0;
         if let (Some(id), true) = (&actor_id, skill.is_some()) {
             modifications.extend(self.effect_modifiers(id, matcher)?);
+            let offered = active::situational(&self.effects(id)?, matcher);
+            for talent in &situational {
+                let mut fits = offered
+                    .iter()
+                    .filter(|(owner, _)| owner == talent)
+                    .peekable();
+                if fits.peek().is_none() {
+                    return Err(RuleError::NotAllowed(format!(
+                        "\"{talent}\" does not apply to this roll"
+                    )));
+                }
+                modifications.extend(fits.map(|(_, m)| m.clone()));
+            }
             if is_skill && human && !matches!(role, Role::Defender { .. }) {
                 max_pushes = engine.constant_u8("base_pushes")
                     + active::extra_pushes(&self.effects(id)?, matcher);

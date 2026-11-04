@@ -264,6 +264,8 @@
   "F-54.any_time": "Any time, visible to the game master",
   "F-55.name": "Androids and stress as a cost",
   "F-55.no_stress_hint": "No stress, a hint to the game master",
+  "F-56.name": "Stress from Pull Rank",
+  "F-56.after_throw": "After the throw",
   "difficulty_trivial.name": "Trivial",
   "difficulty_simple.name": "Simple",
   "difficulty_easy.name": "Easy",
@@ -493,5 +495,15 @@
   "analysis.questions": "One question to the GM per success.",
   "investigate.name": "Investigate",
   "analyze.name": "Analyze",
-  "pull_rank_order.name": "Enforce an order"
+  "pull_rank_order.name": "Enforce an order",
+  "pull_rank.android": "Androids have no stress: Pull Rank costs nothing here. The game master decides on consequences (F-55).",
+  "creation_attribute_points.name": "Attribute points at creation",
+  "creation_attribute_min.name": "Lowest attribute at creation",
+  "creation_attribute_max.name": "Highest attribute at creation",
+  "creation_key_attribute_max.name": "Highest key attribute",
+  "creation_skill_points.name": "Skill points at creation",
+  "creation_key_skill_max.name": "Highest key skill at creation",
+  "creation_other_skill_max.name": "Highest other skill at creation",
+  "android_attribute_bonus.name": "Android attribute bonus",
+  "android_bonus_attributes.name": "Attributes with the android bonus"
 }

@@ -55,6 +55,7 @@
     { "id": "F-52", "pages": [31], "options": ["optional_distinct"], "default": "optional_distinct" },
     { "id": "F-53", "pages": [61, 383], "options": ["zero"], "default": "zero" },
     { "id": "F-54", "pages": [31], "options": ["any_time"], "default": "any_time" },
-    { "id": "F-55", "pages": [29, 75, 76], "options": ["no_stress_hint"], "default": "no_stress_hint" }
+    { "id": "F-55", "pages": [29, 75, 76], "options": ["no_stress_hint"], "default": "no_stress_hint" },
+    { "id": "F-56", "pages": [76], "options": ["after_throw"], "default": "after_throw" }
   ]
 }

@@ -6,6 +6,7 @@
 //! work on a game state (`engine`, see `docs/engine.md`).
 
 mod active;
+pub mod creation;
 pub mod data;
 pub mod dice;
 pub mod engine;

@@ -190,7 +190,7 @@ async fn view(
             owner_name: name_of(&state, character.owner_id).await?,
             actor: sees.then(|| character.data.actor.clone()),
             broken: sees.then(|| character.data.actor.broken()),
-            health_max: sees.then(|| character.data.actor.full_health()),
+            health_max: sees.then(|| state.engine.full_health(&character.data.actor)),
             hints,
         });
     }

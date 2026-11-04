@@ -16,7 +16,16 @@ pub const MAX_PAGE: Page = 400;
 
 /// Constants the engine and the server read from `constants.json`.
 pub const REQUIRED_CONSTANTS: &[&str] = &[
+    "android_attribute_bonus",
+    "android_bonus_attributes",
     "base_pushes",
+    "creation_attribute_max",
+    "creation_attribute_min",
+    "creation_attribute_points",
+    "creation_key_attribute_max",
+    "creation_key_skill_max",
+    "creation_other_skill_max",
+    "creation_skill_points",
     "gear_bonus_max",
     "help_max",
     "panic_effect_from",
@@ -26,6 +35,9 @@ pub const REQUIRED_CONSTANTS: &[&str] = &[
 
 /// Names of the engine functions that `special` operations may call.
 pub const SPECIAL_HANDLERS: &[&str] = &["pull_rank"];
+
+/// Text keys the engine uses in its own code, e.g. for a hint it emits.
+pub const ENGINE_TEXT_KEYS: &[&str] = &["pull_rank.android"];
 
 /// A problem found by [`validate`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -448,6 +460,9 @@ impl<'a> Checker<'a> {
 
         self.panic_table();
 
+        for key in ENGINE_TEXT_KEYS {
+            self.require_key("engine", key);
+        }
         for id in REQUIRED_CONSTANTS {
             if !rules.constants.iter().any(|c| c.id == *id) {
                 self.problem("constants", format!("missing constant \"{id}\""));
