@@ -71,7 +71,7 @@ Jede Person hat ein Benutzerkonto und wählt bei der Registrierung, ob sie Spiel
 | Bereich | Spielleitung | Spieler |
 | --- | --- | --- |
 | Charaktere | Im eigenen Team alle sehen und ändern; Charaktere der Mitglieder dem Team zuordnen oder aus ihm lösen | Eigene Charaktere jederzeit anlegen und verwalten, auch ohne Team; die Bögen der anderen sehen sie nicht |
-| Persönliche Agenda | Alle sehen; in Cinematic pro Akt neu verteilen [S. 31, 216] | Nur die eigene sehen [S. 213]; in Campaign gibt die App alle Agenden beim Sitzungsabschluss für die gemeinsame XP-Runde frei [S. 31] |
+| Persönliche Agenda | Alle sehen; in Cinematic bis zu drei pro Charakter vorbereiten, eine pro Akt (A-13) [S. 31, 216] | Nur die eigene sehen [S. 213]; in Campaign gibt die App alle Agenden beim Sitzungsabschluss für die gemeinsame XP-Runde frei [S. 31] |
 | Verdeckter Android | Weiß Bescheid | Nur der eigene Charakter; die Enthüllung löst bei Anwesenden Stress aus [S. 103] |
 | NSC und Kreaturen | Anlegen, Werte sehen, würfeln | Sehen nur Namen und Wirkungen, keine Werte |
 | Würfe | Würfe für NSC und Kreaturen öffentlich oder verdeckt | Immer offen, denn über den Push entscheidet, wer das Ergebnis sieht [S. 60]. Ergebnisse stehen im gemeinsamen Protokoll |
@@ -223,17 +223,17 @@ Der Charaktermanager deckt alle sieben Wege ab, auf denen im Buch Charaktere ent
 - **Ein Charakter gehört der Person, die ihn angelegt hat.** Spieler legen Charaktere in ihrer eigenen Sammlung an und verwalten sie dort, auch ohne Team.
 - **Spieler bringen ihre Charaktere ins Team.** Wer über den Einladungslink beitritt, wählt einen seiner freien Charaktere; niemand wird ohne Zustimmung in ein Team geholt. Die Spielleitung kann einen Charakter wieder aus dem Team lösen, und Spieler können mit ihrem Charakter austreten; sein Stand (Health, Stress, XP, Ausrüstung) bleibt dabei erhalten.
 - **Höchstens ein Team gleichzeitig.** Sonst würden Health, Stress und XP doppelt geführt.
-- **Vorgefertigte Szenario-Charaktere und NSC** legt die Spielleitung an, im freien Modus ohne Punkteprüfung. Vorgefertigte Charaktere bietet sie im Team zur Wahl an; wer einen wählt, wird Besitzer (A-09). Was übrig bleibt, gehört weiter der Spielleitung und wird in Phase 3 zum NSC. Ein eigenes Feld „spielt“ neben „gehört“ wäre nötig gewesen, wenn die Spielleitung Eigentümerin bliebe; alle Rechte- und Sichtbarkeitsprüfungen hätten dann zwei Personen pro Charakter kennen müssen.
+- **Vorgefertigte Szenario-Charaktere und NSC** legt die Spielleitung an, im freien Modus ohne Punkteprüfung. Vorgefertigte Charaktere bietet sie im Team zur Wahl an; Spieler treten dafür auch ohne eigenen Charakter bei, und wer zuerst wählt, wird sofort Besitzer (A-09, A-12). Was übrig bleibt, gehört weiter der Spielleitung und wird in Phase 3 zum NSC. Ein eigenes Feld „spielt“ neben „gehört“ wäre nötig gewesen, wenn die Spielleitung Eigentümerin bliebe; alle Rechte- und Sichtbarkeitsprüfungen hätten dann zwei Personen pro Charakter kennen müssen.
 
 ### 5.1 Erschaffungswege
 
 | Weg | Wer | Was die App tut | Seite |
 | --- | --- | --- | --- |
 | Kampagnen-Charakter | Spieler | Assistent in zehn Schritten mit Regelprüfung (5.2) | 27–36 |
-| Vorgefertigter Charakter (Cinematic) | Spielleitung legt an, Spieler wählen | Auswahl im Szenario, Losentscheid bei Streit, übrige werden NSC | 26, 370–374 |
+| Vorgefertigter Charakter (Cinematic) | Spielleitung legt an, Spieler wählen | Angebot im Team, wer zuerst wählt, bekommt ihn; übrige werden NSC (A-12) | 26, 370–374 |
 | Android | Spieler, nach Absprache in der Gruppe | Variante der beiden Wege oben (5.3) | 28–29, 111 |
-| Session Zero | Gruppe | Gemeinsame Erschaffung, Wahl des Rahmens (Space Truckers, Colonial Marines, Frontier Colonists), Checkliste mit den acht Fragen | 217, 326–329 |
-| Ersatzcharakter | Spielleitung | Übergibt nach Tod oder PvP einen freien Charakter oder NSC | 32, 101 |
+| Session Zero | Gruppe | Gemeinsame Erschaffung, Wahl des Rahmens (Space Truckers, Colonial Marines, Frontier Colonists), Checkliste mit den acht Fragen; kommt mit Phase 4 | 217, 326–329 |
+| Ersatzcharakter | Spielleitung | Übergibt nach Tod oder PvP einen eigenen Charakter; in Cinematic übernimmt sie den Verräter als NSC (A-12) | 32, 101 |
 | Schnell-NSC | Spielleitung | 14 Attributpunkte als Richtwert, max. 5 (außer Androiden), nur benötigte Fertigkeiten, dazu Name, Aussehen, Eigenschaft, Ziel | 214 |
 | Typische NSC | Spielleitung | Vorlagen aus dem Buch laden und anpassen | 354–357 |
 
@@ -759,9 +759,9 @@ Ich schlage sieben Phasen vor, jede mit einer Abnahme, meist einer Testsitzung m
 flowchart TD
     p0["Phase 0 · Fundament<br/>Cargo-Workspace, Vite-Projekt, CI,<br/>Regeldaten mit Schema inkl. Effektformat,<br/>Errata und Festlegungen<br/>Abnahme: alle Regeldaten bestehen die Prüfung"]
     p1["Phase 1 · Regel-Engine<br/>Würfe außer Initiative, Push, Stress, Panik,<br/>Effekt-System mit Ereignissen und Zustandsprüfung<br/>Abnahme: alle Buchbeispiele und ihre Effekte als Tests grün"]
-    p2["Phase 2 · Teams und Charaktere<br/>2a Spieltisch: Konten, Teams, Echtzeit, Protokoll, Würfeln, Design-System<br/>2b.1 Assistent für Kampagnen-Charaktere, Androiden, Bogen, alle 58 Talente<br/>2b.2 Cinematic: vorgefertigte Charaktere zur Wahl, Übergabe, Agenda pro Akt, Rahmen des Teams<br/>2c Ausrüstung: Katalog, Traglast, Boni<br/>Abnahme je Teil, zuletzt Testsitzung mit Proben"]
+    p2["Phase 2 · Teams und Charaktere<br/>2a Spieltisch: Konten, Teams, Echtzeit, Protokoll, Würfeln, Design-System<br/>2b.1 Assistent für Kampagnen-Charaktere, Androiden, Bogen, alle 58 Talente<br/>2b.2 Cinematic: vorgefertigte Charaktere zur Wahl, Übergabe, Agenda pro Akt, Story Points<br/>2c Ausrüstung: Katalog, Traglast, Boni<br/>Abnahme je Teil, zuletzt Testsitzung mit Proben"]
     p3["Phase 3 · Kampf und Gegner<br/>Initiative, Aktionen, Schaden, Verletzungen,<br/>NSC, Kreaturen, Gefahren, Turn- und Runden-Phasen<br/>Abnahme: Hope's Last Day komplett spielbar"]
-    p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Story Points<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
+    p4["Phase 4 · Zeit und Kampagne<br/>Schichten und Tage, Zustände, Vorräte, Heilung,<br/>XP, Sitzungsabschluss, Rahmen des Teams mit Session Zero<br/>Abnahme: eine Kampagnensitzung mit Downtime"]
     p5["Phase 5 · Schiffe<br/>Designer, sechs Buchschiffe, Schiffsbogen,<br/>Schiffsstatus, Bereiche und Decks,<br/>Wartung, Reparatur, FTL-Reisen<br/>Abnahme: Buchschiffe laden, Eigenbau prüft,<br/>jeder Schadenseintrag wirkt wie im Buch"]
     p6["Phase 6 · Raumkampf<br/>Positionen, vier Phasen, geheime Ansagen,<br/>Schiffsschaden, Raumkampf-Panik, Entern<br/>Abnahme: Beispiel S. 202–203 nachspielbar"]
     p7["Später · Ausbau<br/>Generatoren für Sternensysteme, Jobs und Begegnungen;<br/>Schiffskarte mit hervorgehobenen Bereichen;<br/>Druckansicht der Bögen"]
@@ -772,7 +772,7 @@ flowchart TD
     p6 -.-> p7
 ```
 
-Phase 2 kommt in Teilen mit je eigenem Pull Request: 2a, 2b.1, 2b.2 und 2c. In 2b wirken die Talente, die die Engine dann schon abbilden kann: Tough, Analysis, Investigator und Pull Rank als „Talent einsetzen“ sowie die Talente mit Lage-Bonus zum Ankreuzen (A-10). Die übrigen sind wählbar und wirken mit der Phase ihres Systems: Ausrüstung (2c), Kampf (3, darunter Personal Safety), Zeit und Ruhe (4), Raumkampf (6). NSC-Erschaffung (Schnell-NSC, typische NSC) gehört zu Phase 3, wo Gegner gebraucht werden. Initiative entsteht mit dem Kampf in Phase 3, die Raumkampf-Paniktabelle mit dem Raumkampf in Phase 6, weil beide ohne diese Zusammenhänge nichts zu tun haben. Die Regel-Engine kennt in Phase 1 nur den Zeitschritt als Befehl; das Zeitmodell mit Schichtmarker und Phasen baut Phase 4 darauf auf.
+Phase 2 kommt in Teilen mit je eigenem Pull Request: 2a, 2b.1, 2b.2 und 2c. In 2b wirken die Talente, die die Engine dann schon abbilden kann: Tough, Analysis, Investigator und Pull Rank als „Talent einsetzen“ sowie die Talente mit Lage-Bonus zum Ankreuzen (A-10). 2b.2 bringt die Cinematic-Seite: Auswahl und Übergabe vorgefertigter Charaktere, Agenden pro Akt und Story Points beim Aktende (A-12, A-13). Der Rahmen des Teams wandert in Phase 4, weil er erst mit Gehalt und Aufträgen etwas bewirkt. Die übrigen Talente sind wählbar und wirken mit der Phase ihres Systems: Ausrüstung (2c), Kampf (3, darunter Personal Safety), Zeit und Ruhe (4), Raumkampf (6). NSC-Erschaffung (Schnell-NSC, typische NSC) gehört zu Phase 3, wo Gegner gebraucht werden. Initiative entsteht mit dem Kampf in Phase 3, die Raumkampf-Paniktabelle mit dem Raumkampf in Phase 6, weil beide ohne diese Zusammenhänge nichts zu tun haben. Die Regel-Engine kennt in Phase 1 nur den Zeitschritt als Befehl; das Zeitmodell mit Schichtmarker und Phasen baut Phase 4 darauf auf.
 
 Die Reihenfolge folgt den Abhängigkeiten: Ohne Regel-Engine keine Proben, ohne Proben kein Kampf, ohne Kampfregeln kein Raumkampf. Ab Phase 3 ist das Werkzeug am echten Tisch brauchbar, weil Hope's Last Day als Cinematic-Szenario samt vorgefertigten Charakteren vollständig im Buch steht. Das Lagebild der Spielleitung (3.1) wächst mit: Crew ab Phase 2, Kampf ab Phase 3, Zeit ab Phase 4, Schiff ab Phase 5.
 
@@ -829,4 +829,4 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 
 Offen:
 
-Derzeit keine. Phasen 0, 1 und 2a sind abgeschlossen (PR #1 bis #9). Phase 2b.1 ist in Arbeit.
+Derzeit keine. Phasen 0, 1, 2a und 2b.1 sind abgeschlossen (PR #1 bis #11). Phase 2b.2 ist in Arbeit.
