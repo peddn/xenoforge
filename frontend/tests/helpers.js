@@ -54,6 +54,8 @@ export const rulesData = {
     { id: 'difficulty_average', page: 63, value: 0 },
     { id: 'creation_attribute_min', page: 28, value: 2 },
     { id: 'creation_attribute_points', page: 28, value: 14 },
+    { id: 'cinematic_acts', page: 216, value: 3 },
+    { id: 'story_points_max', page: 61, value: 3 },
   ],
 }
 

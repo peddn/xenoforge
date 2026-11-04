@@ -138,14 +138,16 @@ pub async fn access(pool: &SqlitePool, team: &Team, user: &User) -> ApiResult<bo
 }
 
 /// The engine state: the team document plus the actors of its characters.
-/// Story Points belong to the player, so each actor names its owner.
+/// Story Points belong to the player, so each actor names its owner. The
+/// game master's own characters have no player and so no Story Points
+/// (A-13).
 pub fn assemble(team: &Team, characters: &[Character]) -> GameState {
     let mut game = team.state.clone();
     game.actors = characters
         .iter()
         .map(|c| {
             let mut actor = c.data.actor.clone();
-            actor.player = Some(c.owner_id.to_string());
+            actor.player = (c.owner_id != team.gm_id).then(|| c.owner_id.to_string());
             (c.id.to_string(), actor)
         })
         .collect();
@@ -332,6 +334,20 @@ async fn command(
         .map(|c| (c.id.to_string(), c.owner_id))
         .collect();
     check_permission(&team, &body.command, &user, is_gm, &owners)?;
+    // Story Points go to players of the team (F-53).
+    if let Command::SetStoryPoints { player, .. } = &body.command {
+        let member = sqlx::query("SELECT 1 FROM members WHERE team_id = ? AND user_id = ?")
+            .bind(id)
+            .bind(player)
+            .fetch_optional(&mut *tx)
+            .await?
+            .is_some();
+        if !member {
+            return Err(ApiError::bad_request(
+                "Story Points go to players of the team",
+            ));
+        }
+    }
 
     let mut game = assemble(&team, &characters);
     let events = {

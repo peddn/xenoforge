@@ -53,7 +53,8 @@ fn gm_only(is_gm: bool) -> ApiResult<()> {
     }
 }
 
-/// Saves the character and logs one entry.
+/// Saves the character and logs one entry. A new owner ends the undo
+/// history, so undo never seems to take back a handover.
 async fn save_and_log(
     state: &AppState,
     team: &Team,
@@ -63,6 +64,15 @@ async fn save_and_log(
 ) -> ApiResult<Vec<Stored>> {
     let mut tx = begin_write(&state.pool).await?;
     characters::save(&mut tx, character).await?;
+    if matches!(
+        entry,
+        Entry::CharacterClaimed { .. } | Entry::CharacterHandedOver { .. }
+    ) {
+        sqlx::query("DELETE FROM snapshots WHERE team_id = ?")
+            .bind(team.id)
+            .execute(&mut *tx)
+            .await?;
+    }
     let stored = log::append(&mut tx, team.id, user, vec![entry], None).await?;
     tx.commit().await?;
     log::publish(state, &stored);
@@ -102,7 +112,8 @@ async fn offer(
 }
 
 /// A player takes an offered character and owns it at once; it is then no
-/// longer on offer. Whoever comes first gets it (A-12).
+/// longer on offer. Whoever comes first gets it; who already plays a
+/// character in the team takes no second one (A-12, p. 26).
 async fn claim(
     State(state): State<AppState>,
     user: User,
@@ -117,6 +128,17 @@ async fn claim(
     }
     if !character.data.offered || character.owner_id != team.gm_id {
         return Err(ApiError::conflict("the character is no longer on offer"));
+    }
+    let plays = sqlx::query("SELECT 1 FROM characters WHERE team_id = ? AND owner_id = ?")
+        .bind(id)
+        .bind(user.id)
+        .fetch_optional(&state.pool)
+        .await?
+        .is_some();
+    if plays {
+        return Err(ApiError::conflict(
+            "you already play a character in this team",
+        ));
     }
     character.owner_id = user.id;
     character.data.offered = false;
@@ -134,10 +156,11 @@ struct Owner {
     owner: i64,
 }
 
-/// The game master gives a character to a member of the team, e.g. as a
-/// replacement after death or PvP, or takes it over. Taking a character
-/// away from a player is for Cinematic play only, where a traitor becomes
-/// an NPC [p. 32].
+/// The game master gives one of their characters to a member of the
+/// team, e.g. as a replacement after death or PvP, or takes a prepared
+/// character back. Taking it back is for Cinematic play only, where a
+/// traitor becomes an NPC [p. 32]; characters players built stay theirs
+/// (plan 5.0).
 async fn owner(
     State(state): State<AppState>,
     user: User,
@@ -161,10 +184,22 @@ async fn owner(
             "characters go to members of the team",
         ));
     }
-    if character.owner_id != team.gm_id && team.state.mode != Mode::Cinematic {
-        return Err(ApiError::forbidden(
-            "taking a character from a player is for Cinematic play only (p. 32)",
-        ));
+    if character.owner_id != team.gm_id {
+        if team.state.mode != Mode::Cinematic {
+            return Err(ApiError::forbidden(
+                "taking a character from a player is for Cinematic play only (p. 32)",
+            ));
+        }
+        if body.owner != team.gm_id {
+            return Err(ApiError::bad_request(
+                "a player's character goes back to the game master only",
+            ));
+        }
+        if character.data.status != characters::Status::Free {
+            return Err(ApiError::forbidden(
+                "only prepared characters go back to the game master",
+            ));
+        }
     }
     character.owner_id = body.owner;
     character.data.offered = false;

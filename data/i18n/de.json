@@ -268,6 +268,8 @@
   "F-56.after_throw": "Nach dem Wurf",
   "F-57.name": "Talente mit eigener Probe als Aktion",
   "F-57.slow": "Langsame Aktion",
+  "F-58.name": "Buddy und Rival wechseln",
+  "F-58.any_time": "Jederzeit bis Phase 4",
   "difficulty_trivial.name": "Trivial",
   "difficulty_simple.name": "Einfach",
   "difficulty_easy.name": "Leicht",

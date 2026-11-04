@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import XButton from '@/ui/XButton.vue'
 import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
+import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The game master's actions for the whole team: a fixed pool such as
@@ -12,6 +13,7 @@ import { useTeamStore } from '@/stores/team'
 // session asks once more first.
 const { t } = useI18n()
 const team = useTeamStore()
+const rules = useRulesStore()
 const pool = ref(8)
 const note = ref('')
 const error = ref('')
@@ -72,7 +74,7 @@ function rollPool() {
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <XButton
-        v-if="team.view.mode === 'cinematic' && !endingAct"
+        v-if="team.view.mode === 'cinematic' && team.view.act <= rules.constant('cinematic_acts') && !endingAct"
         data-test="end-act"
         @click="endingAct = true"
       >

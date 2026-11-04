@@ -192,7 +192,9 @@
     "leave": "Leave the team",
     "leaveConfirm": "Leave the team with {name}?",
     "act": "Act {act}",
-    "waiting": "Without a character: {names}"
+    "waiting": "Without a character:",
+    "scenarioOver": "Scenario over",
+    "removeMemberConfirm": "Take {name} out of the team?"
   },
   "outcome": {
     "success": "Success",
@@ -247,7 +249,10 @@
     "character_handed_over": "{name} goes to {to}",
     "agenda_changed": "Agendas of {name} changed",
     "story_points_changed": "{player}: Story Points {from} → {to}",
-    "act_ended_n": "Act {act} ended: signature item and talents usable once per Act are available again."
+    "act_ended_n": "Act {act} ended: signature item and talents usable once per Act are available again.",
+    "story_point_awarded": "{player} gets a Story Point",
+    "member_left": "{name} leaves the team",
+    "member_removed": "{name} is no longer in the team"
   },
   "about": {
     "title": "About Xenoforge",

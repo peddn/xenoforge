@@ -86,6 +86,8 @@ function describe(entry) {
       return { text: `${actor}: ${rules.text(ev.text)}` }
     case 'talent_used':
       return { text: t('log.talent_used', { actor, talent: rules.name(ev.talent) }) }
+    case 'story_point_awarded':
+      return { text: t('log.story_point_awarded', { player: team.personNames[ev.player] ?? `#${ev.player}` }) }
     case 'story_points_changed':
       return { text: t('log.story_points_changed', { player: team.personNames[ev.player] ?? `#${ev.player}`, from: ev.from, to: ev.to }) }
     case 'act_ended':

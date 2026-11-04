@@ -74,6 +74,14 @@ pub enum Entry {
         character: i64,
         name: String,
     },
+    /// A player without a character left the team.
+    MemberLeft {
+        name: String,
+    },
+    /// The game master took a player without a character out of the team.
+    MemberRemoved {
+        name: String,
+    },
     /// The game master changed values by hand.
     Corrected {
         character: i64,
@@ -136,6 +144,11 @@ fn visibility(entry: &Entry) -> &'static str {
     match entry {
         Entry::Engine {
             event: Event::Hint { gm_only: true, .. },
+        } => "gm",
+        // Each player sees their own Story Points only; an award is
+        // announced to all (p. 216).
+        Entry::Engine {
+            event: Event::StoryPointsChanged { .. },
         } => "gm",
         _ => "all",
     }
@@ -275,7 +288,10 @@ async fn events(
         .flat_map(|stored| {
             let leaves = matches!(
                 stored.entry,
-                Entry::CharacterRemoved { .. } | Entry::CharacterLeft { .. }
+                Entry::CharacterRemoved { .. }
+                    | Entry::CharacterLeft { .. }
+                    | Entry::MemberLeft { .. }
+                    | Entry::MemberRemoved { .. }
             );
             stream::iter(std::iter::once(Some(stored)).chain(leaves.then_some(None)))
         })

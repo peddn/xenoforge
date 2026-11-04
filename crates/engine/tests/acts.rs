@@ -28,27 +28,43 @@ fn story_point_per_player_at_the_end_of_an_act() {
     let mut t = table();
     let ev = t.run(end_act(&["ann", "bob", "cid"]), &[]);
     assert_eq!(ev[0], Event::ActEnded { act: 1 });
-    assert!(ev.contains(&Event::StoryPointsChanged {
-        player: "1".into(),
-        from: 0,
-        to: 1
-    }));
+    assert!(ev.contains(&Event::StoryPointAwarded { player: "1".into() }));
+    assert_eq!(
+        ev.iter()
+            .filter(|e| matches!(e, Event::StoryPointAwarded { .. }))
+            .count(),
+        2,
+        "one per player"
+    );
     assert_eq!(t.state.story_points.get("2"), Some(&1));
     let ev = t.run(end_act(&[]), &[]);
     assert_eq!(ev, vec![Event::ActEnded { act: 2 }]);
-    assert_eq!(t.state.acts_ended, 2);
+    t.run(end_act(&[]), &[]);
+    assert_eq!(t.state.acts_ended, 3);
+    assert!(
+        t.try_run(end_act(&[]), &[]).is_err(),
+        "a scenario has three Acts [p. 216]"
+    );
 }
 
 /// Never more than three Story Points [p. 61].
 #[test]
 fn at_most_three() {
     let mut t = table();
-    t.run(
+    let ev = t.run(
         Command::SetStoryPoints {
             player: "1".into(),
             points: 3,
         },
         &[],
+    );
+    assert_eq!(
+        ev,
+        vec![Event::StoryPointsChanged {
+            player: "1".into(),
+            from: 0,
+            to: 3
+        }]
     );
     let ev = t.run(end_act(&["ann"]), &[]);
     assert_eq!(ev, vec![Event::ActEnded { act: 1 }], "no change at three");

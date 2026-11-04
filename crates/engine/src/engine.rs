@@ -260,8 +260,12 @@ pub enum Event {
         #[serde(default)]
         act: u8,
     },
-    /// A player's Story Points changed: awarded at the end of an Act, or
-    /// set by the game master [p. 61, 216].
+    /// A player got a Story Point for furthering their Agenda; announced
+    /// without the reason [p. 216].
+    StoryPointAwarded {
+        player: PlayerId,
+    },
+    /// The game master set a player's Story Points [p. 61, 383].
     StoryPointsChanged {
         player: PlayerId,
         from: u8,
@@ -715,12 +719,21 @@ impl<'a> Ctx<'a> {
             Command::EndAct { agenda } => self.end_act(&agenda),
             Command::SetStoryPoints { player, points } => {
                 self.cinematic("Story Points")?;
-                if points > self.engine.constant_u8("story_points_max") {
-                    return Err(RuleError::NotAllowed(
-                        "a player has at most three Story Points".into(),
-                    ));
+                let max = self.engine.constant_u8("story_points_max");
+                if points > max {
+                    return Err(RuleError::NotAllowed(format!(
+                        "a player has at most {max} Story Points"
+                    )));
                 }
-                self.set_story_points(&player, points);
+                let from = self.state.story_points.get(&player).copied().unwrap_or(0);
+                self.state.story_points.insert(player.clone(), points);
+                if from != points {
+                    self.emit(Event::StoryPointsChanged {
+                        player,
+                        from,
+                        to: points,
+                    });
+                }
                 Ok(())
             }
             Command::EndSession => self.end_session(),
@@ -1444,10 +1457,17 @@ impl<'a> Ctx<'a> {
     }
 
     /// End of an Act: a Story Point for each player whose character
-    /// furthered their Agenda, once per player, at most three
-    /// [p. 61, 216]; uses per Act are free again.
+    /// furthered their Agenda, once per player, at most `story_points_max`
+    /// [p. 61, 216]; uses per Act are free again. A scenario has
+    /// `cinematic_acts` Acts; after the last one it is over (A-13).
     fn end_act(&mut self, agenda: &[ActorId]) -> Result<()> {
         self.cinematic("Acts")?;
+        let acts = self.engine.constant_u8("cinematic_acts");
+        if self.state.acts_ended >= acts {
+            return Err(RuleError::NotAllowed(format!(
+                "the scenario's {acts} Acts are over"
+            )));
+        }
         let mut players: Vec<PlayerId> = Vec::new();
         for id in agenda {
             let actor = self.actor(id)?;
@@ -1468,26 +1488,16 @@ impl<'a> Ctx<'a> {
         self.emit(Event::ActEnded {
             act: self.state.acts_ended,
         });
+        let max = self.engine.constant_u8("story_points_max");
         for player in players {
-            let now = self.state.story_points.get(&player).copied().unwrap_or(0);
-            self.set_story_points(&player, now.saturating_add(1));
+            let points = self.state.story_points.entry(player.clone()).or_insert(0);
+            if *points < max {
+                *points += 1;
+                self.emit(Event::StoryPointAwarded { player });
+            }
         }
         self.reset_uses(false);
         Ok(())
-    }
-
-    /// At most `story_points_max`; a change is reported.
-    fn set_story_points(&mut self, player: &str, points: u8) {
-        let to = points.min(self.engine.constant_u8("story_points_max"));
-        let from = self.state.story_points.get(player).copied().unwrap_or(0);
-        self.state.story_points.insert(player.to_owned(), to);
-        if from != to {
-            self.emit(Event::StoryPointsChanged {
-                player: player.to_owned(),
-                from,
-                to,
-            });
-        }
     }
 
     /// End of a game session: trauma checks [p. 104; F-01, F-26, F-27,

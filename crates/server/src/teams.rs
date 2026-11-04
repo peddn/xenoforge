@@ -27,6 +27,7 @@ pub fn routes() -> Router<AppState> {
             "/{id}/characters/{character}",
             delete(remove).put(game::correct),
         )
+        .route("/{id}/members/{user}", delete(remove_member))
 }
 
 pub fn join_routes() -> Router<AppState> {
@@ -203,11 +204,21 @@ async fn view(
             name: character.name.clone(),
             owner_id: character.owner_id,
             owner_name: name_of(&state, character.owner_id).await?,
-            actor: sees.then(|| character.data.actor.clone()),
+            // An offered sheet for the others shows no agenda, no notes
+            // and not whether it is an android, who may pass as human
+            // (A-12, p. 29).
+            actor: sees.then(|| {
+                let mut actor = character.data.actor.clone();
+                if !own {
+                    actor.android = false;
+                }
+                actor
+            }),
             sheet: sees.then(|| {
                 let mut sheet = character.data.sheet.clone();
                 if !own {
                     sheet.agenda.clear();
+                    sheet.notes.clear();
                 }
                 sheet
             }),
@@ -407,6 +418,54 @@ async fn remove(
             character: character.id,
             name: character.name.clone(),
         }
+    };
+    let stored = log::append(&mut tx, id, &user, vec![entry], None).await?;
+    tx.commit().await?;
+    log::publish(&state, &stored);
+    Ok(Json(stored))
+}
+
+/// A player without a character in the team leaves it, or the game master
+/// takes them out (A-12). Whoever still plays a character leaves with it.
+async fn remove_member(
+    State(state): State<AppState>,
+    user: User,
+    Path((id, member)): Path<(i64, i64)>,
+) -> ApiResult<Json<Vec<Stored>>> {
+    let _guard = state.lock.lock().await;
+    let team = game::load_team(&state.pool, id).await?;
+    let is_gm = game::access(&state.pool, &team, &user).await?;
+    if !is_gm && member != user.id {
+        return Err(ApiError::forbidden(
+            "only the game master or the player themselves can do that",
+        ));
+    }
+    let plays = sqlx::query("SELECT 1 FROM characters WHERE team_id = ? AND owner_id = ?")
+        .bind(id)
+        .bind(member)
+        .fetch_optional(&state.pool)
+        .await?
+        .is_some();
+    if plays {
+        return Err(ApiError::conflict(
+            "the player still has a character in the team",
+        ));
+    }
+    let mut tx = begin_write(&state.pool).await?;
+    let removed = sqlx::query("DELETE FROM members WHERE team_id = ? AND user_id = ?")
+        .bind(id)
+        .bind(member)
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
+    if removed == 0 {
+        return Err(ApiError::not_found("member"));
+    }
+    let name = name_of(&state, member).await?;
+    let entry = if member == user.id {
+        Entry::MemberLeft { name }
+    } else {
+        Entry::MemberRemoved { name }
     };
     let stored = log::append(&mut tx, id, &user, vec![entry], None).await?;
     tx.commit().await?;

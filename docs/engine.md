@@ -30,7 +30,7 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 | `sleep` | Diese Charaktere schlafen (für Nightmares) | 101 |
 | `perform_action` | Aktion ausführen, wahlweise mit Ziel (Pull Rank): prüft Sperren und Fähigkeiten, löst Auslöser aus | 74–77 |
 | `use_signature_item` | Stress −1, einmal pro Akt bzw. Sitzung, gesperrt wie anderer Stressabbau | 104, F-31 |
-| `end_act` | Akt beenden (nur Cinematic): Akte zählen, Zähler pro Akt zurücksetzen, ein Story Point für jeden Spieler, dessen Charakter seiner Agenda gefolgt ist, höchstens drei | 61, 104, 216, A-13 |
+| `end_act` | Akt beenden (nur Cinematic, höchstens drei Akte): Akte zählen, Zähler pro Akt zurücksetzen, ein Story Point für jeden Spieler, dessen Charakter seiner Agenda gefolgt ist, höchstens drei | 61, 104, 216, A-13 |
 | `set_story_points` | Story Points eines Spielers setzen (nur Cinematic), etwa Mitgebrachte | 61, 383, F-53 |
 | `end_session` | Zähler zurücksetzen; danach die Trauma-Probe | 104 |
 

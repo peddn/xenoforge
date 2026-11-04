@@ -48,10 +48,10 @@ Helfer stehen in `helpers`; es zählen höchstens drei (S. 63). Alles andere leh
 
 ## Sichtbarkeit (A-01)
 
-- Die Werte im Bogen (Attribute, Fertigkeiten, Talente, Stress, Zustände) sehen die Spielleitung und der Besitzer. Die anderen sehen Name und Spieler. Solange die Spielleitung einen Charakter zur Wahl anbietet, sehen alle im Team seinen Bogen, aber keine Agenda (A-12).
+- Die Werte im Bogen (Attribute, Fertigkeiten, Talente, Stress, Zustände) sehen die Spielleitung und der Besitzer. Die anderen sehen Name und Spieler. Solange die Spielleitung einen Charakter zur Wahl anbietet, sehen alle im Team seinen Bogen, aber weder Agenda noch Notizen noch ob er ein Android ist (A-12, S. 29).
 - Agenden pro Akt (Cinematic) sieht die Spielleitung alle, der Besitzer nur die des laufenden Akts (A-13). Sie liegen beim Team, nicht im Charakter, damit sie über die Charakter-Schnittstelle nie herausgehen.
 - Was im Spiel geschieht, steht nach A-01 im gemeinsamen Protokoll, so wie es am Tisch angesagt würde: Würfe, Stress und Schaden, Panik, eingesetzte Talente und die Entscheidungen, auf die gewartet wird.
-- Story Points sieht jeder Spieler für sich, die Spielleitung für alle.
+- Story Points sieht jeder Spieler für sich, die Spielleitung für alle. Dass jemand beim Aktende einen bekommt, steht für alle im Protokoll (S. 216); was die Spielleitung von Hand setzt, nur für sie.
 - Jeder Protokolleintrag ist entweder für **alle** im Team oder nur für die **Spielleitung** sichtbar. Nur für die Spielleitung sind Hinweise der Engine, die als solche markiert sind. Gefiltert wird an einer Stelle (`log.rs`), für das Nachladen und für den Live-Strom gleich.
 - Wen ein Effekt trifft, entscheidet nur die Spielleitung; die offene Entscheidung sehen Spieler nicht, im Protokoll steht nur, dass gewählt wird.
 
@@ -72,7 +72,7 @@ Ein Charakter hat einen Status:
 - **Fertig:** Die Werte ändern sich nur im Spiel. Name, Aussehen, Agenda (F-54), Signature Item und Notizen bleiben frei.
 - **Frei:** Nur Spielleitungskonten legen frei an, für vorgefertigte Charaktere und Szenarien; nur sie bearbeiten außerhalb eines Teams auch die Werte und die Karriere. Charaktere von vor dem Assistenten gelten als frei.
 
-Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung. Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt der Besitzer im Team über einen eigenen Pfad, damit Speichern der Texte sie nie berührt: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Texte haben höchstens 4000 Zeichen. Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
+Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung. Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt in Campaign der Besitzer, in Cinematic die Spielleitung, weil das Szenario sie vorgibt (S. 31). Sie haben einen eigenen Pfad, damit Speichern der Texte sie nie berührt: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Texte haben höchstens 4000 Zeichen. Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
 
 ### Rückgängig
 
@@ -116,7 +116,7 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `GET /characters/{id}` | – | Charakter |
 | `PUT /characters/{id}` | Entwurf: `{ data: { draft } }`; sonst `{ name, data: { sheet, actor } }` | Charakter, beim Entwurf mit `problems`; Werte nur bei freien Charakteren der Spielleitung außerhalb eines Teams |
 | `POST /characters/{id}/finish` | – | fertiger Charakter mit `start_cash`; 400, solange es Probleme gibt |
-| `PUT /characters/{id}/relations` | `{ buddy, rival }`, Ids oder `null` | Charakter; nur im Team (F-52) |
+| `PUT /characters/{id}/relations` | `{ buddy, rival }`, Ids oder `null` | Charakter; nur im Team (F-52); in Cinematic nur die Spielleitung |
 | `DELETE /characters/{id}` | – | nur außerhalb eines Teams, sonst 409 |
 
 ### Teams
@@ -133,8 +133,9 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `GET /join/{token}` | angemeldet | – | Team, Spielleitung, Modus |
 | `POST /join/{token}` | angemeldet | `{ character }`, Id oder `null` | Beitritt mit freiem Charakter oder ohne (A-12) |
 | `PUT /teams/{id}/characters/{c}/offer` | Spielleitung | `{ offered }` | eigenen Charakter zur Wahl anbieten oder zurückziehen |
-| `POST /teams/{id}/characters/{c}/claim` | Spieler | – | angebotenen Charakter wählen; wer zuerst kommt, wird Besitzer, sonst 409 |
-| `PUT /teams/{id}/characters/{c}/owner` | Spielleitung | `{ owner }` | übergeben an ein Mitglied oder übernehmen; einem Spieler wegnehmen nur in Cinematic (S. 32) |
+| `POST /teams/{id}/characters/{c}/claim` | Spieler | – | angebotenen Charakter wählen; wer zuerst kommt, wird Besitzer, sonst 409; nur wer noch keinen Charakter im Team hat |
+| `PUT /teams/{id}/characters/{c}/owner` | Spielleitung | `{ owner }` | eigenen Charakter an ein Mitglied übergeben; einen vorgefertigten zurücknehmen nur in Cinematic (S. 32); beendet die Rückgängig-Kette |
+| `DELETE /teams/{id}/members/{user}` | Spielleitung oder der Spieler selbst | – | Spieler ohne Charakter im Team austreten lassen |
 | `PUT /teams/{id}/characters/{c}/agendas` | Spielleitung | `{ agendas }`, höchstens drei | Agenden pro Akt (Cinematic, A-13) |
 
 ### Spiel

@@ -12,18 +12,23 @@ import LogList from '@/components/LogList.vue'
 import RollPanel from '@/components/RollPanel.vue'
 import SheetDialog from '@/components/SheetDialog.vue'
 import XButton from '@/ui/XButton.vue'
+import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import XModal from '@/ui/XModal.vue'
 import XPanel from '@/ui/XPanel.vue'
 import XStatus from '@/ui/XStatus.vue'
-import { post } from '@/api'
+import { del, post } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import { useCharactersStore } from '@/stores/characters'
+import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 const { t } = useI18n()
 const route = useRoute()
 const team = useTeamStore()
 const characters = useCharactersStore()
+const rules = useRulesStore()
+const auth = useAuthStore()
 
 // The open dialog: { kind: 'roll' | 'sheet' | 'actions', id } with a
 // character id, or { kind: 'decision', id } with a pending decision's id.
@@ -41,9 +46,20 @@ const inviteLink = computed(() =>
   team.view?.invite_token ? `${location.origin}/join/${team.view.invite_token}` : '',
 )
 // Members without a character in the team, e.g. before choosing (A-12).
+// They can leave, and the game master can take them out.
 const waiting = computed(() =>
-  team.view.members.filter((m) => !team.view.characters.some((c) => c.owner_id === m.id)).map((m) => m.name),
+  team.view.members.filter((m) => !team.view.characters.some((c) => c.owner_id === m.id)),
 )
+
+async function removeMember(member) {
+  error.value = ''
+  try {
+    await del(`/teams/${team.view.id}/members/${member.id}`)
+    await team.refresh()
+  } catch (e) {
+    error.value = e.message
+  }
+}
 const freeOwn = computed(() => characters.list.filter((c) => !c.team_id && c.data.status !== 'draft'))
 // Looked up live, so the dialog shows current values; it closes when the
 // character leaves the team or the decision is made.
@@ -111,16 +127,32 @@ async function addOwn() {
         </template>
         <p class="text-dim">
           {{ t(`mode.${team.view.mode}`) }}<template v-if="team.view.act">
-            · {{ t('team.act', { act: team.view.act }) }}
+            · {{ team.view.act > rules.constant('cinematic_acts') ? t('team.scenarioOver') : t('team.act', { act: team.view.act }) }}
           </template> · {{ t('team.gm') }}: {{ team.view.gm.name }}
         </p>
-        <p
+        <div
           v-if="waiting.length"
-          class="text-dim"
+          class="flex flex-wrap items-center gap-2 text-dim"
           data-test="waiting"
         >
-          {{ t('team.waiting', { names: waiting.join(', ') }) }}
-        </p>
+          <span>{{ t('team.waiting') }}</span>
+          <span
+            v-for="m in waiting"
+            :key="m.id"
+            class="flex items-center gap-1"
+          >
+            {{ m.name }}
+            <XConfirm
+              v-if="team.view.is_gm || m.id === auth.user?.id"
+              variant="danger"
+              size="small"
+              :label="m.id === auth.user?.id ? t('team.leave') : t('common.remove')"
+              :question="t('team.removeMemberConfirm', { name: m.name })"
+              :data-test="`remove-member-${m.id}`"
+              @confirm="removeMember(m)"
+            />
+          </span>
+        </div>
         <template v-if="team.view.is_gm">
           <div class="flex flex-wrap items-center gap-2">
             <XField :label="t('team.invite')">

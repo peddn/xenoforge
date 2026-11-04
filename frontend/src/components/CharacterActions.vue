@@ -45,7 +45,7 @@ const people = computed(() =>
   [team.view.gm, ...(team.view.members ?? [])].filter((p) => p && p.id !== props.character.owner_id),
 )
 const newOwner = ref(null)
-const acts = computed(() => rules.constant('cinematic_acts') ?? 3)
+const acts = computed(() => rules.constant('cinematic_acts'))
 const agendas = ref([])
 watch(
   () => JSON.stringify(props.character.agendas ?? []),
@@ -55,7 +55,20 @@ watch(
   },
   { immediate: true },
 )
-const storyPoints = ref(team.view.story_points?.[String(props.character.owner_id)] ?? 0)
+// Follows the owner's stored points, e.g. after a handover or an Act.
+const storyPoints = ref(0)
+watch(
+  () => team.view.story_points?.[String(props.character.owner_id)] ?? 0,
+  (points) => (storyPoints.value = points),
+  { immediate: true },
+)
+
+function handOver() {
+  attempt(async () => {
+    await team.handOver(props.character.id, newOwner.value)
+    newOwner.value = null
+  })
+}
 
 async function attempt(work) {
   error.value = ''
@@ -217,7 +230,7 @@ function apply() {
         <XButton
           :disabled="newOwner == null"
           data-test="hand-over"
-          @click="attempt(() => team.handOver(character.id, newOwner))"
+          @click="handOver"
         >
           {{ t('cast.handOver') }}
         </XButton>

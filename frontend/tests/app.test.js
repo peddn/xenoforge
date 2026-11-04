@@ -695,6 +695,38 @@ describe('choosing and Acts (A-12, A-13)', () => {
     expect(calls.at(-1).body.command).toEqual({ command: 'set_story_points', player: '2', points: 3 })
   })
 
+  it('lets a player without a character leave, and only the GM sets buddy and rival in Cinematic', async () => {
+    const { pinia, i18n } = setup()
+    vi.stubGlobal(
+      'EventSource',
+      class {
+        close() {}
+      },
+    )
+    const calls = mockApi({ 'GET /teams/5': { ...view(false), members: [{ id: 2, name: 'Ann' }, { id: 3, name: 'Bob' }] }, 'DELETE /teams/5/members/3': [] })
+    useAuthStore().user = { id: 3, name: 'Bob', role: 'player' }
+    useAuthStore().checked = true
+    const r = router()
+    r.push('/teams/5')
+    await r.isReady()
+    const wrapper = mount(TeamView, { global: { plugins: [pinia, i18n, r] } })
+    await flushPromises()
+    expect(wrapper.get('[data-test="waiting"]').text()).toContain('Bob')
+    expect(wrapper.find('[data-test="remove-member-2"]').exists()).toBe(false)
+    await wrapper.get('[data-test="remove-member-3"]').trigger('click')
+    await wrapper.get('[data-test="confirm"]').trigger('click')
+    await flushPromises()
+    expect(calls.some((c) => c.method === 'DELETE' && c.path === '/teams/5/members/3')).toBe(true)
+
+    useAuthStore().user = { id: 2, name: 'Ann', role: 'player' }
+    useTeamStore().view = view(false)
+    const sheet = mount(SheetDialog, { props: { character: ripley }, global: { plugins: [pinia, i18n] } })
+    expect(sheet.find('[data-test="buddy"]').exists()).toBe(false)
+    useTeamStore().view = view(true)
+    const gmSheet = mount(SheetDialog, { props: { character: ripley }, global: { plugins: [pinia, i18n] } })
+    expect(gmSheet.find('[data-test="buddy"]').exists()).toBe(true)
+  })
+
   it('shows the Agenda of the current Act on the sheet', () => {
     const { pinia, i18n } = setup()
     mockApi({})
@@ -711,12 +743,14 @@ describe('choosing and Acts (A-12, A-13)', () => {
     team.log = [
       { id: 1, batch: 1, by: 'Ann', at: 0, entry: { type: 'character_claimed', character: 9, name: 'Nat' } },
       { id: 2, batch: 2, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'act_ended', act: 2 } } },
-      { id: 3, batch: 2, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'story_points_changed', player: '2', from: 1, to: 2 } } },
+      { id: 3, batch: 2, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'story_point_awarded', player: '2' } } },
+      { id: 4, batch: 4, by: 'Mother', at: 0, entry: { type: 'engine', event: { event: 'story_points_changed', player: '2', from: 2, to: 3 } } },
     ]
     const text = mount(LogList, { global: { plugins: [pinia, i18n] } }).text()
     expect(text).toContain('Ann spielt jetzt Nat')
     expect(text).toContain('Akt 2 beendet')
-    expect(text).toContain('Ann: Story Points 1 → 2')
+    expect(text).toContain('Ann bekommt einen Story Point')
+    expect(text).toContain('Ann: Story Points 2 → 3')
   })
 })
 

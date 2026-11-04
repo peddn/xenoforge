@@ -33,7 +33,8 @@ async function claim(c) {
 }
 // Story Points exist in Cinematic play only (F-06) and belong to the player.
 const cinematic = computed(() => team.view.mode === 'cinematic')
-const storyPoints = (c) => team.view.story_points[String(c.owner_id)] ?? 0
+// The game master's characters have no player and no Story Points (A-12).
+const storyPoints = (c) => (c.owner_id === team.view.gm?.id ? '–' : (team.view.story_points[String(c.owner_id)] ?? 0))
 </script>
 
 <template>

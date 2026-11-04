@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Row, Sqlite, Transaction};
 use xenoforge_engine::creation::{Cash, CreationProblem, Draft};
 use xenoforge_engine::data::Id;
-use xenoforge_engine::state::{Actor, ActorKind};
+use xenoforge_engine::state::{Actor, ActorKind, Mode};
 
 use crate::auth::{Role, User};
 use crate::error::{ApiError, ApiResult};
@@ -373,8 +373,10 @@ struct Relations {
 }
 
 /// Buddy and rival: other player characters of the same team, not the
-/// same one; both are optional (F-52) [p. 31]. A route of their own, so
-/// saving texts never touches them.
+/// same one; both are optional (F-52) [p. 31]. In Campaign play the owner
+/// chooses them, in Cinematic play the scenario does, so the game master
+/// sets them [p. 31]. A route of their own, so saving texts never touches
+/// them.
 async fn relations(
     State(state): State<AppState>,
     user: User,
@@ -382,7 +384,22 @@ async fn relations(
     Json(body): Json<Relations>,
 ) -> ApiResult<Json<Character>> {
     let _guard = state.lock.lock().await;
-    let mut character = owned(&state, &user, id).await?;
+    let mut character = load(&state.pool, id).await?;
+    let team = match character.team_id {
+        Some(team) => Some(crate::game::load_team(&state.pool, team).await?),
+        None => None,
+    };
+    let chooses = match &team {
+        Some(team) if team.state.mode == Mode::Cinematic => team.gm_id == user.id,
+        _ => character.owner_id == user.id,
+    };
+    if !chooses {
+        return Err(if character.owner_id == user.id {
+            ApiError::forbidden("in Cinematic play the scenario sets buddy and rival (p. 31)")
+        } else {
+            ApiError::not_found("character")
+        });
+    }
     check_relations(&state, &character, body.buddy, body.rival).await?;
     character.data.sheet.buddy = body.buddy;
     character.data.sheet.rival = body.rival;
