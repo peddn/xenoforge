@@ -455,12 +455,18 @@ async fn undo(
 #[derive(Deserialize)]
 pub struct Correction {
     actor: Actor,
+    /// The values as the form showed them when it was opened; if the
+    /// character changed since, the correction is refused.
+    #[serde(default)]
+    base: Option<Actor>,
     #[serde(default)]
     note: Option<String>,
 }
 
 /// The game master overwrites a character's values except the items;
-/// logged and undoable (plan section 3).
+/// logged and undoable (plan section 3). With the values the form started
+/// from, it is refused when something happened in between, e.g. a player
+/// used an item, so nothing is undone unseen.
 pub async fn correct(
     State(state): State<AppState>,
     user: User,
@@ -482,6 +488,13 @@ pub async fn correct(
         .find(|c| c.id == character_id)
         .cloned()
         .ok_or_else(|| ApiError::not_found("character"))?;
+    if let Some(base) = body.base {
+        if !same_values(&base, &character.data.actor) {
+            return Err(ApiError::conflict(
+                "the character changed since the correction was opened",
+            ));
+        }
+    }
     // Items change only through item commands, so a correction made with
     // an older copy never brings back what was handed over or used up.
     // Doses per Shift are the engine's count.
@@ -505,6 +518,16 @@ pub async fn correct(
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))
+}
+
+/// The values a correction overwrites are the same; items and the count
+/// of doses are left out, since a correction keeps them anyway.
+fn same_values(base: &Actor, now: &Actor) -> bool {
+    let mut base = base.clone();
+    base.items.clone_from(&now.items);
+    base.next_item = now.next_item;
+    base.doses.clone_from(&now.doses);
+    base == *now
 }
 
 /// An open decision as the interface shows it.

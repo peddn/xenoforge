@@ -26,6 +26,10 @@ const team = useTeamStore()
 
 const auth = useAuthStore()
 const editing = ref(null)
+// The values the correction started from; the server refuses the
+// correction if the character changed since.
+const base = ref(null)
+const stale = ref(false)
 const note = ref('')
 const error = ref('')
 
@@ -66,16 +70,20 @@ async function saveRelations() {
 function startCorrection() {
   // A copy to edit; structuredClone refuses Vue's reactive proxies.
   editing.value = structuredClone(toRaw(props.character.actor))
+  base.value = structuredClone(toRaw(props.character.actor))
+  stale.value = false
+  error.value = ''
 }
 
 async function save() {
   error.value = ''
   try {
-    await team.correct(props.character.id, editing.value, note.value)
+    await team.correct(props.character.id, editing.value, note.value, base.value)
     editing.value = null
     note.value = ''
   } catch (e) {
-    error.value = e.message
+    stale.value = e.status === 409
+    error.value = stale.value ? t('gm.correctionStale') : e.message
   }
 }
 
@@ -246,6 +254,13 @@ async function leave() {
           @click="save"
         >
           {{ t('common.save') }}
+        </XButton>
+        <XButton
+          v-if="stale"
+          data-test="reload-correction"
+          @click="startCorrection"
+        >
+          {{ t('gm.reloadCorrection') }}
         </XButton>
         <XButton
           variant="quiet"
