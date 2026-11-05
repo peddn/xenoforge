@@ -1321,6 +1321,90 @@ async fn money() {
     assert_eq!(visible, ["gm", "gm", "gm"]);
 }
 
+/// A correction from a form opened before something happened is refused,
+/// so it undoes nothing unseen; one from the current values goes through.
+#[tokio::test]
+async fn outdated_corrections_are_refused() {
+    let server = server("stale").await;
+    let (mut gm, mut player, team, character) = table(&server).await;
+    let actor = character.to_string();
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let opened = view["characters"][0]["actor"].clone();
+    // While the form is open, the player drinks a beer the GM gave.
+    gm.command(
+        team,
+        json!({ "command": "add_item", "actor": actor, "item": { "item": "beer" } }),
+    )
+    .await;
+    let (status, _) = player
+        .command(
+            team,
+            json!({ "command": "use_item", "actor": actor, "uid": 0 }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let path = format!("/api/teams/{team}/characters/{character}");
+    let mut changed = opened.clone();
+    changed["stress"] = json!(3);
+    let (status, _) = gm
+        .call(
+            "PUT",
+            &path,
+            Some(json!({ "actor": changed, "base": opened })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+
+    // Opened again: the beer's penalty is there and goes through.
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let fresh = view["characters"][0]["actor"].clone();
+    assert_eq!(fresh["sources"].as_array().unwrap().len(), 1);
+    let mut changed = fresh.clone();
+    changed["stress"] = json!(3);
+    gm.ok(
+        "PUT",
+        &path,
+        Some(json!({ "actor": changed, "base": fresh })),
+    )
+    .await;
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(view["characters"][0]["actor"]["stress"], 3);
+    assert_eq!(
+        view["characters"][0]["actor"]["sources"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+
+    // Money changes through bookings only; one in between is no conflict.
+    let opened = view["characters"][0]["actor"].clone();
+    let (status, _) = gm
+        .command(
+            team,
+            json!({ "command": "book", "actor": actor, "amount": 100, "note": "Trinkgeld" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let mut changed = opened.clone();
+    changed["stress"] = json!(2);
+    gm.ok(
+        "PUT",
+        &path,
+        Some(json!({ "actor": changed, "base": opened })),
+    )
+    .await;
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(view["characters"][0]["actor"]["stress"], 2);
+    assert_eq!(
+        view["characters"][0]["actor"]["ledger"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
 /// The game master's choice of targets names who asks, why and what
 /// happens; the choice is logged even when nothing changes (F-39).
 #[tokio::test]

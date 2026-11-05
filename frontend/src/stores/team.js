@@ -109,8 +109,9 @@ export const useTeamStore = defineStore('team', () => {
     return post(`/teams/${view.value.id}/undo`)
   }
 
-  async function correct(characterId, actor, note) {
-    return put(`/teams/${view.value.id}/characters/${characterId}`, { actor, note: note || undefined })
+  // `base`: the values the correction started from (refused if outdated).
+  async function correct(characterId, actor, note, base) {
+    return put(`/teams/${view.value.id}/characters/${characterId}`, { actor, base, note: note || undefined })
   }
 
   // The game master takes a character out, or a player leaves with theirs.

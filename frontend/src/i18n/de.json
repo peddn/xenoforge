@@ -252,7 +252,9 @@
     "endActTitle": "Akt {act} beenden",
     "agendaQuestion": "Wer ist in diesem Akt seiner Agenda gefolgt, trotz Risiko oder Opfer? Jeder Spieler bekommt dafür einen Story Point, höchstens drei. Das Protokoll nennt keinen Grund (S. 216).",
     "revealAndroid": "Android enthüllen",
-    "revealAndroidConfirm": "{name} als Android enthüllen? Menschen in der Nähe bekommen Stress."
+    "revealAndroidConfirm": "{name} als Android enthüllen? Menschen in der Nähe bekommen Stress.",
+    "correctionStale": "Die Werte haben sich inzwischen geändert, etwa weil jemand etwas benutzt hat. Lade die Korrektur neu, damit nichts verloren geht.",
+    "reloadCorrection": "Neu laden"
   },
   "cold": {
     "above_freezing": "über null",

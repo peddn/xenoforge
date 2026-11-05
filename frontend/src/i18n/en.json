@@ -252,7 +252,9 @@
     "endActTitle": "End Act {act}",
     "agendaQuestion": "Who furthered their Agenda in this Act, despite risk or sacrifice? Each player gets a Story Point for it, at most three. The log gives no reason (p. 216).",
     "revealAndroid": "Reveal android",
-    "revealAndroidConfirm": "Reveal {name} as an android? Humans nearby gain stress."
+    "revealAndroidConfirm": "Reveal {name} as an android? Humans nearby gain stress.",
+    "correctionStale": "The values changed in the meantime, for example because someone used an item. Reload the correction so nothing is lost.",
+    "reloadCorrection": "Reload"
   },
   "cold": {
     "above_freezing": "above freezing",
