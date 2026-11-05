@@ -193,6 +193,38 @@ describe('rolling', () => {
     expect(calls[0].body).toEqual({ command: { command: 'decide', pending: 4, choice: 'push' } })
   })
 
+  it('asks to reload a correction when the values changed in between', async () => {
+    const { pinia, i18n } = setup()
+    const calls = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url, options = {}) => {
+        calls.push({ method: options.method, body: options.body && JSON.parse(options.body) })
+        if (options.method === 'PUT' && calls.filter((c) => c.method === 'PUT').length === 1) {
+          return { ok: false, status: 409, statusText: 'conflict', text: async () => JSON.stringify({ error: 'conflict', message: 'changed' }) }
+        }
+        return { ok: true, status: 200, text: async () => '[]' }
+      }),
+    )
+    useAuthStore().user = { id: 1, role: 'gm' }
+    const character = { id: 9, name: 'Charlize', owner_id: 2, actor: { attributes: { wits: 4 }, stress: 1, items: [] }, sheet: {}, hints: [] }
+    useTeamStore().view = { id: 5, mode: 'campaign', is_gm: true, characters: [character] }
+    const wrapper = mount(SheetDialog, { props: { character }, global: { plugins: [pinia, i18n] } })
+    await wrapper.get('[data-test="correct"]').trigger('click')
+    // In between, the player drank something: the sheet now shows stress 0.
+    await wrapper.setProps({ character: { ...character, actor: { ...character.actor, stress: 0 } } })
+    await wrapper.get('[data-test="save-correction"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Die Werte haben sich inzwischen geändert')
+    await wrapper.get('[data-test="reload-correction"]').trigger('click')
+    await wrapper.get('[data-test="save-correction"]').trigger('click')
+    await flushPromises()
+    const puts = calls.filter((c) => c.method === 'PUT')
+    expect(puts[0].body.base.stress).toBe(1)
+    expect(puts[1].body.base.stress).toBe(0)
+    expect(wrapper.find('[data-test="save-correction"]').exists()).toBe(false)
+  })
+
   it('names who asks the game master, why and what follows, and closes once decided (F-39)', async () => {
     vi.useFakeTimers()
     const { pinia, i18n } = setup()
@@ -359,6 +391,7 @@ describe('rolling', () => {
     await flushPromises()
     const put = calls.find((c) => c.method === 'PUT')
     expect(put.body.actor.attributes.wits).toBe(5)
+    expect(put.body.base.attributes.wits).toBe(4)
 
     // Closing, then the actions for the same character.
     await wrapper.get('[data-test="modal-close"]').trigger('click')
