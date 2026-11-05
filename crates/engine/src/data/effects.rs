@@ -137,6 +137,8 @@ pub struct ModTarget {
 pub enum ActorStat {
     /// Full Health, normally STRENGTH [p. 30].
     HealthMax,
+    /// How much a character carries without being encumbered [p. 34, 79].
+    CarryCapacity,
 }
 
 /// How a modifier changes a value.

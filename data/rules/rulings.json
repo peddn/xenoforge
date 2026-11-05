@@ -58,6 +58,19 @@
     { "id": "F-55", "pages": [29, 75, 76], "options": ["no_stress_hint"], "default": "no_stress_hint" },
     { "id": "F-56", "pages": [76], "options": ["after_throw"], "default": "after_throw" },
     { "id": "F-57", "pages": [76, 87, 88], "options": ["slow"], "default": "slow" },
-    { "id": "F-58", "pages": [31, 36], "options": ["any_time"], "default": "any_time" }
+    { "id": "F-58", "pages": [31, 36], "options": ["any_time"], "default": "any_time" },
+    { "id": "F-59", "pages": [62], "options": ["several_items"], "default": "several_items" },
+    { "id": "F-60", "pages": [33, 39, 55], "options": ["two_lines"], "default": "two_lines" },
+    { "id": "F-61", "pages": [33], "options": ["firearms"], "default": "firearms" },
+    { "id": "F-62", "pages": [34, 79], "options": ["max_four"], "default": "max_four" },
+    { "id": "F-63", "pages": [118, 127, 136], "options": ["not_carried"], "default": "not_carried" },
+    { "id": "F-64", "pages": [39, 55], "options": ["rule_of_thumb"], "default": "rule_of_thumb" },
+    { "id": "F-65", "pages": [131, 132], "options": ["text"], "default": "text" },
+    { "id": "F-66", "pages": [127], "options": ["skill_rolls"], "default": "skill_rolls" },
+    { "id": "F-67", "pages": [126, 136], "options": ["close_combat"], "default": "close_combat" },
+    { "id": "F-68", "pages": [136], "options": ["used_up"], "default": "used_up" },
+    { "id": "F-69", "pages": [34], "options": ["every_four"], "default": "every_four" },
+    { "id": "F-70", "pages": [33, 124], "options": ["weightless"], "default": "weightless" },
+    { "id": "F-71", "pages": [62], "options": ["once_per_kind"], "default": "once_per_kind" }
   ]
 }

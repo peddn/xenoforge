@@ -59,7 +59,7 @@ macro_rules! effect_entry {
         }
     )*};
 }
-effect_entry!(Condition, Talent, ShipSystem);
+effect_entry!(Condition, Talent, ShipSystem, Item);
 
 /// Effects of an entry plus those of its ruling alternatives.
 fn with_alternatives<'a>(
@@ -184,6 +184,7 @@ rule_files! {
     critical_injuries: CriticalInjury => "critical-injuries",
     conditions: Condition => "conditions",
     talents: Talent => "talents",
+    gear: Item => "gear",
     ship_systems: ShipSystem => "ship-systems",
     ship_damage: ShipDamage => "ship-damage",
     rulings: Ruling => "rulings",

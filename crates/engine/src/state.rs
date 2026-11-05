@@ -6,7 +6,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 
 use crate::data::Id;
-use crate::data::effects::{Blocked, Cold, EndEvent, Gear, Op, Unit, Who};
+use crate::data::effects::{Blocked, Cold, EndEvent, Op, Unit, Who};
+use crate::data::model::Weight;
 use crate::roll::RollState;
 
 pub type ActorId = String;
@@ -78,6 +79,53 @@ pub enum Supply {
     Power,
 }
 
+fn is_zero(value: &u32) -> bool {
+    *value == 0
+}
+
+/// Something a character has: from the gear catalog, or free with a name
+/// and a weight for things a scenario names [p. 33].
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Possession {
+    /// Stays the same while the item exists.
+    pub uid: u32,
+    /// Entry in `gear.json`; none for a free item.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub item: Option<Id>,
+    /// Name of a free item.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Weight of a free item.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub weight: Option<Weight>,
+    pub count: u16,
+    /// Where it is: carried, worn (a suit) or stowed [p. 33, 98].
+    pub place: Place,
+    /// Spare reloads of a firearm, for the whole stack (F-61); they weigh
+    /// nothing (F-70) [p. 33].
+    #[serde(skip_serializing_if = "is_zero_u8")]
+    pub reloads: u8,
+    /// Air or power left, for items with a supply [p. 34].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supply: Option<u8>,
+}
+
+fn is_zero_u8(value: &u8) -> bool {
+    *value == 0
+}
+
+/// Where an item is. Only what is carried or worn counts for encumbrance
+/// and can be used in a roll [p. 33, 34].
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Place {
+    #[default]
+    Carried,
+    Worn,
+    Stowed,
+}
+
 /// A character or creature with dice to roll. Missing fields take their
 /// defaults when read from JSON.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -101,7 +149,12 @@ pub struct Actor {
     /// STRESS LEVEL; only human PCs have one [p. 103, 105].
     pub stress: u8,
     pub supplies: BTreeMap<Supply, u8>,
-    pub wearing: BTreeSet<Gear>,
+    /// What the character has with them or stowed [p. 33].
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub items: Vec<Possession>,
+    /// Number for the next item; numbers are never reused.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub next_item: u32,
     /// Traumas, conditions, injuries and blocks currently in effect.
     pub sources: Vec<ActiveSource>,
     pub panic: Option<ActivePanic>,

@@ -37,6 +37,18 @@
           "description": "Starting cash, rolled once at creation.",
           "$ref": "#/$defs/Cash"
         },
+        "gear": {
+          "description": "Starting gear: four lines of \"A or B\"; two items from two different\nlines (F-60) [p. 33].",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/StartItem"
+            },
+            "maxItems": 2,
+            "minItems": 2
+          }
+        },
         "id": {
           "type": "string"
         },
@@ -96,7 +108,8 @@
         "names",
         "looks",
         "items",
-        "agendas"
+        "agendas",
+        "gear"
       ]
     },
     "Cash": {
@@ -119,6 +132,37 @@
       "required": [
         "dice",
         "times"
+      ]
+    },
+    "StartItem": {
+      "description": "A starting item: one, `count` of them, or `dice` D6 of them [p. 39–55].",
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "dice": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "item": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "item"
       ]
     }
   }

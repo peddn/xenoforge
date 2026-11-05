@@ -92,6 +92,19 @@ impl Engine {
                 );
             }
         }
+        // A worn suit works by itself (F-59) [p. 98].
+        for (item, effect) in self.worn_effects(actor) {
+            self.push_effect(
+                &mut out,
+                actor,
+                effect,
+                &format!("item/{}", item.id),
+                &item.id,
+                None,
+                false,
+                0,
+            );
+        }
         if let Some(panic) = &actor.panic {
             if panic.effects_end.is_some() {
                 if let Some(entry) = self.panic_entry(&panic.effect) {
@@ -210,7 +223,7 @@ impl Engine {
             ..
         } = effect.as_ref()
         {
-            let protected = unless_wearing.iter().any(|g| actor.wearing.contains(g));
+            let protected = unless_wearing.iter().any(|g| self.wears(actor, *g));
             if !protected && depth < MAX_DEPTH {
                 if let Some(entry) = self.condition(condition) {
                     let label = format!("{label} → condition/{condition}");
@@ -318,7 +331,7 @@ pub fn extra_pushes(effects: &[ActiveEffect], roll: RollMatch) -> u8 {
         .sum()
 }
 
-fn matches_roll(target: &crate::data::effects::ModTarget, roll: RollMatch) -> bool {
+pub(crate) fn matches_roll(target: &crate::data::effects::ModTarget, roll: RollMatch) -> bool {
     let skill_roll = roll.skill.is_some();
     (skill_roll
         && roll

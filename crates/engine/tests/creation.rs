@@ -6,8 +6,9 @@ mod common;
 use std::collections::BTreeMap;
 
 use common::*;
-use xenoforge_engine::creation::{CreationStep, Draft};
+use xenoforge_engine::creation::{CreationStep, Draft, GearChoice, GearRoll};
 use xenoforge_engine::dice::ScriptedDice;
+use xenoforge_engine::state::Place;
 
 fn map(pairs: &[(&str, u8)]) -> BTreeMap<String, u8> {
     pairs.iter().map(|(k, v)| ((*k).to_owned(), *v)).collect()
@@ -30,9 +31,15 @@ fn nat() -> Draft {
         name: "Nat".into(),
         appearance: "Wild hair".into(),
         agenda: "Never let your friends down.".into(),
+        // A cutting torch and a compression suit [p. 33].
+        gear: vec![gear(0, 0), gear(2, 1)],
         signature_item: "Tool belt".into(),
         ..Draft::default()
     }
+}
+
+fn gear(line: u8, option: u8) -> GearChoice {
+    GearChoice { line, option }
 }
 
 fn codes(draft: &Draft) -> Vec<String> {
@@ -188,4 +195,86 @@ fn starting_cash() {
     assert_eq!(roll("kid", &[4]), 4);
     assert_eq!(roll("roughneck", &[4]), 400);
     assert_eq!(roll("company_agent", &[4, 5]), 900);
+}
+
+/// p. 33: Nat starts with a cutting torch and a compression suit, carried;
+/// the torch has a power supply and is full, so it gets no reloads (F-61).
+#[test]
+fn book_p33_nat_starting_gear() {
+    let t = Table::new(xenoforge_engine::state::Mode::Campaign);
+    let actor = t.engine.creation_actor(&nat());
+    let items: Vec<_> = actor
+        .items
+        .iter()
+        .map(|p| (p.item.as_deref().unwrap_or(""), p.count, p.place, p.reloads))
+        .collect();
+    assert_eq!(
+        items,
+        [
+            ("cutting_torch", 1, Place::Carried, 0),
+            ("irc_mk50_compression_suit", 1, Place::Carried, 0),
+        ]
+    );
+    let torch = &actor.items[0];
+    assert_eq!(torch.supply, Some(5), "full Power Supply 5 [p. 135]");
+    assert_ne!(actor.items[0].uid, actor.items[1].uid);
+}
+
+/// Two items from two different lines of the career (F-60).
+#[test]
+fn starting_gear_rules() {
+    let mut d = nat();
+    d.gear = vec![gear(0, 0)];
+    assert_eq!(codes(&d), ["gear_count"]);
+    d.gear = vec![gear(0, 0), gear(0, 1)];
+    assert_eq!(codes(&d), ["gear_line"]);
+    d.gear = vec![gear(0, 0), gear(4, 0)];
+    assert_eq!(codes(&d), ["gear_unknown"]);
+    d.gear = vec![gear(0, 0), gear(1, 2)];
+    assert_eq!(codes(&d), ["gear_unknown"]);
+    let t = Table::new(xenoforge_engine::state::Mode::Campaign);
+    let problem = &t.engine.check_creation(&d)[0];
+    assert_eq!(
+        (problem.step, problem.value, problem.limit),
+        (CreationStep::Gear, Some(2), Some(4))
+    );
+}
+
+/// A firearm comes with two full reloads (F-61) [p. 33].
+#[test]
+fn starting_firearm_has_two_reloads() {
+    let t = Table::new(xenoforge_engine::state::Mode::Campaign);
+    let mut d = nat();
+    d.career = Some("officer".into());
+    d.gear = vec![gear(0, 0), gear(1, 1)];
+    let actor = t.engine.creation_actor(&d);
+    assert_eq!(actor.items[0].item.as_deref(), Some("m4a3_service_pistol"));
+    assert_eq!(actor.items[0].reloads, 2);
+    assert_eq!(actor.items[1].item.as_deref(), Some("binoculars"));
+    assert_eq!(actor.items[1].reloads, 0);
+}
+
+/// "D6 doses" are rolled when finishing, not before (F-60) [p. 47].
+#[test]
+fn dice_quantities_are_rolled_at_the_end() {
+    let t = Table::new(xenoforge_engine::state::Mode::Campaign);
+    let mut d = nat();
+    d.career = Some("medic".into());
+    d.gear = vec![gear(1, 0), gear(3, 1)];
+    let mut actor = t.engine.creation_actor(&d);
+    assert_eq!(actor.items.len(), 1, "only the hand radio so far");
+    let mut dice = ScriptedDice::new([4]);
+    let rolls = t.engine.roll_start_gear(&mut actor, &d, &mut dice);
+    assert_eq!(
+        rolls,
+        [GearRoll {
+            item: "naproleve".into(),
+            dice: vec![4]
+        }]
+    );
+    let doses = actor
+        .items
+        .iter()
+        .find(|p| p.item.as_deref() == Some("naproleve"));
+    assert_eq!(doses.map(|p| p.count), Some(4));
 }

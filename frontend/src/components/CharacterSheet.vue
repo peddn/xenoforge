@@ -2,17 +2,28 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import GearPanel from '@/components/GearPanel.vue'
 import XFacts from '@/ui/XFacts.vue'
 import { useRulesStore } from '@/stores/rules'
 
 // The character sheet to read, in the order of the printed one [p. 389]:
-// texts, attributes with their skills, talents. Gear follows with 2c.
+// texts, attributes with their skills, talents, gear. Where items can be
+// moved or added, `sendItem` sends the commands.
 const props = defineProps({
   sheet: { type: Object, required: true },
   actor: { type: Object, required: true },
   // Full Health from the server, if known.
   healthMax: { type: Number, default: null },
   startCash: { type: Object, default: null },
+  // Quantities of starting gear as rolled (F-60).
+  startGear: { type: Array, default: () => [] },
+  // How much the character carries, from the server [p. 34].
+  encumbrance: { type: Object, default: null },
+  gearMove: { type: Boolean, default: false },
+  gearAdd: { type: Boolean, default: false },
+  // Characters to hand items to.
+  others: { type: Array, default: () => [] },
+  sendItem: { type: Function, default: undefined },
   // Names of the team's characters; without them buddy and rival are left out.
   names: { type: Object, default: null },
   // Without the texts, where they are edited next to the sheet.
@@ -40,6 +51,16 @@ const facts = computed(() => {
       t('sheet.startCash'),
       t('sheet.cashRolled', { amount: props.startCash.amount, dice: props.startCash.dice.join(', ') }),
     ])
+  }
+  if (props.startGear.length) {
+    const rolled = props.startGear.map((roll) =>
+      t('sheet.gearRolled', {
+        name: rules.name(roll.item),
+        count: roll.dice.reduce((a, b) => a + b, 0),
+        dice: roll.dice.join(', '),
+      }),
+    )
+    list.push([t('sheet.startGear'), rolled.join('; ')])
   }
   return list
 })
@@ -93,5 +114,13 @@ const talentText = (id) => {
         </li>
       </ul>
     </div>
+    <GearPanel
+      :actor="actor"
+      :encumbrance="encumbrance"
+      :can-move="gearMove"
+      :can-add="gearAdd"
+      :others="others"
+      :send="sendItem"
+    />
   </div>
 </template>

@@ -9,6 +9,7 @@ const FILES = [
   'careers',
   'talents',
   'actions',
+  'gear',
   'traumas',
   'conditions',
   'critical-injuries',

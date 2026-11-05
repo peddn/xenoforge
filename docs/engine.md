@@ -34,15 +34,28 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 | `reveal_android` | Verdeckten Android enthüllen: offen; die Spielleitung wählt die Menschen in der Nähe, sie bekommen Stress +1 | 103, A-14 |
 | `set_story_points` | Story Points eines Spielers setzen (nur Cinematic), etwa Mitgebrachte | 61, 383, F-53 |
 | `end_session` | Zähler zurücksetzen; danach die Trauma-Probe | 104 |
+| `add_item` | Gegenstand geben: aus dem Katalog (tragbar, F-63) oder frei mit Name und Gewicht; mehr als die Höchstlast geht nicht | 33–34, 118 |
+| `move_item` | Gegenstand mitnehmen, anziehen (nur Anzüge, einer auf einmal), verstauen, ablegen oder einem anderen Charakter geben, wahlweise nur einen Teil des Stapels | 33–34, 98 |
 
 ## Ablauf einer Fertigkeitsprobe
 
-1. **Pool bauen:** Wer Broken ist, kann keine Fertigkeitsprobe machen, der Death Roll bleibt erlaubt [S. 98–99]. Attribut + Fertigkeit + Modifikationen (Ausrüstung und Schwierigkeit vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit, bestehen die Probe ohne Wurf (Breakthrough) oder geben ihren Lage-Bonus (A-10): Talente wie Stealthy wirken nur, wenn sie für den Wurf angekreuzt sind, und nur bei passender Fertigkeit. Die Vorschau nennt alle passenden; verlangt ein Effekt die Probe, bietet die Engine sie wie Stoic vorher an.
+1. **Pool bauen:** Wer Broken ist, kann keine Fertigkeitsprobe machen, der Death Roll bleibt erlaubt [S. 98–99]. Attribut + Fertigkeit + Modifikationen (Schwierigkeit und freier Ausrüstungsbonus vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle, gewählte Gegenstände). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit, bestehen die Probe ohne Wurf (Breakthrough) oder geben ihren Lage-Bonus (A-10): Talente wie Stealthy wirken nur, wenn sie für den Wurf angekreuzt sind, und nur bei passender Fertigkeit. Die Vorschau nennt alle passenden; verlangt ein Effekt die Probe, bietet die Engine sie wie Stoic vorher an.
 2. **Würfeln.** Grundwürfel zuerst, dann Stresswürfel.
 3. **Facehugger** auf Stresswürfeln: Mit The Long Haul fragt die Engine, ob es eingesetzt wird. Sonst gibt es keinen Push mehr, und es folgt sofort der Panikwurf; ab 10 ist die Aktion abgebrochen (F-44 für 1–9).
 4. **Push oder Story Point anbieten**, solange erlaubt. Ein Push kostet zuerst Stress +1, dann bleiben die 6er liegen, ein neuer Stresswürfel kommt dazu, und der Rest wird neu geworfen (F-20).
 5. **Ersatzfertigkeit:** Mit Authority wird COMMAND gewürfelt, samt den Modifikatoren für COMMAND; die Aktion bleibt die angefragte Fertigkeit (MANIPULATION) mit deren Gegenwurf, Folgen und Stunts (F-49). Die Stunt-Listen selbst kommen mit Phase 2.
 6. **Ergebnis:** ab einer 6 Erfolg, jede weitere 6 ein Stunt; beim vergleichenden Wurf zählt die Differenz, Gleichstand verliert der Angreifer [S. 64, 70]. Danach laufen Auslöser wie Crotch hit, und eine COMMAND-Probe zum Beenden einer Panik wirkt (F-36).
+
+## Ausrüstung
+
+Jeder Charakter hat eine Liste von Gegenständen (`Possession`) mit fester Nummer, Anzahl, Ort (dabei, angezogen, verstaut), Magazinen und Vorrat [S. 33]. Gegenstände kommen aus `gear.json` oder sind frei mit Name und Gewicht.
+
+- **Traglast** (`Engine::encumbrance`) in Vierteln eines normalen Gegenstands: was dabei oder angezogen ist, dazu Nahrung und Wasser je angefangene 4 Vorrat (F-69); Verstautes und Magazine zählen nicht (F-70). Normal sind STRENGTH × 2, Pack Mule verdoppelt; mehr als STRENGTH × 4 geht nie (F-62) [S. 34, 79]. Wer über der normalen Last liegt, ist überladen; die MOBILITY-Probe dafür kommt mit dem Kampf. Wer, etwa nach weniger STRENGTH, über der Höchstlast liegt, kann noch ablegen und verstauen, aber nichts dazunehmen.
+- **Anziehen:** nur Anzüge, immer einer; aus einem Stapel wird einer abgeteilt. Reservemagazine gehören zum ganzen Stapel und bleiben beim Rest, wenn ein Teil abgeht.
+- **Angezogener Anzug** wirkt von selbst: seine Modifikatoren zählen (Mk.50 −1 auf AGILITY-Proben, F-66), und ein luftdichter schützt vor Zuständen wie Life support offline (F-18).
+- **Gegenstände im Wurf** (F-59): Die Vorschau bietet alles an, was dabei ist und zur Probe passt, mit Wert und Lage. Gewählte Gegenstände (`items` in der Anfrage) zählen je einmal, gleiche Gegenstände zusammen nur einmal (F-71); eine Waffe nur mit ihrer Fertigkeit und höchstens eine. Nur bei Fertigkeitsproben. Das persönliche Medkit ist danach verbraucht (F-68).
+- **Talente:** Pack Mule über die Traglast, Weapon Specialist als Lage-Bonus mit der gewählten Waffe (A-10), Hidden Stash als Hinweis an die Spielleitung.
+- `Engine::check_items` prüft von Hand gesetzte Gegenstände, etwa in einer Korrektur, nach denselben Regeln.
 
 ## Talente als Aktion
 
@@ -52,7 +65,7 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 
 ## Erschaffung
 
-`Engine::check_creation` prüft einen Entwurf (`creation::Draft`) und nennt jedes Problem mit Schritt, Code und Buchseite, in der Reihenfolge des Buchs [S. 27–33]: Karriere; 14 Attributpunkte, je 2 bis 4, das Schlüsselattribut bis 5; 10 Fertigkeitspunkte, Schlüsselfertigkeiten bis 3, andere bis 1; alle Punkte verteilt (F-51); ein Talent der Karriere, ggf. mit Fahrzeug oder Waffe; Name, Aussehen, Agenda und Signature Item, das Androiden nicht brauchen. Androiden bekommen +3 auf zwei verschiedene Attribute (F-50). `creation_actor` baut daraus die Figur mit voller Health und Stresslevel 0, `roll_cash` würfelt das Startgeld der Karriere. Alle Grenzen stehen in `constants.json`.
+`Engine::check_creation` prüft einen Entwurf (`creation::Draft`) und nennt jedes Problem mit Schritt, Code und Buchseite, in der Reihenfolge des Buchs [S. 27–33]: Karriere; 14 Attributpunkte, je 2 bis 4, das Schlüsselattribut bis 5; 10 Fertigkeitspunkte, Schlüsselfertigkeiten bis 3, andere bis 1; alle Punkte verteilt (F-51); ein Talent der Karriere, ggf. mit Fahrzeug oder Waffe; Name, Aussehen, Agenda; zwei Startgegenstände aus zwei verschiedenen Zeilen der Karriere (F-60); das Signature Item, das Androiden nicht brauchen. Androiden bekommen +3 auf zwei verschiedene Attribute (F-50). `creation_actor` baut daraus die Figur mit voller Health, Stresslevel 0 und der Startausrüstung, Schusswaffen mit zwei Magazinen (F-61); `roll_cash` würfelt das Startgeld der Karriere und `roll_start_gear` Mengen wie „W6 Dosen“. Alle Grenzen stehen in `constants.json`.
 
 ## Panik
 
@@ -66,7 +79,7 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 
 ## Effekte und Zeit
 
-- Aktive Quellen sind Traumata, Zustände, Verletzungen und Sperren aus `block`-Operationen. Talente wirken immer. Ein Zustand innerhalb eines Effekts (`condition`) bringt dessen Effekte mit, außer die Figur trägt passende Ausrüstung.
+- Aktive Quellen sind Traumata, Zustände, Verletzungen und Sperren aus `block`-Operationen. Talente und der angezogene Anzug wirken immer. Ein Zustand innerhalb eines Effekts (`condition`) bringt dessen Effekte mit, außer die Figur trägt einen passenden Anzug.
 - Dauern laufen nur mit den Schritten ihrer Einheit ab (Plan 9.1). Ein Tag zählt als vier Schicht-Schritte; „bis zum nächsten Tag“ endet beim Tageswechsel.
 - Periodische Effekte feuern beim passenden Zeitschritt, Freezing nach Kälte: über null täglich, unter null jede Schicht, im All jeden Turn.
 - Verlangt ein Effekt eine Probe, etwa Freezing eine STAMINA-Probe, bietet die Engine passende freiwillige Talente vorher an (Stoic). Wer Broken ist, würfelt nicht; das Ereignis `roll_skipped` und der Hinweis des Zustands gehen an die Spielleitung.
@@ -81,7 +94,8 @@ Die Engine liest die gewählte Option jeder Festlegung aus dem Zustand (`rulings
 | Was | Phase |
 | --- | --- |
 | Konten, Teams, Speichern, echte Zufallsquelle, Würfeln in der Oberfläche | 2 |
-| Initiative, Aktionen pro Runde, Waffen, Personal Safety, leeres Magazin nach Facehugger (S. 61, 96; F-38), Death Rolls mit Fristen | 3 |
+| Verbrauch von Vorräten und Mitteln (Bier, Schnaps, Naproleve, Energie nach dem Einsatz), Geld und Kauf | 2c.2 |
+| Initiative, Aktionen pro Runde, Waffenwerte im Kampf (Schaden, Reichweite, Granatwerfer der M41A, Zielen der XM99A), Überladung beim Laufen, Personal Safety, leeres Magazin nach Facehugger (S. 61, 96; F-38), Death Rolls mit Fristen | 3 |
 | Ruhe pro Turn und Schicht (F-16), Banter, Calming Presence, Counselor, Zeitmodell mit Schichtmarker | 4 |
-| Effekte auf Schiffe und alle an Bord, Fähigkeiten von Modulen | 5 |
+| Effekte auf Schiffe und alle an Bord, Fähigkeiten von Modulen; Fahrzeuge, Power Loader (HEAVY MACHINERY 2), Raketen mit Zielbeschränkung | 5 |
 | Raumkampf-Panik | 6 |

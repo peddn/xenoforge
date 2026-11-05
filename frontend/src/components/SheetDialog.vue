@@ -15,9 +15,10 @@ import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The sheet of a character in the team, for its owner and the game master.
-// The game master can correct values (logged, undoable); the owner chooses
-// buddy and rival among the other characters (F-52) and can leave the team
-// with the character.
+// The game master can correct values (logged, undoable) and gives items; the
+// owner moves, drops and hands over the character's items, chooses buddy and
+// rival among the other characters (F-52) and can leave the team with the
+// character.
 const props = defineProps({ character: { type: Object, required: true } })
 const { t } = useI18n()
 const rules = useRulesStore()
@@ -78,6 +79,20 @@ async function save() {
   }
 }
 
+// Item commands go to the team for this character; true when they went
+// through.
+async function item(command) {
+  error.value = ''
+  try {
+    await team.command({ ...command, actor: String(props.character.id) })
+    await team.refresh()
+    return true
+  } catch (e) {
+    error.value = e.message
+    return false
+  }
+}
+
 async function leave() {
   error.value = ''
   try {
@@ -128,6 +143,11 @@ async function leave() {
         :actor="character.actor"
         :health-max="character.health_max"
         :names="team.characterNames"
+        :encumbrance="character.encumbrance"
+        :gear-move="own || team.view.is_gm"
+        :gear-add="team.view.is_gm"
+        :others="others"
+        :send-item="item"
       />
       <div
         v-if="setsRelations && others.length"

@@ -21,11 +21,12 @@ use crate::data::model::{
 };
 use crate::data::{Id, RuleData};
 use crate::dice::{Dice, Die, throw};
+use crate::inventory::{Destination, ItemOffer, NewItem};
 use crate::panic::{PanicCause, StopReason};
 use crate::roll::{Outcome, RollRequest};
 use crate::state::{
     ActiveSource, Actor, ActorId, ActorKind, Ending, GameState, Mode, Origin, Pending, PendingId,
-    PlayerId, Supply,
+    Place, PlayerId, Supply,
 };
 
 /// The rule engine. It owns the rule data and holds no game state.
@@ -91,6 +92,18 @@ pub enum Command {
     RevealAndroid { actor: ActorId },
     /// End of a game session: resets uses, trauma checks [p. 104].
     EndSession,
+    /// Gives a character an item from the gear catalog or a free one
+    /// [p. 33, 118].
+    AddItem { actor: ActorId, item: NewItem },
+    /// Carries, puts on, stows, drops or hands over an item; with `count`
+    /// only part of a stack [p. 33, 34].
+    MoveItem {
+        actor: ActorId,
+        uid: u32,
+        to: Destination,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        count: Option<u16>,
+    },
 }
 
 /// A source to put on an actor.
@@ -298,6 +311,33 @@ pub enum Event {
         actor: ActorId,
         action: Id,
     },
+    ItemAdded {
+        actor: ActorId,
+        uid: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        item: Option<Id>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
+        count: u16,
+        place: Place,
+    },
+    ItemMoved {
+        actor: ActorId,
+        uid: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        item: Option<Id>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
+        to: Destination,
+        count: u16,
+    },
+    /// A single-use item counted in a roll and is gone (F-68).
+    ItemUsedUp {
+        actor: ActorId,
+        uid: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        item: Option<Id>,
+    },
 }
 
 /// A roll as it would be built, see [`Engine::preview`].
@@ -312,6 +352,8 @@ pub struct Preview {
     pub max_pushes: u8,
     /// Optional talents that fit this roll.
     pub talents: Vec<Id>,
+    /// Carried items that help with this roll (F-59).
+    pub items: Vec<ItemOffer>,
 }
 
 /// Dice for previews: building a pool never throws.
@@ -408,8 +450,38 @@ impl Engine {
             }
             _ => Vec::new(),
         };
+        let skill_roll = matches!(request.kind, crate::roll::RollKind::Skill { .. });
+        let roller = request.actor.clone();
         ctx.build(request, crate::roll::Role::Single, None)?;
-        match ctx.events.into_iter().next() {
+        // Items for the skill and attribute actually rolled, from the actor
+        // before anything was used up.
+        let started = ctx
+            .events
+            .iter()
+            .position(|e| matches!(e, Event::RollStarted { .. }));
+        let items = match (&roller, started.map(|i| &ctx.events[i]), skill_roll) {
+            (
+                Some(actor),
+                Some(Event::RollStarted {
+                    skill, attribute, ..
+                }),
+                true,
+            ) => {
+                let a = state
+                    .actor(actor)
+                    .ok_or_else(|| RuleError::UnknownActor(actor.clone()))?;
+                self.item_offers(
+                    a,
+                    RollMatch {
+                        skill: skill.as_deref(),
+                        attribute: attribute.as_deref(),
+                        kind: None,
+                    },
+                )
+            }
+            _ => Vec::new(),
+        };
+        match started.map(|i| ctx.events.swap_remove(i)) {
             Some(Event::RollStarted {
                 skill,
                 attribute,
@@ -428,6 +500,7 @@ impl Engine {
                 modifications,
                 max_pushes,
                 talents,
+                items,
             }),
             _ => Err(RuleError::NotAllowed("no preview for this roll".into())),
         }
@@ -755,6 +828,13 @@ impl<'a> Ctx<'a> {
                 Ok(())
             }
             Command::EndSession => self.end_session(),
+            Command::AddItem { actor, item } => self.add_item(&actor, &item),
+            Command::MoveItem {
+                actor,
+                uid,
+                to,
+                count,
+            } => self.move_item(&actor, uid, to, count),
         }
     }
 

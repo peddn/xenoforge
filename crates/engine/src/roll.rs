@@ -70,6 +70,9 @@ pub struct RollRequest {
     /// or Breakthrough.
     #[serde(default)]
     pub talents: Vec<Id>,
+    /// Carried items chosen for a skill roll, by number (F-59).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub items: Vec<u32>,
 }
 
 impl RollRequest {
@@ -82,6 +85,7 @@ impl RollRequest {
             action: None,
             purpose: Purpose::Plain,
             talents: Vec::new(),
+            items: Vec::new(),
         }
     }
 
@@ -104,6 +108,7 @@ impl RollRequest {
             action: None,
             purpose: Purpose::Plain,
             talents: Vec::new(),
+            items: Vec::new(),
         }
     }
 
@@ -529,6 +534,18 @@ impl Ctx<'_> {
                     + active::extra_pushes(&self.effects(id)?, matcher);
             }
         }
+        // Gear chosen for the roll; a single-use item is gone afterwards
+        // (F-59, F-68).
+        let mut used_up = Vec::new();
+        if !request.items.is_empty() {
+            let (Some(a), true) = (&actor, is_skill) else {
+                return Err(RuleError::NotAllowed(
+                    "items help with skill rolls only (F-59)".into(),
+                ));
+            };
+            modifications.extend(engine.item_modifications(a, &request.items, matcher)?);
+            used_up = engine.single_use(a, &request.items);
+        }
         // Saturating: absurd inputs must not overflow.
         base = modifications
             .iter()
@@ -546,7 +563,7 @@ impl Ctx<'_> {
         let id = self.next_pending();
         self.emit(Event::RollStarted {
             roll: id,
-            actor: actor_id,
+            actor: actor_id.clone(),
             skill: skill.clone(),
             attribute: attribute.clone(),
             base_dice,
@@ -555,6 +572,11 @@ impl Ctx<'_> {
             modifications,
             max_pushes,
         });
+        if let Some(actor) = &actor_id {
+            for uid in used_up {
+                self.use_up(actor, uid)?;
+            }
+        }
         Ok(RollState {
             id,
             request,

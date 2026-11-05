@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import XButton from '@/ui/XButton.vue'
 import XFacts from '@/ui/XFacts.vue'
 import XField from '@/ui/XField.vue'
-import { cashFormula, problemText } from '@/labels'
+import { cashFormula, problemText, weightText } from '@/labels'
 import { useCharactersStore } from '@/stores/characters'
 import { useRulesStore } from '@/stores/rules'
 
@@ -29,7 +29,7 @@ const STEPS = [
   { id: 'name', checks: ['name', 'appearance'], page: 30 },
   { id: 'agenda', checks: ['agenda'], page: 31 },
   { id: 'relations', checks: [], page: 31 },
-  { id: 'gear', checks: ['signature_item'], page: 33 },
+  { id: 'gear', checks: ['gear', 'signature_item'], page: 33 },
   { id: 'cash', checks: [], page: 39 },
   { id: 'finish', checks: [], page: 30 },
 ]
@@ -46,6 +46,7 @@ const EMPTY = {
   name: '',
   appearance: '',
   agenda: '',
+  gear: [],
   signature_item: '',
 }
 // A copy to edit; structuredClone refuses Vue's reactive proxies.
@@ -116,7 +117,28 @@ function careerChanged() {
     draft.value.talent = null
     draft.value.talent_param = null
   }
+  // The starting items are lines of the career's own list.
+  draft.value.gear = []
 }
+
+// Starting gear: one item each from two lines of the career's list (F-60).
+// Choosing again takes it back; the number allowed comes from the rules.
+const chosenOption = (line) => draft.value.gear.find((g) => g.line === line)?.option
+function toggleGear(line, option) {
+  const gear = draft.value.gear
+  const i = gear.findIndex((g) => g.line === line)
+  if (i >= 0 && gear[i].option === option) gear.splice(i, 1)
+  else if (i >= 0) gear[i].option = option
+  else if (gear.length < c('start_gear_items')) gear.push({ line, option })
+}
+const lineFull = (line) => chosenOption(line) == null && draft.value.gear.length >= c('start_gear_items')
+function startItemText(start) {
+  const name = rules.name(start.item)
+  if (start.dice) return t('wizard.gearDice', { dice: `${start.dice > 1 ? start.dice : ''}${t('wizard.die')}`, name })
+  if (start.count > 1) return t('wizard.gearCount', { count: start.count, name })
+  return name
+}
+const startItemWeight = (start) => weightText(rules.entry('gear', start.item)?.weight)
 
 function addLook(text) {
   const now = draft.value.appearance.trim()
@@ -425,6 +447,41 @@ async function finish() {
     </template>
 
     <template v-else-if="step.id === 'gear'">
+      <p>{{ t('wizard.gearChosen', { chosen: draft.gear.length, of: c('start_gear_items') }) }}</p>
+      <div
+        class="grid gap-2"
+        data-test="start-gear"
+      >
+        <div
+          v-for="(line, i) in career?.gear ?? []"
+          :key="i"
+          class="flex flex-wrap items-center gap-2"
+        >
+          <span class="text-sm text-dim">{{ i + 1 }}.</span>
+          <template
+            v-for="(start, option) in line"
+            :key="option"
+          >
+            <span
+              v-if="option > 0"
+              class="text-sm text-dim uppercase"
+            >{{ t('wizard.or') }}</span>
+            <XButton
+              size="small"
+              :aria-pressed="chosenOption(i) === option"
+              :disabled="lineFull(i)"
+              :title="t('gear.weight', { weight: startItemWeight(start) })"
+              :data-test="`gear-${i}-${option}`"
+              @click="toggleGear(i, option)"
+            >
+              {{ startItemText(start) }}
+            </XButton>
+          </template>
+        </div>
+      </div>
+      <p class="text-dim">
+        {{ t('wizard.gearExtras') }}
+      </p>
       <p
         v-if="draft.android"
         class="text-dim"

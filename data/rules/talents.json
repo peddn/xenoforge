@@ -253,7 +253,9 @@
     {
       "id": "hidden_stash",
       "page": 78,
-      "later": "gear"
+      "effects": [
+        { "kind": "hint", "text": "hidden_stash.hint", "tier": "info" }
+      ]
     },
     {
       "id": "hothead",
@@ -306,7 +308,9 @@
     {
       "id": "pack_mule",
       "page": 79,
-      "later": "gear"
+      "effects": [
+        { "kind": "modifier", "applies_to": { "stats": ["carry_capacity"] }, "change": { "multiply": 2 } }
+      ]
     },
     {
       "id": "quick_draw",
@@ -378,9 +382,11 @@
     {
       "id": "weapon_specialist",
       "page": 79,
-      "later": "gear",
       "parameter": "weapon",
-      "repeatable": true
+      "repeatable": true,
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["close_combat", "ranged_combat"] }, "change": { "add": 2 }, "when": "weapon_specialist.when" }
+      ]
     },
     {
       "id": "zero_g_training",

@@ -4,15 +4,16 @@ import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
 import XField from '@/ui/XField.vue'
-import { modsText } from '@/labels'
+import { itemName, modsText } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The content of the roll dialog (plan 6.1). The dice count comes from the server's
 // preview; this component computes no rules. The difficulty is the game
 // master's (A-08). Talents with a situational bonus are ticked by the player
-// (A-10); talents that grant an action, such as Analysis, are used from here
-// too [p. 74–77].
+// (A-10), and so are the carried items the server offers for the roll; a
+// free gear bonus is the game master's, for improvised gear (F-59). Talents
+// that grant an action, such as Analysis, are used from here too [p. 74–77].
 const props = defineProps({ character: { type: Object, required: true } })
 const emit = defineEmits(['done'])
 const { t } = useI18n()
@@ -24,8 +25,12 @@ const difficulty = ref('difficulty_average')
 const gear = ref(0)
 const helpers = ref(0)
 const talents = ref([])
+const items = ref([])
 const note = ref('')
 const preview = ref(null)
+// The last talents and items the server offered stay visible when a preview
+// fails, so a choice that no longer fits can be taken back.
+const offers = ref({ talents: [], items: [] })
 const error = ref('')
 const target = ref(null)
 let timer = null
@@ -50,7 +55,7 @@ const request = computed(() => {
   const modifiers = []
   const level = team.view.is_gm && rules.difficulties().find((d) => d.id === difficulty.value)
   if (level && level.value !== 0) modifiers.push({ source: level.id, value: level.value })
-  if (Number(gear.value)) modifiers.push({ source: 'gear', value: Number(gear.value) })
+  if (team.view.is_gm && Number(gear.value)) modifiers.push({ source: 'gear', value: Number(gear.value) })
   const kinds = { skill: { skill: { skill: id } }, attribute: { attribute: { attribute: id } }, death: 'death' }
   return {
     actor: String(props.character.id),
@@ -58,8 +63,13 @@ const request = computed(() => {
     modifiers,
     helpers: Number(helpers.value) || 0,
     talents: talents.value,
+    items: items.value,
   }
 })
+
+// An offered item with its name from the character's own list.
+const possession = (uid) => (props.character.actor?.items ?? []).find((p) => p.uid === uid) ?? {}
+const offerText = (offer) => `${itemName(possession(offer.uid), rules)} ${offer.value >= 0 ? '+' : ''}${offer.value}`
 
 watch(
   request,
@@ -68,9 +78,13 @@ watch(
     timer = setTimeout(async () => {
       try {
         preview.value = await team.preview(request.value)
+        offers.value = { talents: preview.value.talents, items: preview.value.items ?? [] }
         // Assign only on a change: a new array would start the next preview.
         const offered = talents.value.filter((id) => preview.value.talents.includes(id))
         if (offered.length !== talents.value.length) talents.value = offered
+        const uids = (preview.value.items ?? []).map((o) => o.uid)
+        const chosen = items.value.filter((uid) => uids.includes(uid))
+        if (chosen.length !== items.value.length) items.value = chosen
         error.value = ''
       } catch (e) {
         preview.value = null
@@ -80,6 +94,12 @@ watch(
   },
   { immediate: true, deep: true },
 )
+
+// Ticks belong to one roll: another skill starts without them.
+watch(what, () => {
+  talents.value = []
+  items.value = []
+})
 
 async function send(command) {
   try {
@@ -142,7 +162,10 @@ function perform(action) {
           </option>
         </select>
       </XField>
-      <XField :label="t('roll.gear')">
+      <XField
+        v-if="team.view.is_gm"
+        :label="t('roll.gear')"
+      >
         <input
           v-model="gear"
           type="number"
@@ -173,11 +196,11 @@ function perform(action) {
       {{ t('roll.difficultyByGm') }}
     </p>
     <div
-      v-if="preview?.talents.length"
+      v-if="offers.talents.length"
       class="flex flex-wrap items-center gap-2"
     >
       <label
-        v-for="id in preview.talents"
+        v-for="id in offers.talents"
         :key="id"
         class="flex flex-wrap items-center gap-2"
       >
@@ -192,6 +215,30 @@ function perform(action) {
           v-if="situation(id)"
           class="text-dim"
         >– {{ rules.text(situation(id)) }}</span>
+      </label>
+    </div>
+    <div
+      v-if="offers.items.length"
+      class="flex flex-wrap items-center gap-2"
+      data-test="items"
+    >
+      <span class="text-sm text-dim uppercase">{{ t('roll.items') }}</span>
+      <label
+        v-for="offer in offers.items"
+        :key="offer.uid"
+        class="flex flex-wrap items-center gap-2"
+      >
+        <input
+          v-model="items"
+          type="checkbox"
+          :value="offer.uid"
+          :data-test="`roll-item-${offer.uid}`"
+        >
+        {{ offerText(offer) }}<template v-if="offer.weapon"> ({{ t('roll.weapon') }})</template>
+        <span
+          v-if="offer.when"
+          class="text-dim"
+        >– {{ rules.text(offer.when) }}</span>
       </label>
     </div>
     <p

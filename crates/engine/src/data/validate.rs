@@ -5,8 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use super::effects::{
-    Blocked, Change, Effect, Lasts, ModTarget, Modified, Op, ReplaceWith, Replaceable, RollSpec,
-    TriggerEvent,
+    ActorStat, Blocked, Change, Effect, Lasts, ModTarget, Modified, Op, ReplaceWith, Replaceable,
+    RollSpec, TriggerEvent,
 };
 use super::model::{DamageTable, RollRange, Ruling, RulingSwitch};
 use super::{Data, Entry, LANGUAGES, Page};
@@ -28,12 +28,17 @@ pub const REQUIRED_CONSTANTS: &[&str] = &[
     "creation_key_skill_max",
     "creation_other_skill_max",
     "creation_skill_points",
+    "carry_factor",
+    "carry_max_factor",
     "gear_bonus_max",
     "help_max",
     "panic_effect_from",
     "shifts_per_day",
+    "start_gear_items",
+    "start_reloads",
     "story_points_max",
     "supply_dice_max",
+    "supply_per_item",
 ];
 
 /// Names of the engine functions that `special` operations may call.
@@ -268,17 +273,27 @@ impl<'a> Checker<'a> {
                         self.problem(at, "a situation applies to skill rolls only");
                     }
                 }
-                let ship_only = applies_to.skills.is_empty()
+                // Ship stats scale; of a character's values only the
+                // carrying capacity, and it only multiplies (Pack Mule).
+                let carry = applies_to.stats.contains(&ActorStat::CarryCapacity);
+                let scalable = applies_to.skills.is_empty()
                     && applies_to.based_on.is_empty()
                     && applies_to.rolls.is_empty()
-                    && applies_to.stats.is_empty();
+                    && applies_to
+                        .stats
+                        .iter()
+                        .all(|s| *s == ActorStat::CarryCapacity);
                 match change {
                     Change::Add(0) => self.problem(at, "adding 0 changes nothing"),
                     Change::Multiply(n) | Change::Divide(n) if *n < 2 => {
                         self.problem(at, "factor must be at least 2")
                     }
-                    Change::Multiply(_) | Change::Divide(_) if !ship_only => {
-                        self.problem(at, "only ship stats can be multiplied or divided")
+                    Change::Multiply(_) | Change::Divide(_) if !scalable => self.problem(
+                        at,
+                        "only ship stats and carrying capacity can be multiplied or divided",
+                    ),
+                    Change::Add(_) | Change::Divide(_) if carry => {
+                        self.problem(at, "carrying capacity is only multiplied")
                     }
                     _ => {}
                 }
@@ -439,6 +454,9 @@ impl<'a> Checker<'a> {
         for career in &rules.careers {
             self.career(career);
         }
+        for item in &rules.gear {
+            self.item(item);
+        }
         for talent in &rules.talents {
             let at = format!("talents/{}", talent.id);
             if let Some(career) = &talent.career {
@@ -597,6 +615,65 @@ impl<'a> Checker<'a> {
             for id in ids {
                 self.require_key(&at, &format!("{}.{kind}.{id}", career.id));
             }
+        }
+        // Four lines of "A or B" [p. 39–55].
+        if career.gear.len() != 4 {
+            self.problem(&at, "a career has four lines of starting gear");
+        }
+        for start in career.gear.iter().flatten() {
+            match rules.gear.iter().find(|i| i.id == start.item) {
+                Some(item) if item.weight.is_some() => {}
+                Some(_) => self.problem(&at, format!("\"{}\" cannot be carried", start.item)),
+                None => self.problem(&at, format!("unknown item \"{}\"", start.item)),
+            }
+            if start.count.is_some() && start.dice.is_some() {
+                self.problem(&at, format!("\"{}\": count or dice, not both", start.item));
+            }
+        }
+    }
+
+    /// An item: weapons roll CLOSE or RANGED COMBAT, own skill levels and
+    /// vehicle weapons exist, and effects are modifiers only (F-59).
+    fn item(&mut self, item: &crate::data::model::Item) {
+        let rules = &self.data.rules;
+        let at = format!("gear/{}", item.id);
+        if let Some(weapon) = &item.weapon {
+            if !matches!(weapon.skill.as_str(), "close_combat" | "ranged_combat") {
+                self.problem(&at, "a weapon uses CLOSE COMBAT or RANGED COMBAT");
+            }
+            if weapon.reloads && item.supply.is_some() {
+                self.problem(&at, "a weapon with a power supply takes no reloads (F-61)");
+            }
+        }
+        for skill in item.skills.keys() {
+            self.reference(&at, "skill", skill);
+        }
+        if let Some(vehicle) = &item.vehicle {
+            for id in &vehicle.weapons {
+                let armed = rules.gear.iter().any(|i| i.id == *id && i.weapon.is_some());
+                if !armed {
+                    self.problem(&at, format!("\"{id}\" is no weapon"));
+                }
+            }
+        }
+        if item
+            .effects
+            .iter()
+            .any(|e| !matches!(e, Effect::Modifier { .. }))
+        {
+            self.problem(&at, "items have modifiers only");
+        }
+        // A suit's modifiers count by themselves while worn; a situation
+        // to tick would never be offered.
+        let situational = item
+            .effects
+            .iter()
+            .any(|e| matches!(e, Effect::Modifier { when: Some(_), .. }));
+        if item.armor.is_some() && situational {
+            self.problem(&at, "a suit's modifiers need no situation");
+        }
+        if item.single_use && item.effects.is_empty() {
+            self.problem(&at, "single use needs a bonus to use up (F-68)");
         }
     }
 

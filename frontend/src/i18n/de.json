@@ -69,7 +69,54 @@
     "editTexts": "Texte bearbeiten",
     "covert": "Verdeckt: gibt sich als Mensch aus",
     "covertShort": "verdeckt",
-    "open": "offen"
+    "open": "offen",
+    "startGear": "Startausrüstung gewürfelt",
+    "gearRolled": "{name} × {count} (gewürfelt: {dice})"
+  },
+  "gear": {
+    "title": "Ausrüstung",
+    "load": "Traglast {carried} von {normal}, überladen bis {max}",
+    "overloaded": "Überladen",
+    "weight": "Gewicht {weight}",
+    "bonus": "Bonus {bonus}",
+    "damage": "Schaden {damage}",
+    "range": {
+      "engaged": "Nahkampf",
+      "short": "kurz",
+      "medium": "mittel",
+      "long": "weit",
+      "extreme": "extrem"
+    },
+    "armor": "Panzerung {rating}",
+    "reloads": "kein Magazin | 1 Magazin | {n} Magazine",
+    "supply": {
+      "air": "Luft {left}/{max}",
+      "power": "Energie {left}/{max}"
+    },
+    "place": {
+      "carried": "dabei",
+      "worn": "angezogen",
+      "stowed": "verstaut"
+    },
+    "to": {
+      "carried": "Mitnehmen",
+      "worn": "Anziehen",
+      "stowed": "Verstauen"
+    },
+    "toCharacter": "An {name} geben",
+    "moveTo": "Bewegen …",
+    "count": "Anzahl",
+    "drop": "Ablegen",
+    "dropConfirm": "{name} ablegen? Es ist dann weg.",
+    "add": "Gegenstand geben",
+    "fromCatalog": "Aus dem Katalog",
+    "free": "Frei",
+    "search": "Suchen",
+    "name": "Name",
+    "weightLabel": "Gewicht",
+    "where": "Wo",
+    "addGo": "Hinzufügen",
+    "reloadsLabel": "Magazine"
   },
   "join": {
     "title": "Einladung",
@@ -102,9 +149,11 @@
     "gear": "Ausrüstung",
     "helpers": "Helfer",
     "preview": "{base} Grundwürfel, {stress} Stresswürfel",
-    "difficultyByGm": "Eine Schwierigkeit legt die Spielleitung fest: Sie löst den Wurf dann für deinen Charakter aus.",
+    "difficultyByGm": "Eine Schwierigkeit oder einen Bonus für improvisierte Ausrüstung legt die Spielleitung fest: Sie löst den Wurf dann für deinen Charakter aus.",
     "talentActions": "Talent einsetzen",
-    "target": "Ziel"
+    "target": "Ziel",
+    "items": "Gegenstände",
+    "weapon": "Waffe"
   },
   "decision": {
     "title": "Entscheidung",
@@ -268,7 +317,17 @@
     "story_point_awarded": "{player} bekommt einen Story Point",
     "member_left": "{name} verlässt das Team",
     "member_removed": "{name} ist nicht mehr im Team",
-    "android_revealed": "{actor} ist ein Android"
+    "android_revealed": "{actor} ist ein Android",
+    "item_added": "{actor} bekommt {item} × {count}",
+    "item_moved": "{actor}: {item} × {count} – {to}",
+    "item_used_up": "{actor}: {item} verbraucht",
+    "to": {
+      "carried": "mitgenommen",
+      "worn": "angezogen",
+      "stowed": "verstaut",
+      "dropped": "abgelegt"
+    },
+    "toCharacter": "an {name} gegeben"
   },
   "about": {
     "title": "Über Xenoforge",
@@ -291,7 +350,7 @@
       "name": "Name und Aussehen",
       "agenda": "Agenda",
       "relations": "Buddy und Rival",
-      "gear": "Signature Item",
+      "gear": "Ausrüstung",
       "cash": "Startgeld",
       "finish": "Abschluss"
     },
@@ -303,7 +362,7 @@
       "name": "Ein Name und ein paar Stichworte zum Aussehen. Die Vorschläge stammen aus dem Buch; du kannst auch Eigenes schreiben.",
       "agenda": "Was dein Charakter erreichen will. Nur du und die Spielleitung sehen die Agenda; du kannst sie später ändern.",
       "relations": "Buddy und Rival sind andere Spielercharaktere. Du wählst sie im Team, wenn die anderen dabei sind; beide sind freiwillig.",
-      "gear": "Die Ausrüstung der Karriere kommt mit dem Ausrüstungskatalog in die App. Das Signature Item ist ein kleiner persönlicher Gegenstand.",
+      "gear": "Wähle zwei Gegenstände aus zwei verschiedenen Zeilen der Karriere, je einen. Das Signature Item ist ein kleiner persönlicher Gegenstand.",
       "cash": "Startgeld deiner Karriere: {formula}. Der Server würfelt es beim Fertigstellen.",
       "finish": "Health entspricht der STÄRKE, der Stresslevel beginnt bei 0. Fertigstellen macht den Entwurf spielbar; danach ändern sich die Werte nur im Spiel."
     },
@@ -340,10 +399,18 @@
       "name_missing": "Der Charakter braucht einen Namen.",
       "appearance_missing": "Beschreibe das Aussehen in ein paar Worten.",
       "agenda_missing": "Lege eine persönliche Agenda fest.",
-      "signature_item_missing": "Wähle ein Signature Item."
+      "signature_item_missing": "Wähle ein Signature Item.",
+      "gear_count": "{value} von {limit} Startgegenständen gewählt.",
+      "gear_line": "Zeile {value}: nur ein Gegenstand pro Zeile.",
+      "gear_unknown": "Zeile {value} hat diesen Gegenstand nicht."
     },
     "keyAttribute": "Schlüsselattribut",
-    "keySkills": "Schlüsselfertigkeiten"
+    "keySkills": "Schlüsselfertigkeiten",
+    "gearChosen": "Gewählt: {chosen} von {of}",
+    "or": "oder",
+    "gearDice": "{dice} × {name}",
+    "gearCount": "{count} × {name}",
+    "gearExtras": "Schusswaffen kommen mit zwei vollen Magazinen. Mengen in Würfeln würfelt der Server beim Fertigstellen. Kleidung hast du ohnehin."
   },
   "cast": {
     "offer": "Zur Wahl anbieten",
