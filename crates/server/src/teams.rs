@@ -178,10 +178,11 @@ struct TeamView {
     undo: Option<Undo>,
 }
 
-/// The last step undo takes back: its log entries by their first number,
-/// none if it wrote none.
+/// The last step undo takes back, and its log entries by their first
+/// number; none if it wrote none or the step is older than this record.
 #[derive(Serialize)]
 struct Undo {
+    step: i64,
     batch: Option<i64>,
 }
 
@@ -311,7 +312,7 @@ async fn view(
         undo: if is_gm {
             game::undo_target(&state.pool, id)
                 .await?
-                .map(|batch| Undo { batch })
+                .map(|(step, batch)| Undo { step, batch })
         } else {
             None
         },

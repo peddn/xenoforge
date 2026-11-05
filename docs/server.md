@@ -85,7 +85,7 @@ Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur 
 
 ### Rückgängig
 
-Vor jedem Befehl und jeder Korrektur legt der Server einen Schnappschuss des Team-Dokuments und der Werte aller Charaktere an; die letzten 20 bleiben erhalten. Zu jedem merkt er sich, welche Protokolleinträge der Schritt geschrieben hat (`batch`, die Nummer des ersten). **Rückgängig** stellt den letzten wieder her und schreibt das ins Protokoll (`undone` mit `batch`); die alten Einträge bleiben stehen, die Oberfläche markiert sie als zurückgenommen. Die Team-Ansicht nennt der Spielleitung, was Rückgängig zurücknehmen würde (`undo.batch`, leer bei einem Schritt ohne Eintrag), damit sie vorher nachfragt. Name, Aussehen und Notizen bleiben, wie der Spieler sie zuletzt gespeichert hat, und Nummern von Würfen und Entscheidungen werden nie zweimal vergeben. Wird ein Charakter aus dem Team genommen, endet die Kette, weil ältere Stände ihn noch enthalten.
+Vor jedem Befehl und jeder Korrektur legt der Server einen Schnappschuss des Team-Dokuments und der Werte aller Charaktere an; die letzten 20 bleiben erhalten. Zu jedem merkt er sich, welche Protokolleinträge der Schritt geschrieben hat (`batch`, die Nummer des ersten). **Rückgängig** stellt den letzten wieder her und schreibt das ins Protokoll (`undone` mit `batch`); die alten Einträge bleiben stehen, die Oberfläche markiert sie als zurückgenommen. Die Team-Ansicht nennt der Spielleitung, was Rückgängig zurücknehmen würde (`undo.step` und `undo.batch`; `batch` ist leer bei einem Schritt ohne Eintrag und bei Schnappschüssen von vor dieser Angabe), damit sie vorher nachfragt. Schickt die Oberfläche den gesehenen Schritt mit (`{ step }`), lehnt der Server mit `409` ab, wenn inzwischen ein anderer dazukam. Name, Aussehen und Notizen bleiben, wie der Spieler sie zuletzt gespeichert hat, und Nummern von Würfen und Entscheidungen werden nie zweimal vergeben. Wird ein Charakter aus dem Team genommen, endet die Kette, weil ältere Stände ihn noch enthalten.
 
 ## Speicher (SQLite)
 
@@ -154,7 +154,7 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | --- | --- | --- |
 | `POST /teams/{id}/commands` | `{ command, note? }`, ein Engine-Befehl und auf Wunsch eine Notiz | neue Protokolleinträge, soweit sichtbar |
 | `POST /teams/{id}/preview` | Wurfanfrage wie in `roll` | Würfelzahl und Modifikatoren, passende Talente und Gegenstände, ohne zu würfeln |
-| `POST /teams/{id}/undo` | – | Eintrag `undone` |
+| `POST /teams/{id}/undo` | wahlweise `{ step }`, der Schritt, den die Spielleitung gesehen hat | Eintrag `undone` mit `batch`; `409`, wenn ein anderer Schritt dazukam |
 | `GET /teams/{id}/events` | `Last-Event-ID` oder `?after=<id>` | Server-Sent Events, je Eintrag `{ id, batch, visible_to, by, at, entry }`; dazu `event: refresh` ohne Nummer, wenn sich Verborgenes am eigenen Bogen geändert hat |
 
 Offene Entscheidungen (`pending` in der Ansicht des Teams) bringen bei einem Wurf den bisherigen Stand mit (`roll`): Fertigkeit oder Attribut, Würfel, Erfolge und übrige Pushes. Die Erfolge zählt die Engine. Bei der Wahl der Betroffenen, die nur die Spielleitung sieht, kommen dazu, wessen Aktion oder Panik fragt (`by`), welches Talent, welcher Panikeffekt oder welche Regel dahintersteht (`source`) und was jedem Gewählten geschieht (`ops`, z. B. Stress −1). Die Wahl selbst steht als `targets_chosen` im Protokoll, auch wenn sie nichts ändert. Die Oberfläche lädt die Ansicht nach jedem Befehl neu, nicht nur bei neuen Einträgen.

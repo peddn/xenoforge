@@ -1437,6 +1437,7 @@ describe('acceptance of phase 2 (Bedienung)', () => {
     const t = i18n.global.t
     expect(refusal(new ApiError(422, 'rule', 'one weapon per roll (F-59)'), t)).toBe('Abgelehnt: one weapon per roll (F-59)')
     expect(refusal(new ApiError(500, 'internal', 'internal error'), t)).toBe('internal error')
+    expect(refusal(new ApiError(404, 'not_found', 'invitation not found'), t)).toBe('invitation not found')
   })
 
   it('lets the owner use the signature item once, not an android', async () => {
@@ -1463,14 +1464,35 @@ describe('acceptance of phase 2 (Bedienung)', () => {
 
   it('names the step undo takes back and marks it in the log', async () => {
     const { pinia, i18n } = setup()
-    mockApi({ 'POST /teams/5/undo': [] })
+    let answer = { status: 409 }
+    const calls = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url, options = {}) => {
+        calls.push({ path: url, body: options.body && JSON.parse(options.body) })
+        if (url === '/api/teams/5') return { ok: true, status: 200, text: async () => JSON.stringify(team.view) }
+        const ok = answer.status === 200
+        return { ok, status: answer.status, text: async () => (ok ? '[]' : '{"error":"conflict","message":"x"}') }
+      }),
+    )
     const team = useTeamStore()
-    team.view = { id: 5, mode: 'campaign', is_gm: true, characters: [{ id: 9, name: 'Charlize' }], undo: { batch: 2 } }
+    team.view = { id: 5, mode: 'campaign', is_gm: true, characters: [{ id: 9, name: 'Charlize' }], undo: { step: 11, batch: 2 } }
     const stress = { type: 'engine', event: { event: 'stress_changed', actor: '9', from: 1, to: 2 } }
     team.log = [{ id: 2, batch: 2, by: 'Mother', at: 0, entry: stress }]
     const bar = mount(GmBar, { global: { plugins: [pinia, i18n] } })
     await bar.get('[data-test="undo"]').trigger('click')
     expect(bar.get('[role="alertdialog"]').text()).toContain('Zurücknehmen: Mother: Charlize: Stress 1 → 2?')
+    // A step in between: refused, shown again.
+    await bar.get('[data-test="confirm"]').trigger('click')
+    await flushPromises()
+    expect(calls[0]).toEqual({ path: '/api/teams/5/undo', body: { step: 11 } })
+    expect(bar.text()).toContain('Inzwischen kam ein anderer Schritt dazu')
+    answer = { status: 200 }
+    // An old step or one without entries is named neutrally.
+    team.view = { ...team.view, undo: { step: 12, batch: null } }
+    await flushPromises()
+    await bar.get('[data-test="undo"]').trigger('click')
+    expect(bar.get('[role="alertdialog"]').text()).toContain('Zurücknehmen: den letzten Schritt?')
     team.log = [...team.log, { id: 3, batch: 3, by: 'Mother', at: 0, entry: { type: 'undone', batch: 2 } }]
     const log = mount(LogList, { global: { plugins: [pinia, i18n] } })
     const blocks = log.findAll('[data-test="log-block"]')

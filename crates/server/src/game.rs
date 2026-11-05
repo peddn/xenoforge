@@ -226,16 +226,27 @@ async fn mark_snapshot(
     Ok(())
 }
 
-/// What undo would take back, for the game master: the batch of log
-/// entries of the last step, none if it wrote none (A-01 for the rest).
-pub async fn undo_target(pool: &sqlx::SqlitePool, team: i64) -> ApiResult<Option<Option<i64>>> {
+/// What undo would take back, for the game master: the step (its
+/// snapshot) and the batch of log entries it wrote; none if it wrote none
+/// or the snapshot is older than this record.
+pub async fn undo_target(
+    pool: &sqlx::SqlitePool,
+    team: i64,
+) -> ApiResult<Option<(i64, Option<i64>)>> {
     Ok(
-        sqlx::query("SELECT batch FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1")
+        sqlx::query("SELECT id, batch FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1")
             .bind(team)
             .fetch_optional(pool)
             .await?
-            .map(|row| row.get::<Option<i64>, _>("batch")),
+            .map(|row| (row.get("id"), row.get("batch"))),
     )
+}
+
+/// The step the game master saw named before taking it back.
+#[derive(Deserialize)]
+struct UndoBody {
+    #[serde(default)]
+    step: Option<i64>,
 }
 
 /// The actor whose owner decides a pending decision; `None` means only
@@ -458,10 +469,13 @@ async fn preview(
 }
 
 /// Takes back the last command or correction.
+/// Takes back the last step. With the step the game master saw named, a
+/// newer one in between is refused rather than taken back unseen.
 async fn undo(
     State(state): State<AppState>,
     user: User,
     Path(id): Path<i64>,
+    body: Option<Json<UndoBody>>,
 ) -> ApiResult<Json<Vec<Stored>>> {
     let _guard = state.lock.lock().await;
     let team = load_team(&state.pool, id).await?;
@@ -476,6 +490,12 @@ async fn undo(
     .fetch_optional(&mut *tx)
     .await?
     .ok_or_else(|| ApiError::conflict("nothing to undo"))?;
+    let expected = body.and_then(|Json(b)| b.step);
+    if expected.is_some_and(|step| step != row.get::<i64, _>("id")) {
+        return Err(ApiError::conflict(
+            "another step came in between; look again before taking it back",
+        ));
+    }
     let mut snapshot: Snapshot = serde_json::from_str(row.get("state"))?;
     // Numbers of decisions and rolls are never handed out twice: the log
     // already names the newer ones.

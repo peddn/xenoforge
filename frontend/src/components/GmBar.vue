@@ -41,6 +41,21 @@ async function attempt(work) {
 
 const run = (command) => attempt(() => team.command(command))
 
+// Another step came in between: show the newer one and ask again.
+async function undo() {
+  error.value = ''
+  try {
+    await team.undo(team.view.undo?.step)
+  } catch (e) {
+    if (e.status === 409) {
+      await team.refresh()
+      error.value = t('gm.undoChanged')
+    } else {
+      error.value = refusal(e, t)
+    }
+  }
+}
+
 // Ending an Act: who furthered their Agenda gets a Story Point (A-13,
 // p. 216). Characters of the game master have no player to reward.
 const endingAct = ref(false)
@@ -104,7 +119,7 @@ function rollPool() {
         :label="t('gm.undo')"
         :question="t('gm.confirmUndo', { step: undoStep })"
         data-test="undo"
-        @confirm="attempt(() => team.undo())"
+        @confirm="undo"
       />
     </div>
     <fieldset

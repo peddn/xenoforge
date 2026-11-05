@@ -180,7 +180,8 @@ export function changeText(change, t, rules) {
  * interface's language; its reason comes as the server gives it.
  */
 export function refusal(error, t) {
-  const refused = error?.status >= 400 && error?.status < 500 && error.status !== 401
+  // Not logged in and not found are no refusals.
+  const refused = error?.status >= 400 && error?.status < 500 && ![401, 404].includes(error.status)
   return refused ? t('common.refused', { message: error.message }) : (error?.message ?? String(error))
 }
 

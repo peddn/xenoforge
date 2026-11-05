@@ -261,7 +261,8 @@
     "correctionStale": "The values changed in the meantime, for example because someone used an item. Reload the correction so nothing is lost.",
     "reloadCorrection": "Reload",
     "confirmUndo": "Take back: {step}?",
-    "undoSilent": "the last step (no log entry)"
+    "undoSilent": "the last step",
+    "undoChanged": "Another step came in meanwhile. Please look again."
   },
   "cold": {
     "above_freezing": "above freezing",

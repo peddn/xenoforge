@@ -76,14 +76,13 @@ onUnmounted(() => resize?.disconnect())
     <section
       v-for="block in blocks"
       :key="block.batch"
-      :class="['grid gap-1.5 border border-l-[3px] border-line border-l-dim bg-bg px-2.5 py-1.5', block.undone && 'line-through opacity-60']"
+      :class="['grid gap-1.5 border border-l-[3px] border-line border-l-dim bg-bg px-2.5 py-1.5', block.undone && 'opacity-60']"
       data-test="log-block"
     >
       <header class="text-xs text-dim">
         {{ block.by ?? '' }} · {{ block.at }}
         <XStatus
           v-if="block.undone"
-          class="no-underline"
           :text="t('log.undoneMark')"
           data-test="log-undone"
         />
@@ -98,7 +97,7 @@ onUnmounted(() => resize?.disconnect())
       <div
         v-for="row in block.rows"
         :key="row.id"
-        class="grid gap-1"
+        :class="['grid gap-1', block.undone && 'line-through']"
         data-test="log-entry"
       >
         <div v-if="row.status || row.text">

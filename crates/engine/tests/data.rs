@@ -431,16 +431,19 @@ fn careers_make_suggestions() {
 }
 
 /// A talent is marked as without effect for androids exactly when all it
-/// does is about pushes, panic or facehuggers on Stress Dice, which
-/// androids do not have (plan 5.3) [p. 29, 111].
+/// does is about pushes, panic, facehuggers on Stress Dice or the supply
+/// of air, food and water, which androids do not have or need (plan 5.3)
+/// [p. 29, 111]. Talents whose effects come later are marked by hand:
+/// Machinegunner (no stress to spare) and Light Sleeper (no sleep).
 #[test]
 fn talents_without_effect_for_androids() {
+    let human_rolls = ["panic", "air_supply", "food_supply", "water_supply"];
     let only_human = |effect: &serde_json::Value| match effect["kind"].as_str() {
         Some("modifier") => {
             effect["modifies"] == "pushes"
-                || effect["applies_to"]["rolls"]
-                    .as_array()
-                    .is_some_and(|r| r.iter().any(|x| x == "panic"))
+                || effect["applies_to"]["rolls"].as_array().is_some_and(|r| {
+                    !r.is_empty() && r.iter().all(|x| human_rolls.iter().any(|h| x == h))
+                })
         }
         Some("replacement") => {
             effect["replaces"] == "facehuggers_in_roll"
@@ -451,7 +454,12 @@ fn talents_without_effect_for_androids() {
     for talent in &load().rules.talents {
         let effects = serde_json::to_value(&talent.effects).unwrap();
         let effects = effects.as_array().unwrap();
-        let expected = !effects.is_empty() && effects.iter().all(only_human);
+        if effects.is_empty() {
+            let by_hand = ["machinegunner", "light_sleeper"].contains(&talent.id.as_str());
+            assert_eq!(talent.no_effect_for_androids, by_hand, "{}", talent.id);
+            continue;
+        }
+        let expected = effects.iter().all(only_human);
         assert_eq!(talent.no_effect_for_androids, expected, "{}", talent.id);
     }
 }

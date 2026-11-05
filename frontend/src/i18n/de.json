@@ -261,7 +261,8 @@
     "correctionStale": "Die Werte haben sich inzwischen geändert, etwa weil jemand etwas benutzt hat. Lade die Korrektur neu, damit nichts verloren geht.",
     "reloadCorrection": "Neu laden",
     "confirmUndo": "Zurücknehmen: {step}?",
-    "undoSilent": "den letzten Schritt (ohne Protokolleintrag)"
+    "undoSilent": "den letzten Schritt",
+    "undoChanged": "Inzwischen kam ein anderer Schritt dazu. Bitte noch einmal ansehen."
   },
   "cold": {
     "above_freezing": "über null",

@@ -637,10 +637,24 @@ async fn correction_and_undo() {
     let batch = entries[0]["batch"].clone();
     let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
     assert_eq!(view["undo"]["batch"], batch);
+    let step = view["undo"]["step"].as_i64().unwrap();
     let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
     assert!(view["undo"].is_null(), "the game master's");
+    // A step the game master did not see is not taken back unseen.
+    let (status, _) = gm
+        .call(
+            "POST",
+            &format!("/api/teams/{team}/undo"),
+            Some(json!({ "step": step - 1 })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
     let undone = gm
-        .ok("POST", &format!("/api/teams/{team}/undo"), None)
+        .ok(
+            "POST",
+            &format!("/api/teams/{team}/undo"),
+            Some(json!({ "step": step })),
+        )
         .await;
     assert_eq!(
         undone[0]["entry"],
@@ -656,6 +670,17 @@ async fn correction_and_undo() {
         stress(&player.ok("GET", &format!("/api/teams/{team}"), None).await),
         0
     );
+    // Stress −1 at 0 writes nothing: the step has no entries to name.
+    gm.command(
+        team,
+        json!({ "command": "change_stress", "actors": [actor], "delta": -1 }),
+    )
+    .await;
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(view["undo"]["step"].is_i64());
+    assert!(view["undo"]["batch"].is_null());
+    gm.ok("POST", &format!("/api/teams/{team}/undo"), None)
+        .await;
     let (status, _) = player
         .call("POST", &format!("/api/teams/{team}/undo"), None)
         .await;
@@ -1613,6 +1638,7 @@ async fn choosing_and_handing_over() {
     let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
     let offered = find(&view, nat);
     assert_eq!(offered["offered"], true);
+    assert!(offered["prepared"].is_null(), "the game master's to know");
     assert!(
         offered["actor"].is_object(),
         "offered characters can be read"
