@@ -13,6 +13,7 @@ export function originEntry(origin) {
   const [kind, value] = Object.entries(origin)[0]
   if (kind === 'condition') return value.id
   if (kind === 'block') return value.by
+  if (kind === 'used') return value.item
   if (kind === 'part') return originEntry(value.of)
   return value
 }

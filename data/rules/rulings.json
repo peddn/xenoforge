@@ -71,6 +71,11 @@
     { "id": "F-68", "pages": [136], "options": ["used_up"], "default": "used_up" },
     { "id": "F-69", "pages": [34], "options": ["every_four"], "default": "every_four" },
     { "id": "F-70", "pages": [33, 124], "options": ["weightless"], "default": "weightless" },
-    { "id": "F-71", "pages": [62], "options": ["once_per_kind"], "default": "once_per_kind" }
+    { "id": "F-71", "pages": [62], "options": ["once_per_kind"], "default": "once_per_kind" },
+    { "id": "F-72", "pages": [137, 139], "options": ["water"], "default": "water" },
+    { "id": "F-73", "pages": [137, 139], "options": ["per_use"], "default": "per_use" },
+    { "id": "F-74", "pages": [137, 139], "options": ["stacking"], "default": "stacking" },
+    { "id": "F-75", "pages": [34, 134, 135], "options": ["in_items"], "default": "in_items" },
+    { "id": "F-76", "pages": [161], "options": ["covered"], "default": "covered" }
   ]
 }

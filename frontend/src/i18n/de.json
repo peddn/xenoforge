@@ -71,7 +71,9 @@
     "covertShort": "verdeckt",
     "open": "offen",
     "startGear": "Startausrüstung gewürfelt",
-    "gearRolled": "{name} × {count} (gewürfelt: {dice})"
+    "gearRolled": "{name} × {count} (gewürfelt: {dice})",
+    "supplies": "Vorräte",
+    "supplyRoll": "Vorratswurf"
   },
   "gear": {
     "title": "Ausrüstung",
@@ -116,7 +118,16 @@
     "weightLabel": "Gewicht",
     "where": "Wo",
     "addGo": "Hinzufügen",
-    "reloadsLabel": "Magazine"
+    "reloadsLabel": "Magazine",
+    "use": "Benutzen",
+    "refill": "Auffüllen",
+    "empty": "leer"
+  },
+  "supply": {
+    "food": "Nahrung",
+    "water": "Wasser",
+    "air": "Luft",
+    "power": "Energie"
   },
   "join": {
     "title": "Einladung",
@@ -292,7 +303,8 @@
     "story_point_spent": "Story Point eingesetzt",
     "next_slow_action_lost": "{actor} verliert die nächste langsame Aktion",
     "item_dropped": "{actor} lässt etwas fallen; die Spielleitung wählt, was",
-    "supply_rolled": "{actor}: Vorratswurf",
+    "supply_rolled": "{actor}: Vorratswurf {supply}, {from} → {to}",
+    "supply_rolled_item": "{actor}: Vorratswurf {supply} ({item}), {from} → {to}",
     "signature_item_used": "{actor} nutzt das Signature Item",
     "action_performed": "{actor}: {action}",
     "roll_skipped": "{actor} ist Broken und würfelt nicht",
@@ -327,7 +339,10 @@
       "stowed": "verstaut",
       "dropped": "abgelegt"
     },
-    "toCharacter": "an {name} gegeben"
+    "toCharacter": "an {name} gegeben",
+    "item_used": "{actor} benutzt {item}",
+    "item_refilled": "{actor}: {item} aufgefüllt, {from} → {to}",
+    "supply_changed": "{actor}: {supply} {from} → {to}"
   },
   "about": {
     "title": "Über Xenoforge",

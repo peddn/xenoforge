@@ -2,7 +2,7 @@
 
 Begleit-App für das ALIEN-Rollenspiel (Free League, Grundregelwerk 1. Auflage). Spielleitung und Spieler verwalten Charaktere, würfeln per Klick, führen Kämpfe, bauen Schiffe, spielen Raumkämpfe und lassen die Spielzeit mitlaufen. Karte und Figuren bleiben auf dem Tisch.
 
-**Stand:** Phase 2, Spieltisch: Konten mit Rolle, Teams mit Einladungslink, Würfe per Klick mit Push und Entscheidungen, Werkzeuge der Spielleitung und ein gemeinsames Protokoll in Echtzeit; Charaktererschaffung mit Assistent, vorgefertigte Charaktere für Cinematic, Ausrüstung mit Traglast und Boni im Wurf. Die Regel-Engine (Phase 1) rechnet Würfe, Stress, Panik und Effekte. Als Nächstes: Verbrauch und Geld (2c.2).
+**Stand:** Phase 2, Spieltisch: Konten mit Rolle, Teams mit Einladungslink, Würfe per Klick mit Push und Entscheidungen, Werkzeuge der Spielleitung und ein gemeinsames Protokoll in Echtzeit; Charaktererschaffung mit Assistent, vorgefertigte Charaktere für Cinematic, Ausrüstung mit Traglast, Boni im Wurf, Benutzen von Medikamenten, Essen und Geräten. Die Regel-Engine (Phase 1) rechnet Würfe, Stress, Panik und Effekte. Als Nächstes: Geld und Kauf (2c.3).
 
 - [Projektplan](docs/PLAN.md)
 - [Regel-Spezifikation mit Seitenangaben](docs/rules/)
@@ -38,8 +38,8 @@ XENOFORGE_DB=test.db cargo run -p xenoforge-server -- --seed
 
 Angelegt werden die Konten Mother (Spielleitung), Ann, Bob und Cid, alle mit dem Passwort `xenoforge-test`, dazu zwei Teams:
 
-- **Testlauf Kampagne:** Ann spielt Nat (Buchbeispiel S. 28, mit Schneidbrenner und Kompressionsanzug wie S. 33), Bob eine Wissenschaftlerin, beide über den Assistenten erschaffen, mit Startausrüstung, Buddy und Rival. Ann hat außerdem einen halb fertigen Entwurf.
-- **Testlauf Szenario** (Cinematic): drei Charaktere der Spielleitung zur Wahl, einer davon ein verdeckter Android, jeder mit Agenden für drei Akte und Ausrüstung aus dem Szenario. Ann und Cid sind ohne Charakter beigetreten.
+- **Testlauf Kampagne:** Ann spielt Nat (Buchbeispiel S. 28, mit Schneidbrenner und Kompressionsanzug wie S. 33, dazu Bier und eine Fertigmahlzeit), Bob eine Wissenschaftlerin, beide über den Assistenten erschaffen, mit Startausrüstung, Buddy und Rival. Ann hat außerdem einen halb fertigen Entwurf.
+- **Testlauf Szenario** (Cinematic): drei Charaktere der Spielleitung zur Wahl, einer davon ein verdeckter Android, jeder mit Agenden für drei Akte und Ausrüstung aus dem Szenario (darunter Bewegungsmelder und Naproleve). Ann und Cid sind ohne Charakter beigetreten.
 
 Eine Datenbank mit Konten lehnt `--seed` ab, damit nie Beispieldaten in echte Daten geraten. Zum Zurücksetzen `test.db` löschen und neu starten. Mehrere Personen gleichzeitig testet man in getrennten Browsern oder privaten Fenstern.
 

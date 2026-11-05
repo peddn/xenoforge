@@ -146,6 +146,13 @@ impl Engine {
                 lasts: None,
                 gm_only: false,
             })],
+            // The effect lasts as its data says; the source keeps the time.
+            Origin::Used { item, index } => self
+                .item(item)
+                .and_then(|i| i.on_use.as_ref())
+                .and_then(|u| u.effects.get(*index))
+                .map(|e| vec![Cow::Borrowed(e)])
+                .unwrap_or_default(),
             _ => self
                 .origin_effects(state, origin)
                 .into_iter()
@@ -171,7 +178,7 @@ impl Engine {
                 .injury(id)
                 .map(|i| i.effects.iter().collect())
                 .unwrap_or_default(),
-            Origin::Block { .. } | Origin::Part { .. } => Vec::new(),
+            Origin::Block { .. } | Origin::Used { .. } | Origin::Part { .. } => Vec::new(),
         }
     }
 

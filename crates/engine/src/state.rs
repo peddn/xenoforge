@@ -155,6 +155,9 @@ pub struct Actor {
     /// Number for the next item; numbers are never reused.
     #[serde(skip_serializing_if = "is_zero")]
     pub next_item: u32,
+    /// Doses taken this Shift, by item, e.g. Naproleve (F-74) [p. 137].
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub doses: BTreeMap<Id, u8>,
     /// Traumas, conditions, injuries and blocks currently in effect.
     pub sources: Vec<ActiveSource>,
     pub panic: Option<ActivePanic>,
@@ -226,6 +229,20 @@ impl Actor {
         self
     }
 
+    /// Wears a suit from the gear catalog with this much air left (F-75).
+    pub fn wearing(mut self, item: &str, air: u8) -> Self {
+        self.items.push(Possession {
+            uid: self.next_item,
+            item: Some(item.to_owned()),
+            count: 1,
+            place: Place::Worn,
+            supply: Some(air),
+            ..Possession::default()
+        });
+        self.next_item += 1;
+        self
+    }
+
     /// Has a STRESS LEVEL, rolls Stress Dice, pushes and panics: human PCs
     /// only [p. 29, 62, 105].
     pub fn human_pc(&self) -> bool {
@@ -268,6 +285,12 @@ pub enum Origin {
         blocks: Blocked,
         by: Id,
     },
+    /// Effect number `index` of using `item`, e.g. −1 after a beer
+    /// (F-74) [p. 137].
+    Used {
+        item: Id,
+        index: usize,
+    },
     /// Effect number `index` of `of`, which lasts differently than `of`.
     Part {
         of: Box<Origin>,
@@ -281,6 +304,7 @@ impl Origin {
         match self {
             Origin::Trauma(id) | Origin::Condition { id, .. } | Origin::Injury(id) => id,
             Origin::Block { by, .. } => by,
+            Origin::Used { item, .. } => item,
             Origin::Part { of, .. } => of.entry(),
         }
     }
@@ -292,6 +316,7 @@ impl Origin {
             Origin::Condition { id, .. } => format!("condition/{id}"),
             Origin::Injury(id) => format!("injury/{id}"),
             Origin::Block { by, .. } => format!("block/{by}"),
+            Origin::Used { item, .. } => format!("item/{item}"),
             Origin::Part { of, .. } => of.label(),
         }
     }

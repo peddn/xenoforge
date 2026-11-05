@@ -21,6 +21,8 @@ const props = defineProps({
   encumbrance: { type: Object, default: null },
   gearMove: { type: Boolean, default: false },
   gearAdd: { type: Boolean, default: false },
+  gearUse: { type: Boolean, default: false },
+  gearRefill: { type: Boolean, default: false },
   // Characters to hand items to.
   others: { type: Array, default: () => [] },
   sendItem: { type: Function, default: undefined },
@@ -46,6 +48,9 @@ const facts = computed(() => {
   list.push([t('sheet.health'), String(health ?? 0)])
   if (props.actor.android) list.push([t('sheet.android'), t(props.actor.covert ? 'sheet.covertShort' : 'sheet.open')])
   else list.push([t('sheet.stress'), String(props.actor.stress ?? 0)])
+  // Food and Water; air and power are in the items (F-75) [p. 34].
+  const supplies = props.actor.supplies ?? {}
+  list.push([t('sheet.supplies'), ['food', 'water'].map((s) => `${t(`supply.${s}`)} ${supplies[s] ?? 0}`).join(' · ')])
   if (props.startCash) {
     list.push([
       t('sheet.startCash'),
@@ -119,6 +124,8 @@ const talentText = (id) => {
       :encumbrance="encumbrance"
       :can-move="gearMove"
       :can-add="gearAdd"
+      :can-use="gearUse"
+      :can-refill="gearRefill"
       :others="others"
       :send="sendItem"
     />

@@ -37,7 +37,7 @@ Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editore
 | `traumas.json` | Dauerhafte Traumata | `d6`, `effects`, `ruling` |
 | `critical-injuries.json` | Kritische Verletzungen | `d66`, `fatal`, `instant_death`, `healing`, `on_apply`, `effects` |
 | `conditions.json` | Zustände wie Freezing | `effects`, `ends` |
-| `gear.json` | Ausrüstung aus Kapitel 6 und Karrieregegenstände ohne Werte (F-64) | `category`; `weight` als `"0"`, `"1/4"`, `"1/2"`, `"1"` bis `"4"`, fehlt bei nicht Tragbarem (F-63); `cost` in Cent mit `up_to_cents` für Spannen; `weapon` (`skill`, `bonus`, `damage`, `blast`, `stun`, `fire`, `range`, `features`, `reloads` nach F-61), `armor` (`rating`, `vacuum`), `supply` (`air` oder `power` mit `max`), `skills` (eigene Fertigkeitsstufen), `vehicle`, `effects` (nur Modifikatoren: bei Anzügen wirken sie getragen und brauchen keine Lage, sonst werden sie im Würfeldialog angeboten, F-59), `single_use` (nach dem Einsatz in einer Probe verbraucht, F-68) |
+| `gear.json` | Ausrüstung aus Kapitel 6 und Karrieregegenstände ohne Werte (F-64) | `category`; `weight` als `"0"`, `"1/4"`, `"1/2"`, `"1"` bis `"4"`, fehlt bei nicht Tragbarem (F-63); `cost` in Cent mit `up_to_cents` für Spannen; `weapon` (`skill`, `bonus`, `damage`, `blast`, `stun`, `fire`, `range`, `features`, `reloads` nach F-61), `armor` (`rating`, `vacuum`), `supply` (`air` oder `power` mit `max`), `skills` (eigene Fertigkeitsstufen), `vehicle`, `effects` (nur Modifikatoren: bei Anzügen wirken sie getragen und brauchen keine Lage, sonst werden sie im Würfeldialog angeboten, F-59), `single_use` (nach dem Einsatz in einer Probe verbraucht, F-68), `on_use` (Benutzen: `ops` mit `stress`, `clear_stress`, `supply`, `block`, `hint`; `effects` als Modifikatoren mit `lasts` in Schritten, F-74; `from_dose` ab welcher Dosis einer Schicht die Effekte wirken; `keep`, wenn der Gegenstand bleibt, F-73) |
 | `talents.json` | Talente | `career` (fehlt bei allgemeinen Talenten), `effects`; `parameter` (`vehicle` oder `weapon`) und `repeatable`, wenn das Talent etwas Eigenes benennt und mehrfach genommen werden kann; `later` (`gear`, `combat`, `time`, `space_combat`), solange der Teil der App fehlt, der das Talent wirken lässt. Ein Talent hat entweder `effects` oder `later` |
 | `ship-systems.json` | Kernkomponenten, Module, sonstige Systeme | `category`: `core`, `module`, `other`; `effects` |
 | `ship-damage.json` | Komponentenschäden | `table`: `minor`, `major`; `roll`, `system`, `repair`, `ruling`, `on_apply`, `effects` |
@@ -114,6 +114,8 @@ Die Stufen AUTO, HINWEIS und INFO aus dem Plan (Abschnitt 7.4) ergeben sich dara
 | `op` | Wirkung | Felder |
 | --- | --- | --- |
 | `stress` | STRESS LEVEL ändern | `delta`, `who` |
+| `clear_stress` | STRESS LEVEL auf 0 (Naproleve) | – |
+| `supply` | Food oder Water ändern | `supply`: `food` oder `water`, `delta` |
 | `damage` | Schaden ohne Rüstung | `amount`, `who` |
 | `roll` | Probe würfeln und verzweigen | `roll`: `{ "skill": ... }` oder `{ "attribute": ... }`; `on_success`, `on_fail` |
 | `panic_roll` | Panikwurf | `who` |

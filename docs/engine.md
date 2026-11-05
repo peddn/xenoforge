@@ -16,7 +16,7 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 
 | Befehl | Wirkung | Seite |
 | --- | --- | --- |
-| `roll` | Probe: Fertigkeit, nur Attribut, Death Roll, fester Pool, Vorratswurf, einzelne Stresswürfel | 34, 58–64, 99, 110 |
+| `roll` | Probe: Fertigkeit, nur Attribut, Death Roll, fester Pool, Vorratswurf (Food, Water, Air des Anzugs), Vorrat eines Gegenstands, einzelne Stresswürfel | 34, 58–64, 99, 110 |
 | `opposed` | Vergleichender Wurf; nur der Angreifer darf pushen | 64, F-22 |
 | `decide` | Antwort auf eine offene Entscheidung | – |
 | `panic_roll` | Panikwurf auf Ansage der Spielleitung, etwa nach kritischer Verletzung | 104 |
@@ -36,6 +36,8 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 | `end_session` | Zähler zurücksetzen; danach die Trauma-Probe | 104 |
 | `add_item` | Gegenstand geben: aus dem Katalog (tragbar, F-63) oder frei mit Name und Gewicht; mehr als die Höchstlast geht nicht | 33–34, 118 |
 | `move_item` | Gegenstand mitnehmen, anziehen (nur Anzüge, einer auf einmal), verstauen, ablegen oder einem anderen Charakter geben, wahlweise nur einen Teil des Stapels | 33–34, 98 |
+| `use_item` | Gegenstand zur Hand benutzen: Dosis, Essen, Getränk oder Gerät mit Energie | 34, 134–139 |
+| `refill_item` | Gerät aufladen oder Luft im Anzug auffüllen, voll oder auf einen Wert | F-75 |
 
 ## Ablauf einer Fertigkeitsprobe
 
@@ -56,7 +58,11 @@ Jeder Charakter hat eine Liste von Gegenständen (`Possession`) mit fester Numme
 - **Angezogener Anzug** wirkt von selbst: seine Modifikatoren zählen (Mk.50 −1 auf AGILITY-Proben, F-66), und ein luftdichter schützt vor Zuständen wie Life support offline (F-18).
 - **Gegenstände im Wurf** (F-59): Die Vorschau bietet alles an, was dabei ist und zur Probe passt, mit Wert und Lage. Gewählte Gegenstände (`items` in der Anfrage) zählen je einmal, gleiche Gegenstände zusammen nur einmal (F-71); eine Waffe nur mit ihrer Fertigkeit und höchstens eine. Nur bei Fertigkeitsproben. Das persönliche Medkit ist danach verbraucht (F-68).
 - **Talente:** Pack Mule über die Traglast, Weapon Specialist als Lage-Bonus mit der gewählten Waffe (A-10), Hidden Stash als Hinweis an die Spielleitung.
-- `Engine::check_items` prüft von Hand gesetzte Gegenstände, etwa in einer Korrektur, nach denselben Regeln.
+- `Engine::check_items` prüft von Hand gesetzte Gegenstände nach denselben Regeln; `check_overload` lehnt neue Werte ab, die das Überladen verschlimmern, etwa weniger STRENGTH. Wer nach dem Essen über der Höchstlast liegt, bleibt so korrigierbar.
+- Geräte und Anzüge mit eigenem Vorrat kommen einzeln, jedes mit seiner Energie oder Luft.
+- **Benutzen** (`use_item`, nur was dabei oder angezogen ist): Bei Medikamenten, Essen und Trinken ist eins vom Stapel weg, außer der Schnapsflasche (F-73). Dann laufen die Operationen aus `on_use` (Stress, Food oder Water, Sperren, Hinweise), und die Effekte werden zu Quellen mit Dauer (`used`), die sich addieren; Naproleve zählt die Dosen einer Schicht (F-74). Der Zähler beginnt mit jedem Schicht-Schritt neu.
+- **Energie und Luft** (F-75): Ein Gerät mit Energie verlangt nach jedem Benutzen einen Power-Wurf, ebenso nach einer Probe, in der es angekreuzt war (nicht bei abgebrochener Probe). Mit 0 gibt es keinen Bonus und kein Benutzen, bis `refill_item` es auflädt; wurde ein Gerät geleert, während seine Probe noch auf den Push wartete, entfällt der Wurf danach. Der Air-Wurf (`supply: air`) geht auf den angezogenen Anzug; Power am Charakter gibt es nicht. Am Charakter bleiben Food und Water. Androiden würfeln keine Vorräte, denn sie brauchen weder Luft noch Nahrung noch Wasser [S. 111].
+- **Broken** (Health 0): kein Benutzen und keine Talentaktion, nur kriechen und murmeln [S. 98].
 
 ## Talente als Aktion
 

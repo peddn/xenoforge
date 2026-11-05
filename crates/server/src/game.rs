@@ -17,7 +17,7 @@ use xenoforge_engine::data::Id;
 use xenoforge_engine::data::effects::{Op, Who};
 use xenoforge_engine::dice::Die;
 use xenoforge_engine::roll::{RollKind, RollRequest, RollState};
-use xenoforge_engine::state::{Actor, GameState, Pending};
+use xenoforge_engine::state::{Actor, GameState, Pending, Supply};
 use xenoforge_engine::{Choice, Command, Engine, Preview};
 
 use crate::auth::User;
@@ -221,8 +221,9 @@ fn decider(pending: &Pending) -> Option<&str> {
 }
 
 /// Who may give which command: players act for their own characters and
-/// answer their own decisions, and move, drop or hand over their own
-/// items; everything else is the game master's, new items too.
+/// answer their own decisions, and move, drop, hand over and use their own
+/// items; everything else is the game master's, new items and refilling
+/// too.
 fn check_permission(
     team: &Team,
     command: &Command,
@@ -243,7 +244,8 @@ fn check_permission(
         },
         Command::UseSignatureItem { actor }
         | Command::PerformAction { actor, .. }
-        | Command::MoveItem { actor, .. } => owns(actor),
+        | Command::MoveItem { actor, .. }
+        | Command::UseItem { actor, .. } => owns(actor),
         _ => false,
     };
     if allowed {
@@ -482,10 +484,16 @@ pub async fn correct(
         .ok_or_else(|| ApiError::not_found("character"))?;
     // Items change only through item commands, so a correction made with
     // an older copy never brings back what was handed over or used up.
+    // Doses per Shift are the engine's count.
     let mut actor = body.actor;
     actor.items = character.data.actor.items.clone();
     actor.next_item = character.data.actor.next_item;
+    actor.doses = character.data.actor.doses.clone();
+    actor
+        .supplies
+        .retain(|s, _| matches!(s, Supply::Food | Supply::Water));
     characters::check_actor(&state, &actor)?;
+    state.engine.check_overload(&character.data.actor, &actor)?;
     save_snapshot(&mut tx, &team, &characters).await?;
     character.data.actor = actor;
     characters::save(&mut tx, &character).await?;

@@ -11,8 +11,10 @@ import { useRulesStore } from '@/stores/rules'
 
 // What a character has [p. 33–34]: the items and where they are, and the
 // encumbrance as the server counts it. With `canMove` items are carried,
-// put on, stowed, dropped or handed to one of `others`; with `canAdd` the
-// game master adds items from the catalog or free ones. Commands go to
+// put on, stowed, dropped or handed to one of `others`; with `canUse`
+// doses, meals, drinks and devices are used [p. 134–139]; with `canRefill`
+// the game master recharges devices and refills suits (F-75); with
+// `canAdd` the game master adds items from the catalog or free ones. Commands go to
 // `send` without the actor; the parent sends them, so the same panel works
 // in a team and outside one, and answers whether they went through. The
 // rules stay with the server.
@@ -21,6 +23,8 @@ const props = defineProps({
   encumbrance: { type: Object, default: null },
   canMove: { type: Boolean, default: false },
   canAdd: { type: Boolean, default: false },
+  canUse: { type: Boolean, default: false },
+  canRefill: { type: Boolean, default: false },
   // Other characters to hand items to: { id, name }.
   others: { type: Array, default: () => [] },
   // async (command) => true when the server took it.
@@ -54,8 +58,24 @@ function details(p) {
   }
   if (e?.armor) parts.push(t('gear.armor', { rating: e.armor.rating }))
   if (p.reloads) parts.push(t('gear.reloads', p.reloads))
-  if (p.supply != null && e?.supply) parts.push(t(`gear.supply.${e.supply.kind}`, { left: p.supply, max: e.supply.max }))
+  if (e?.supply) {
+    const left = p.supply ?? e.supply.max
+    parts.push(t(`gear.supply.${e.supply.kind}`, { left, max: e.supply.max }) + (left === 0 ? ` (${t('gear.empty')})` : ''))
+  }
   return parts.join(' · ')
+}
+
+// Used by itself: a dose, meal or drink, or a device with power; at hand,
+// and a device not empty. Whether it may, the server decides.
+const usable = (p) => {
+  const e = entry(p)
+  if (placeOf(p) === 'stowed' || !e) return false
+  if (e.on_use) return true
+  return e.supply?.kind === 'power' && p.supply !== 0
+}
+const refillable = (p) => {
+  const e = entry(p)
+  return !!e?.supply && (p.supply ?? e.supply.max) < e.supply.max
 }
 
 // Where an item can go from where it is.
@@ -160,47 +180,65 @@ function pick(id) {
         </span>
         <span class="text-sm text-dim">{{ details(p) }}</span>
         <span
-          v-if="canMove"
+          v-if="canMove || canUse || canRefill"
           class="flex flex-wrap items-center gap-2"
         >
-          <input
-            v-if="p.count > 1"
-            :value="countOf(p)"
-            type="number"
-            min="1"
-            :max="p.count"
-            class="w-16"
-            :aria-label="t('gear.count')"
-            @input="counts[p.uid] = $event.target.value"
-          >
-          <select
-            :value="''"
-            :aria-label="t('gear.moveTo')"
-            :data-test="`move-${p.uid}`"
-            @change="move(p, $event.target.value); $event.target.value = ''"
-          >
-            <option
-              value=""
-              disabled
-            >
-              {{ t('gear.moveTo') }}
-            </option>
-            <option
-              v-for="d in destinations(p)"
-              :key="d.value"
-              :value="d.value"
-            >
-              {{ d.label }}
-            </option>
-          </select>
-          <XConfirm
+          <XButton
+            v-if="canUse && usable(p)"
             size="small"
-            variant="danger"
-            :label="t('gear.drop')"
-            :question="t('gear.dropConfirm', { name: itemName(p, rules) })"
-            :data-test="`drop-${p.uid}`"
-            @confirm="move(p, 'dropped')"
-          />
+            :data-test="`use-${p.uid}`"
+            @click="send({ command: 'use_item', uid: p.uid })"
+          >
+            {{ t('gear.use') }}
+          </XButton>
+          <XButton
+            v-if="canRefill && refillable(p)"
+            size="small"
+            :data-test="`refill-${p.uid}`"
+            @click="send({ command: 'refill_item', uid: p.uid })"
+          >
+            {{ t('gear.refill') }}
+          </XButton>
+          <template v-if="canMove">
+            <input
+              v-if="p.count > 1"
+              :value="countOf(p)"
+              type="number"
+              min="1"
+              :max="p.count"
+              class="w-16"
+              :aria-label="t('gear.count')"
+              @input="counts[p.uid] = $event.target.value"
+            >
+            <select
+              :value="''"
+              :aria-label="t('gear.moveTo')"
+              :data-test="`move-${p.uid}`"
+              @change="move(p, $event.target.value); $event.target.value = ''"
+            >
+              <option
+                value=""
+                disabled
+              >
+                {{ t('gear.moveTo') }}
+              </option>
+              <option
+                v-for="d in destinations(p)"
+                :key="d.value"
+                :value="d.value"
+              >
+                {{ d.label }}
+              </option>
+            </select>
+            <XConfirm
+              size="small"
+              variant="danger"
+              :label="t('gear.drop')"
+              :question="t('gear.dropConfirm', { name: itemName(p, rules) })"
+              :data-test="`drop-${p.uid}`"
+              @confirm="move(p, 'dropped')"
+            />
+          </template>
         </span>
       </li>
       <li

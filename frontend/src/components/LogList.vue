@@ -115,6 +115,16 @@ function describe(entry) {
           to: destinationLabel(ev.to, t, team.characterNames),
         }),
       }
+    case 'item_used':
+      return { text: t('log.item_used', { actor, item: rules.name(ev.item) }) }
+    case 'item_refilled':
+      return { text: t('log.item_refilled', { actor, item: rules.name(ev.item), from: ev.from, to: ev.to }) }
+    case 'supply_changed':
+      return { text: t('log.supply_changed', { actor, supply: t(`supply.${ev.supply}`), from: ev.from, to: ev.to }) }
+    case 'supply_rolled': {
+      const params = { actor, supply: t(`supply.${ev.supply}`), item: ev.item ? rules.name(ev.item) : '', from: ev.from, to: ev.to }
+      return { dice: ev.dice, text: t(ev.item ? 'log.supply_rolled_item' : 'log.supply_rolled', params) }
+    }
     case 'item_used_up':
       return { text: t('log.item_used_up', { actor, item: itemName(ev, rules) }) }
     case 'trauma_check':

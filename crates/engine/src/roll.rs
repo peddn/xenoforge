@@ -9,10 +9,11 @@ use serde::{Deserialize, Serialize};
 use crate::active::{self, Modification, RollMatch};
 use crate::data::Id;
 use crate::data::effects::{Op, ReplaceWith, Replaceable, RollKind as DataRollKind, TriggerEvent};
+use crate::data::model::SupplyKind;
 use crate::dice::{Die, DieKind};
 use crate::engine::{Choice, Ctx, Event, OpFlags, Result, RuleError, Task};
 use crate::panic::{PanicCause, StopReason};
-use crate::state::{ActorId, Mode, Pending, PendingId, Supply};
+use crate::state::{ActorId, Mode, Pending, PendingId, Place, Supply};
 
 /// What to roll.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -26,8 +27,11 @@ pub enum RollKind {
     Death,
     /// A fixed number of Base Dice: NPC pool, armor, machines [p. 64, 96].
     FixedPool { dice: u8 },
-    /// Stress Dice equal to the Supply rating, at most six [p. 34].
+    /// Stress Dice equal to the Supply rating, at most six [p. 34]. Air
+    /// is the worn suit's (F-75).
     Supply { supply: Supply },
+    /// The air or power of one item, e.g. a device after use (F-75).
+    ItemSupply { uid: u32 },
     /// Single Stress Dice that only look for facehuggers [p. 110].
     StressDice { count: u8 },
 }
@@ -232,7 +236,7 @@ impl Ctx<'_> {
         for side in [&attacker, &defender] {
             if matches!(
                 side.kind,
-                RollKind::Supply { .. } | RollKind::StressDice { .. }
+                RollKind::Supply { .. } | RollKind::ItemSupply { .. } | RollKind::StressDice { .. }
             ) {
                 return Err(RuleError::NotAllowed(
                     "this roll kind cannot be opposed".into(),
@@ -341,6 +345,13 @@ impl Ctx<'_> {
     ) -> Result<()> {
         match &request.kind {
             RollKind::Supply { supply } => self.supply_roll(&request, *supply),
+            RollKind::ItemSupply { uid } => {
+                let actor = request
+                    .actor
+                    .clone()
+                    .ok_or_else(|| RuleError::NotAllowed("a supply roll needs an actor".into()))?;
+                self.item_supply_roll(&actor, *uid)
+            }
             RollKind::StressDice { count } => {
                 let dice = self.throw(0, *count);
                 let id = self.next_pending();
@@ -836,6 +847,14 @@ impl Ctx<'_> {
             against,
             stunts,
         });
+        // A device ticked for the roll was used: its Power Supply roll
+        // follows (F-75) [p. 34].
+        if let (Some(actor), false) = (roll.request.actor.as_deref(), roll.cancelled) {
+            let powered = self.engine.powered(self.actor(actor)?, &roll.request.items);
+            for uid in powered {
+                self.item_supply_roll(actor, uid)?;
+            }
+        }
 
         if let Some(actor) = roll.request.actor.as_deref() {
             if let Some(skill) = roll.skill.as_deref() {
@@ -896,29 +915,129 @@ impl Ctx<'_> {
             .actor
             .clone()
             .ok_or_else(|| RuleError::NotAllowed("a supply roll needs an actor".into()))?;
-        let rating = self
-            .actor(&actor)?
-            .supplies
-            .get(&supply)
-            .copied()
-            .unwrap_or(0);
-        if rating == 0 {
-            return Err(RuleError::NotAllowed(format!(
-                "\"{actor}\" is out of {supply:?}"
-            )));
+        if self.actor(&actor)?.android {
+            return Err(RuleError::NotAllowed(
+                "synthetics need no air, food or water [p. 111]".into(),
+            ));
         }
-        let kind = match supply {
-            Supply::Air => DataRollKind::AirSupply,
-            Supply::Food => DataRollKind::FoodSupply,
-            Supply::Water => DataRollKind::WaterSupply,
-            Supply::Power => DataRollKind::PowerSupply,
+        match supply {
+            // Air is the worn suit's, power the device's (F-75).
+            Supply::Air => {
+                let engine = self.engine;
+                let suit = self
+                    .actor(&actor)?
+                    .items
+                    .iter()
+                    .find(|p| {
+                        p.place == Place::Worn
+                            && p.item
+                                .as_deref()
+                                .and_then(|id| engine.item(id))
+                                .and_then(|i| i.supply)
+                                .is_some_and(|s| s.kind == SupplyKind::Air)
+                    })
+                    .map(|p| p.uid)
+                    .ok_or_else(|| {
+                        RuleError::NotAllowed(format!("\"{actor}\" wears no suit with air (F-75)"))
+                    })?;
+                self.item_supply_roll(&actor, suit)
+            }
+            Supply::Power => Err(RuleError::NotAllowed(
+                "power is in the devices; roll the device (F-75)".into(),
+            )),
+            Supply::Food | Supply::Water => {
+                let rating = self
+                    .actor(&actor)?
+                    .supplies
+                    .get(&supply)
+                    .copied()
+                    .unwrap_or(0);
+                if rating == 0 {
+                    return Err(RuleError::NotAllowed(format!(
+                        "\"{actor}\" is out of {supply:?}"
+                    )));
+                }
+                let kind = if supply == Supply::Food {
+                    DataRollKind::FoodSupply
+                } else {
+                    DataRollKind::WaterSupply
+                };
+                let (dice, to) = self.supply_dice(&actor, rating, kind)?;
+                self.actor_mut(&actor)?.supplies.insert(supply, to);
+                self.emit(Event::SupplyRolled {
+                    actor,
+                    supply,
+                    uid: None,
+                    item: None,
+                    dice,
+                    from: rating,
+                    to,
+                });
+                Ok(())
+            }
+        }
+    }
+
+    /// The air or power of an item: a suit's air or a device after use
+    /// (F-75) [p. 34].
+    pub(crate) fn item_supply_roll(&mut self, actor: &str, uid: u32) -> Result<()> {
+        let engine = self.engine;
+        let possession = self
+            .actor(actor)?
+            .items
+            .iter()
+            .find(|p| p.uid == uid)
+            .cloned()
+            .ok_or_else(|| RuleError::NotAllowed(format!("no item {uid}")))?;
+        let holds = possession
+            .item
+            .as_deref()
+            .and_then(|id| engine.item(id))
+            .and_then(|i| i.supply)
+            .ok_or_else(|| RuleError::NotAllowed(format!("item {uid} holds no air or power")))?;
+        let rating = possession.supply.unwrap_or(holds.max);
+        if rating == 0 {
+            return Err(RuleError::NotAllowed(format!("item {uid} is empty")));
+        }
+        let (kind, supply) = match holds.kind {
+            SupplyKind::Air => (DataRollKind::AirSupply, Supply::Air),
+            SupplyKind::Power => (DataRollKind::PowerSupply, Supply::Power),
         };
+        let (dice, to) = self.supply_dice(actor, rating, kind)?;
+        if let Some(p) = self
+            .actor_mut(actor)?
+            .items
+            .iter_mut()
+            .find(|p| p.uid == uid)
+        {
+            p.supply = Some(to);
+        }
+        self.emit(Event::SupplyRolled {
+            actor: actor.to_owned(),
+            supply,
+            uid: Some(uid),
+            item: possession.item,
+            dice,
+            from: rating,
+            to,
+        });
+        Ok(())
+    }
+
+    /// Stress Dice for a Supply rating; each facehugger costs one step
+    /// [p. 34]. Answers the dice and the new rating.
+    fn supply_dice(
+        &mut self,
+        actor: &str,
+        rating: u8,
+        kind: DataRollKind,
+    ) -> Result<(Vec<Die>, u8)> {
         let matcher = RollMatch {
             skill: None,
             attribute: None,
             kind: Some(kind),
         };
-        let effects = self.effects(&actor)?;
+        let effects = self.effects(actor)?;
         let change: i16 = active::roll_modifiers(&effects, matcher)
             .iter()
             .map(|m| i16::from(m.value))
@@ -934,16 +1053,7 @@ impl Ctx<'_> {
         };
         let dice = self.throw(0, u8::try_from(count).unwrap_or(0));
         let lost = count_facehuggers(&dice);
-        let to = rating.saturating_sub(lost);
-        self.actor_mut(&actor)?.supplies.insert(supply, to);
-        self.emit(Event::SupplyRolled {
-            actor,
-            supply,
-            dice,
-            from: rating,
-            to,
-        });
-        Ok(())
+        Ok((dice, rating.saturating_sub(lost)))
     }
 }
 

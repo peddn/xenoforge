@@ -34,7 +34,8 @@ Browser ── HTTP (JSON) ──▶ axum ──▶ Engine (rein)
 | `decide` bei der Wahl der Betroffenen (`targets`) | nein | ja |
 | `use_signature_item`, `perform_action` für eigenen Charakter, als Ziel jeder im Team (Pull Rank) | ja | ja |
 | `move_item` für eigenen Charakter: mitnehmen, anziehen, verstauen, ablegen, an einen anderen Charakter geben | ja | ja |
-| `add_item` (neue Gegenstände) | nein | ja |
+| `use_item` für eigenen Charakter | ja | ja |
+| `add_item` (neue Gegenstände), `refill_item` (aufladen, Luft auffüllen) | nein | ja |
 | alle übrigen (Stress, Schaden, Panik, Quellen, Akt- und Sitzungsende, Story Points setzen …) | nein | ja |
 | Vorschau eines Wurfs | eigener Charakter, Regeln wie bei `roll` | alle |
 | Werte korrigieren, Rückgängig | nein | ja |
@@ -74,7 +75,7 @@ Ein Charakter hat einen Status:
 - **Fertig:** Die Werte ändern sich nur im Spiel. Name, Aussehen, Agenda (F-54), Signature Item und Notizen bleiben frei.
 - **Frei:** Nur Spielleitungskonten legen frei an, für vorgefertigte Charaktere und Szenarien; nur sie bearbeiten außerhalb eines Teams auch die Werte, die Karriere und die Ausrüstung. Die Ausrüstung ändert sich dabei über dieselben Befehle wie im Spiel (`add_item`, `move_item`), die der Server auf den Charakter allein anwendet; so gelten dieselben Regeln. Charaktere von vor dem Assistenten gelten als frei.
 
-Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung. Eine Korrektur lässt die Gegenstände unberührt, denn die ändern sich nur über `add_item` und `move_item`; so bringt eine ältere Kopie nichts zurück, was übergeben oder verbraucht wurde. Neue Werte prüft die Engine gegen die Gegenstände, etwa die Traglast bei weniger STRENGTH. Charakter und Team-Ansicht bringen die Traglast mit, wie die Engine sie zählt (`encumbrance`, in Vierteln eines Gegenstands). Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt in Campaign der Besitzer, in Cinematic die Spielleitung, weil das Szenario sie vorgibt (S. 31). Sie haben einen eigenen Pfad, damit Speichern der Texte sie nie berührt: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Texte haben höchstens 4000 Zeichen. Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
+Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung. Eine Korrektur lässt die Gegenstände unberührt, denn die ändern sich nur über `add_item` und `move_item`; so bringt eine ältere Kopie nichts zurück, was übergeben oder verbraucht wurde. Neue Werte prüft die Engine gegen die Gegenstände, etwa die Traglast bei weniger STRENGTH. Als Vorräte am Charakter nimmt der Server nur Food und Water an; Luft und Energie stecken in Anzug und Gerät (F-75). Den Zähler der Dosen pro Schicht führt nur die Engine. Charakter und Team-Ansicht bringen die Traglast mit, wie die Engine sie zählt (`encumbrance`, in Vierteln eines Gegenstands). Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt in Campaign der Besitzer, in Cinematic die Spielleitung, weil das Szenario sie vorgibt (S. 31). Sie haben einen eigenen Pfad, damit Speichern der Texte sie nie berührt: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Texte haben höchstens 4000 Zeichen. Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
 
 ### Rückgängig
 

@@ -514,6 +514,15 @@ pub enum Chooser {
     Gm,
 }
 
+/// Consumables a character keeps themselves; air and power are in the
+/// suit and the device (F-75) [p. 34].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Consumable {
+    Food,
+    Water,
+}
+
 /// A one-shot operation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
@@ -524,6 +533,10 @@ pub enum Op {
         #[serde(default, skip_serializing_if = "is_default")]
         who: Who,
     },
+    /// Sets the STRESS LEVEL to zero, e.g. Naproleve [p. 137].
+    ClearStress,
+    /// Changes the Food or Water Supply, e.g. a prefab meal [p. 137].
+    Supply { supply: Consumable, delta: i8 },
     /// Deals damage that ignores armor.
     Damage {
         amount: u8,

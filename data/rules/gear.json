@@ -547,97 +547,183 @@
       "page": 136,
       "category": "pharmaceutical",
       "weight": "0",
-      "cost": { "cents": 200 }
+      "cost": { "cents": 200 },
+      "on_use": {
+        "ops": [
+          { "op": "stress", "delta": 1 },
+          { "op": "block", "blocks": "stress_relief", "lasts": { "steps": { "unit": "day", "count": 1 } } },
+          { "op": "hint", "text": "neversleep_pills.use" }
+        ]
+      }
     },
     {
       "id": "hydr8tion",
       "page": 136,
       "category": "pharmaceutical",
       "weight": "0",
-      "cost": { "cents": 500 }
+      "cost": { "cents": 500 },
+      "on_use": {
+        "ops": [
+          { "op": "hint", "text": "hydr8tion.use" }
+        ]
+      }
     },
     {
       "id": "naproleve",
       "page": 136,
       "category": "pharmaceutical",
       "weight": "0",
-      "cost": { "cents": 2000 }
+      "cost": { "cents": 2000 },
+      "on_use": {
+        "ops": [
+          { "op": "clear_stress" }
+        ],
+        "effects": [
+          { "kind": "modifier", "applies_to": { "based_on": ["agility"] }, "change": { "add": -1 }, "lasts": { "steps": { "unit": "shift", "count": 1 } } }
+        ],
+        "from_dose": 2
+      }
     },
     {
       "id": "recreational_drugs",
       "page": 136,
       "category": "pharmaceutical",
       "weight": "0",
-      "cost": { "cents": 500, "up_to_cents": 6000000 }
+      "cost": { "cents": 500, "up_to_cents": 6000000 },
+      "on_use": {
+        "ops": [
+          { "op": "hint", "text": "recreational_drugs.use" }
+        ]
+      }
     },
     {
       "id": "x_drugs",
       "page": 136,
       "category": "pharmaceutical",
-      "weight": "0"
+      "weight": "0",
+      "on_use": {
+        "ops": [
+          { "op": "hint", "text": "x_drugs.use" }
+        ]
+      }
     },
     {
       "id": "prefab_meal",
       "page": 137,
       "category": "food",
       "weight": "1/4",
-      "cost": { "cents": 1000 }
+      "cost": { "cents": 1000 },
+      "on_use": {
+        "ops": [
+          { "op": "supply", "supply": "food", "delta": 1 }
+        ]
+      }
     },
     {
       "id": "water_bottle",
       "page": 137,
       "category": "food",
       "weight": "1/4",
-      "cost": { "cents": 200, "up_to_cents": 10000 }
+      "cost": { "cents": 200, "up_to_cents": 10000 },
+      "on_use": {
+        "ops": [
+          { "op": "supply", "supply": "water", "delta": 1 }
+        ]
+      }
     },
     {
       "id": "bug_juice_protein_drink",
       "page": 137,
       "category": "food",
       "weight": "1/4",
-      "cost": { "cents": 500 }
+      "cost": { "cents": 500 },
+      "on_use": {
+        "ops": [
+          { "op": "supply", "supply": "food", "delta": 1 },
+          { "op": "supply", "supply": "water", "delta": 1 }
+        ]
+      }
     },
     {
       "id": "carbonated_beverage",
       "page": 137,
       "category": "food",
       "weight": "1/4",
-      "cost": { "cents": 200 }
+      "cost": { "cents": 200 },
+      "on_use": {
+        "ops": [
+          { "op": "supply", "supply": "water", "delta": 1 }
+        ]
+      }
     },
     {
       "id": "candy_bar",
       "page": 137,
       "category": "food",
       "weight": "1/4",
-      "cost": { "cents": 200, "up_to_cents": 500 }
+      "cost": { "cents": 200, "up_to_cents": 500 },
+      "on_use": {
+        "ops": [
+          { "op": "supply", "supply": "food", "delta": 1 }
+        ]
+      }
     },
     {
       "id": "coffee",
       "page": 137,
       "category": "food",
       "weight": "0",
-      "cost": { "cents": 0, "up_to_cents": 150 }
+      "cost": { "cents": 0, "up_to_cents": 150 },
+      "on_use": {
+        "ops": [
+          { "op": "stress", "delta": 1 },
+          { "op": "hint", "text": "coffee.use" }
+        ]
+      }
     },
     {
       "id": "beer",
       "page": 137,
       "category": "food",
       "weight": "1/4",
-      "cost": { "cents": 400 }
+      "cost": { "cents": 400 },
+      "on_use": {
+        "ops": [
+          { "op": "stress", "delta": -1 }
+        ],
+        "effects": [
+          { "kind": "modifier", "applies_to": { "based_on": ["wits"] }, "change": { "add": -1 }, "lasts": { "steps": { "unit": "shift", "count": 1 } } }
+        ]
+      }
     },
     {
       "id": "hard_liquor",
       "page": 137,
       "category": "food",
       "weight": "1",
-      "cost": { "cents": 1000, "up_to_cents": 50000 }
+      "cost": { "cents": 1000, "up_to_cents": 50000 },
+      "on_use": {
+        "ops": [
+          { "op": "stress", "delta": -1 }
+        ],
+        "effects": [
+          { "kind": "modifier", "applies_to": { "based_on": ["wits"] }, "change": { "add": -1 }, "lasts": { "steps": { "unit": "shift", "count": 1 } } }
+        ],
+        "keep": true
+      }
     },
     {
       "id": "colony_specialty_meal",
       "page": 137,
       "category": "food",
       "weight": "1/4",
-      "cost": { "cents": 2000, "up_to_cents": 30000 }
+      "cost": { "cents": 2000, "up_to_cents": 30000 },
+      "on_use": {
+        "ops": [
+          { "op": "supply", "supply": "food", "delta": 1 },
+          { "op": "stress", "delta": -1 }
+        ]
+      }
     },
     {
       "id": "daihotai_tractor",

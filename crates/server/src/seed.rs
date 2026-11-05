@@ -64,6 +64,18 @@ pub async fn seed(app: Router, pool: &SqlitePool) -> Result<Vec<String>> {
         Some(json!({ "buddy": null, "rival": nat })),
     )
     .await?;
+    // Something to eat and drink for Nat [p. 137].
+    for item in [
+        json!({ "item": "beer", "count": 2 }),
+        json!({ "item": "prefab_meal" }),
+    ] {
+        gm.ok(
+            "POST",
+            &format!("/api/teams/{}/commands", campaign.id),
+            Some(json!({ "command": { "command": "add_item", "actor": nat.to_string(), "item": item } })),
+        )
+        .await?;
+    }
 
     // Cinematic: three prepared characters on offer, one a covert android,
     // each with an Agenda per Act; Ann and Cid join to choose.
@@ -253,6 +265,7 @@ fn prepared() -> Vec<Prepared> {
                 json!({ "item": "m4a3_service_pistol", "reloads": 2 }),
                 json!({ "item": "irc_mk50_compression_suit", "place": "worn" }),
                 json!({ "item": "signal_flare", "count": 3 }),
+                json!({ "item": "m314_motion_tracker" }),
             ],
         ),
         (
@@ -272,6 +285,7 @@ fn prepared() -> Vec<Prepared> {
             vec![
                 json!({ "item": "personal_medkit", "count": 2 }),
                 json!({ "item": "surgical_kit" }),
+                json!({ "item": "naproleve", "count": 2 }),
                 json!({ "name": "Gewebeprobe im Kühlbehälter", "weight": "1/2", "place": "stowed" }),
             ],
         ),

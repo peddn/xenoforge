@@ -6,7 +6,7 @@ use std::fmt;
 
 use super::effects::{
     ActorStat, Blocked, Change, Effect, Lasts, ModTarget, Modified, Op, ReplaceWith, Replaceable,
-    RollSpec, TriggerEvent,
+    RollSpec, TriggerEvent, Who,
 };
 use super::model::{DamageTable, RollRange, Ruling, RulingSwitch};
 use super::{Data, Entry, LANGUAGES, Page};
@@ -403,6 +403,7 @@ impl<'a> Checker<'a> {
     fn op(&mut self, at: &str, owner: &str, op: &Op) {
         match op {
             Op::Stress { delta: 0, .. } => self.problem(at, "stress change of 0"),
+            Op::Supply { delta: 0, .. } => self.problem(at, "supply change of 0"),
             Op::Damage { amount: 0, .. } => self.problem(at, "damage of 0"),
             Op::Roll {
                 roll,
@@ -674,6 +675,55 @@ impl<'a> Checker<'a> {
         }
         if item.single_use && item.effects.is_empty() {
             self.problem(&at, "single use needs a bonus to use up (F-68)");
+        }
+        if let Some(on_use) = &item.on_use {
+            self.item_use(&at, &item.id, on_use);
+        }
+    }
+
+    /// Using an item: plain operations on the user, and modifiers that
+    /// say how long they last (F-74).
+    fn item_use(&mut self, at: &str, owner: &str, on_use: &crate::data::model::ItemUse) {
+        if on_use.ops.is_empty() && on_use.effects.is_empty() {
+            self.problem(at, "using it does nothing");
+        }
+        if !on_use.ops.is_empty() {
+            self.ops(at, owner, &on_use.ops);
+        }
+        for op in &on_use.ops {
+            let plain = matches!(
+                op,
+                Op::Stress {
+                    who: Who::Bearer,
+                    ..
+                } | Op::ClearStress
+                    | Op::Supply { .. }
+                    | Op::Block { .. }
+                    | Op::Hint { .. }
+            );
+            if !plain {
+                self.problem(
+                    at,
+                    "using an item changes stress, Food or Water, blocks or notes",
+                );
+            }
+        }
+        for effect in &on_use.effects {
+            let timed = matches!(
+                effect,
+                Effect::Modifier {
+                    lasts: Some(Lasts::Steps { .. }),
+                    ..
+                }
+            );
+            if !timed {
+                self.problem(at, "effects of using an item are modifiers for some steps");
+            }
+        }
+        match on_use.from_dose {
+            Some(dose) if dose < 2 => self.problem(at, "from_dose starts at 2"),
+            Some(_) if on_use.effects.is_empty() => self.problem(at, "from_dose needs effects"),
+            _ => {}
         }
     }
 

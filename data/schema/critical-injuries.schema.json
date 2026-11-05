@@ -160,6 +160,14 @@
         "deep_space"
       ]
     },
+    "Consumable": {
+      "description": "Consumables a character keeps themselves; air and power are in the\nsuit and the device (F-75) [p. 34].",
+      "type": "string",
+      "enum": [
+        "food",
+        "water"
+      ]
+    },
     "CriticalInjury": {
       "description": "A row of the critical injury table [p. 100].",
       "type": "object",
@@ -864,6 +872,45 @@
           "additionalProperties": false,
           "required": [
             "op",
+            "delta"
+          ]
+        },
+        {
+          "description": "Sets the STRESS LEVEL to zero, e.g. Naproleve [p. 137].",
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "clear_stress"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op"
+          ]
+        },
+        {
+          "description": "Changes the Food or Water Supply, e.g. a prefab meal [p. 137].",
+          "type": "object",
+          "properties": {
+            "delta": {
+              "type": "integer",
+              "format": "int8",
+              "maximum": 127,
+              "minimum": -128
+            },
+            "op": {
+              "type": "string",
+              "const": "supply"
+            },
+            "supply": {
+              "$ref": "#/$defs/Consumable"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "supply",
             "delta"
           ]
         },
