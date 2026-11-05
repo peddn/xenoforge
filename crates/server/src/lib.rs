@@ -22,7 +22,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use axum::extract::Request;
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::middleware::{self, Next};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use axum::{Json, Router, routing::get};
 use serde::Serialize;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
@@ -123,6 +123,7 @@ pub fn router(state: AppState, static_dir: &Path, data_dir: &Path) -> Router {
         .nest("/join", teams::join_routes())
         .nest_service("/data", ServeDir::new(data_dir))
         .fallback(|| async { ApiError::new(StatusCode::NOT_FOUND, "not_found", "no such API") })
+        .layer(middleware::map_response(json_errors))
         .with_state(state);
     Router::new()
         .nest("/api", api)
@@ -151,6 +152,30 @@ async fn cache_control(request: Request, next: Next) -> Response {
             .insert(header::CACHE_CONTROL, HeaderValue::from_static(value));
     }
     response
+}
+
+/// Requests the framework refuses before a handler runs, such as a JSON
+/// body that does not fit (a negative damage), answer in plain text; the
+/// API answers every error as `{ error, message }`.
+async fn json_errors(response: Response) -> Response {
+    let plain = response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.starts_with("text/plain"));
+    if !(response.status().is_client_error() && plain) {
+        return response;
+    }
+    let status = response.status();
+    let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .unwrap_or_default();
+    ApiError::new(
+        status,
+        "bad_request",
+        String::from_utf8_lossy(&bytes).into_owned(),
+    )
+    .into_response()
 }
 
 /// A transaction that writes: it takes SQLite's write lock at once, so a

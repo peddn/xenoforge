@@ -44,12 +44,12 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 
 ## Ablauf einer Fertigkeitsprobe
 
-1. **Pool bauen:** Wer Broken ist, kann keine Fertigkeitsprobe machen, der Death Roll bleibt erlaubt [S. 98–99]. Attribut + Fertigkeit + Modifikationen (Schwierigkeit und freier Ausrüstungsbonus vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle, gewählte Gegenstände). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit, bestehen die Probe ohne Wurf (Breakthrough) oder geben ihren Lage-Bonus (A-10): Talente wie Stealthy wirken nur, wenn sie für den Wurf angekreuzt sind, und nur bei passender Fertigkeit. Die Vorschau nennt alle passenden; verlangt ein Effekt die Probe, bietet die Engine sie wie Stoic vorher an.
+1. **Pool bauen:** Ein Mensch, der Broken ist, kann keine Fertigkeitsprobe machen [S. 98]; ein Android arbeitet weiter bis zum System Shutdown [S. 111]. Den Death Roll würfelt, wer Broken oder tödlich verletzt ist (`Engine::fatally_injured`; mit wieder gewonnener Health würfelt man weiter, bis jemand das Leben rettet), nie ein Android [S. 99, 111]. Attribut + Fertigkeit + Modifikationen (Schwierigkeit und freier Ausrüstungsbonus vom Aufrufer, Hilfe höchstens +3, Effekte mit Quelle, gewählte Gegenstände). Stresswürfel = Stresslevel, nur bei menschlichen Spielercharakteren. Ein negativer Überhang nimmt Stresswürfel weg [S. 62]. Vorab gewählte Talente tauschen Attribut oder Fertigkeit, bestehen die Probe ohne Wurf (Breakthrough) oder geben ihren Lage-Bonus (A-10): Talente wie Stealthy wirken nur, wenn sie für den Wurf angekreuzt sind, und nur bei passender Fertigkeit. Die Vorschau nennt alle passenden; verlangt ein Effekt die Probe, bietet die Engine sie wie Stoic vorher an.
 2. **Würfeln.** Grundwürfel zuerst, dann Stresswürfel.
 3. **Facehugger** auf Stresswürfeln: Mit The Long Haul fragt die Engine, ob es eingesetzt wird. Sonst gibt es keinen Push mehr, und es folgt sofort der Panikwurf; ab 10 ist die Aktion abgebrochen (F-44 für 1–9).
-4. **Push oder Story Point anbieten**, solange erlaubt. Ein Push kostet zuerst Stress +1, dann bleiben die 6er liegen, ein neuer Stresswürfel kommt dazu, und der Rest wird neu geworfen (F-20).
+4. **Push oder Story Point anbieten**, solange erlaubt. Ein Push kostet zuerst Stress +1, dann bleiben die 6er liegen, ein neuer Stresswürfel kommt dazu, und der Rest wird neu geworfen (F-20). Der Erfolg eines Story Points bleibt beim Push liegen wie eine 6; nach ihm darf noch gepusht werden, solange Pushes übrig sind (F-78). Das Ereignis `decision` nennt den Story Point nicht, denn das Protokoll sehen alle; die offene Entscheidung bietet ihn an. Damit auch das Warten nichts verrät, wartet in Cinematic jede Fertigkeitsprobe eines Spielers an dieser Stelle auf ihn, ob er einen Story Point hat oder nicht.
 5. **Ersatzfertigkeit:** Mit Authority wird COMMAND gewürfelt, samt den Modifikatoren für COMMAND; die Aktion bleibt die angefragte Fertigkeit (MANIPULATION) mit deren Gegenwurf, Folgen und Stunts (F-49). Die Stunt-Listen selbst kommen mit Phase 2.
-6. **Ergebnis:** ab einer 6 Erfolg, jede weitere 6 ein Stunt; beim vergleichenden Wurf zählt die Differenz, Gleichstand verliert der Angreifer [S. 64, 70]. Danach laufen Auslöser wie Crotch hit, und eine COMMAND-Probe zum Beenden einer Panik wirkt (F-36).
+6. **Ergebnis:** ab einer 6 Erfolg, jede weitere 6 ein Stunt, außer bei MEDICAL AID und COMMAND, die keine Stunt-Liste haben (`no_stunts` in `skills.json`), und bei Death Roll, reinen Attributproben, Vorratswürfen und festen Pools wie der Rüstung [S. 64, 71, 96]; beim vergleichenden Wurf zählt die Differenz, Gleichstand verliert der Angreifer [S. 64, 70]. Danach laufen Auslöser wie Crotch hit, und eine COMMAND-Probe zum Beenden einer Panik wirkt (F-36).
 
 ## Ausrüstung
 
@@ -65,7 +65,7 @@ Jeder Charakter hat eine Liste von Gegenständen (`Possession`) mit fester Numme
 - Geräte und Anzüge mit eigenem Vorrat kommen einzeln, jedes mit seiner Energie oder Luft.
 - **Benutzen** (`use_item`, nur was dabei oder angezogen ist): Bei Medikamenten, Essen und Trinken ist eins vom Stapel weg, außer der Schnapsflasche (F-73). Dann laufen die Operationen aus `on_use` (Stress, Food oder Water, Sperren, Hinweise), und die Effekte werden zu Quellen mit Dauer (`used`), die sich addieren; Naproleve zählt die Dosen einer Schicht (F-74). Der Zähler beginnt mit jedem Schicht-Schritt neu.
 - **Energie und Luft** (F-75): Ein Gerät mit Energie verlangt nach jedem Benutzen einen Power-Wurf, ebenso nach einer Probe, in der es angekreuzt war (nicht bei abgebrochener Probe). Mit 0 gibt es keinen Bonus und kein Benutzen, bis `refill_item` es auflädt; wurde ein Gerät geleert, während seine Probe noch auf den Push wartete, entfällt der Wurf danach. Der Air-Wurf (`supply: air`) geht auf den angezogenen Anzug; Power am Charakter gibt es nicht. Am Charakter bleiben Food und Water. Androiden würfeln keine Vorräte, denn sie brauchen weder Luft noch Nahrung noch Wasser [S. 111].
-- **Broken** (Health 0): kein Benutzen und keine Talentaktion, nur kriechen und murmeln [S. 98].
+- **Broken** (Health 0): kein Benutzen und keine Talentaktion, nur kriechen und murmeln [S. 98]. Androiden handeln weiter bis zum System Shutdown, der mit Phase 3 kommt [S. 111].
 
 ## Geld
 
@@ -86,10 +86,10 @@ Jeder Charakter hat eine Buchungsliste in Cent (`ledger`); der Kontostand ist ih
 - **Wert:** W6 + Stresslevel + Modifikationen (Nerves of Steel −2). Unter 1 zählt als 1–6.
 - **Mehr Panik:** Läuft eine Panik, wird ein niedrigerer Wert auf eine Stufe über dem laufenden angehoben; gleich bleibt gleich (F-23), über 15+ bleibt es Catatonic (F-24). Eine Panik läuft ab 7, bis sie endet, auch wenn ihr Effekt schon vorbei ist (F-25).
 - **Ende:** ein Turn oder eine Schicht vergeht, Broken, eine gelungene COMMAND-Probe eines anderen, die Spielleitung [S. 104].
-- **Ketten:** Wer etwas hört, sieht oder auf kurzer Distanz ist, kennt die App nicht. Sie schlägt alle anderen menschlichen Spielercharaktere vor (F-39), die Spielleitung wählt aus. Die Frage nennt Auslöser und Quelle (`choose_targets`), die Wahl ist ein eigenes Ereignis (`targets_chosen`), auch wenn niemand gewählt wird oder sich nichts ändert.
+- **Ketten:** Wer etwas hört, sieht oder auf kurzer Distanz ist, kennt die App nicht. Sie schlägt alle anderen menschlichen Spielercharaktere vor (F-39), die Spielleitung wählt aus. Die Frage nennt Auslöser und Quelle (`choose_targets`), aber nicht die Vorschläge: Die stehen nur in der offenen Entscheidung, sonst verriete die Liste einen verdeckten Android (A-14). Aus demselben Grund kommt die Frage, sobald es andere Spielercharaktere gibt, auch wenn keiner davon ein Mensch ist. Die Wahl ist ein eigenes Ereignis (`targets_chosen`), auch wenn niemand gewählt wird oder sich nichts ändert.
 - **Overkill** bietet die Engine ab 11 an; der Wert bleibt für Mehr Panik und die Trauma-Schwelle maßgeblich (F-26, F-30).
 - **Broken:** Eine Panik endet, wenn man Broken wird. Beginnt sie, während man schon Broken ist, endet sie sofort; die sofortigen Folgen gelten (F-48).
-- **Trauma:** Wer in der Sitzung 13+ hatte, würfelt bei `end_session` einmal EMPATHY ohne Stresswürfel und ohne Push (F-27, F-42); misslingt sie, entsteht ein Trauma (F-01).
+- **Trauma:** Wer in der Sitzung 13+ hatte, würfelt bei `end_session` einmal EMPATHY ohne Stresswürfel und ohne Push (F-27, F-42); misslingt sie, entsteht ein Trauma (F-01). Das Ereignis `trauma_check` nennt dann auch den W6 der Tabelle [S. 101].
 
 ## Effekte und Zeit
 
@@ -101,7 +101,7 @@ Jeder Charakter hat eine Buchungsliste in Cent (`ledger`); der Kontostand ist ih
 
 ## Festlegungen
 
-Die Engine liest die gewählte Option jeder Festlegung aus dem Zustand (`rulings`), sonst gilt der Standard aus `data/rules/rulings.json`. Umschaltbar sind in diesem Bereich F-09 (Vorratswurf mit Talent), F-17 (Nightmares), F-47 (The Long Haul und Push) und F-48 (Panik bei Broken). Regelwerte wie die Höchstzahl der Helfer stehen in `data/rules/constants.json`. Zu jeder umschaltbaren Festlegung gibt es Tests für Standard und Alternative.
+Die Engine liest die gewählte Option jeder Festlegung aus dem Zustand (`rulings`), sonst gilt der Standard aus `data/rules/rulings.json`. Umschaltbar sind in diesem Bereich F-09 (Vorratswurf mit Talent), F-17 (Nightmares), F-47 (The Long Haul und Push), F-48 (Panik bei Broken) und F-78 (Push nach Story Point). Regelwerte wie die Höchstzahl der Helfer stehen in `data/rules/constants.json`. Zu jeder umschaltbaren Festlegung gibt es Tests für Standard und Alternative.
 
 ## Was noch fehlt
 

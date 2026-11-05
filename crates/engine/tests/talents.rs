@@ -115,7 +115,8 @@ fn investigator() {
     assert_eq!(hint(&ev, "investigator.questions"), Some(false));
 }
 
-/// Analysis: on a success questions and stress −1 for the other PCs at
+/// Analysis (F-34: the other PCs at short range, chosen by the game
+/// master): on a success questions and stress −1 for the other PCs at
 /// SHORT range; the game master picks them [p. 77].
 #[test]
 fn analysis_success() {
@@ -126,13 +127,7 @@ fn analysis_success() {
     let ev = t.run(act("s", "analyze", None), &[6, 3]);
     let ev = t.decide(&ev, Choice::Accept, &[]);
     assert_eq!(hint(&ev, "analysis.questions"), Some(false));
-    let candidates = ev
-        .iter()
-        .find_map(|e| match e {
-            Event::ChooseTargets { candidates, .. } => Some(candidates.clone()),
-            _ => None,
-        })
-        .expect("the game master picks who is near");
+    let candidates = candidates(&t, &ev);
     assert_eq!(candidates, ["b", "c"]);
     t.decide(&ev, Choice::Targets(vec!["b".into()]), &[]);
     assert_eq!(

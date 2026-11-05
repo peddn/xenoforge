@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use xenoforge_engine::data::RuleData;
 use xenoforge_engine::dice::ScriptedDice;
 use xenoforge_engine::roll::{Outcome, RollRequest};
-use xenoforge_engine::state::{Actor, GameState, Mode, PendingId};
+use xenoforge_engine::state::{Actor, GameState, Mode, Pending, PendingId};
 use xenoforge_engine::{Choice, Command, Engine, Event, Modification, RuleError};
 
 pub fn rules() -> RuleData {
@@ -85,7 +85,32 @@ pub fn pending(events: &[Event]) -> PendingId {
         .unwrap_or_else(|| panic!("no open decision in {events:#?}"))
 }
 
-/// Options of the last decision, or none.
+/// Who the game master may choose from in the open choice of targets
+/// the events ask for; the event itself does not say (A-14).
+pub fn candidates(t: &Table, events: &[Event]) -> Vec<String> {
+    let id = events
+        .iter()
+        .find_map(|e| match e {
+            Event::ChooseTargets { pending, .. } => Some(*pending),
+            _ => None,
+        })
+        .expect("a choice of targets");
+    match t.state.pending.get(&id) {
+        Some(Pending::Targets { candidates, .. }) => candidates.clone(),
+        other => panic!("no choice of targets pending: {other:?}"),
+    }
+}
+
+/// What the open roll offers its player, Story Point included; the log
+/// leaves that one out.
+pub fn offered(t: &Table, events: &[Event]) -> Vec<Choice> {
+    match t.state.pending.get(&pending(events)) {
+        Some(Pending::Roll(roll)) => roll.offered.clone(),
+        other => panic!("no open roll: {other:?}"),
+    }
+}
+
+/// Options of the last decision as the log shows them, or none.
 pub fn options(events: &[Event]) -> Vec<Choice> {
     events
         .iter()

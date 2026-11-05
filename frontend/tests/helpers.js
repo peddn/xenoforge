@@ -30,7 +30,12 @@ export function mockApi(routes) {
 
 export const rulesData = {
   attributes: [{ id: 'wits', page: 27 }],
-  skills: [{ id: 'observation', page: 58, attribute: 'wits' }],
+  skills: [
+    { id: 'observation', page: 58, attribute: 'wits' },
+    { id: 'comtech', page: 58, attribute: 'wits' },
+    // Really EMPATHY; the test data knows WITS only.
+    { id: 'command', page: 58, attribute: 'wits', no_stunts: true },
+  ],
   careers: [
     {
       id: 'officer',

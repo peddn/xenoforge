@@ -257,6 +257,12 @@ impl Actor {
         self.health == 0
     }
 
+    /// Broken and so out of action: a human can only crawl and mumble
+    /// [p. 98]; an android keeps working until System Shutdown [p. 111].
+    pub fn incapacitated(&self) -> bool {
+        self.broken() && !self.android
+    }
+
     pub fn attribute(&self, id: &str) -> u8 {
         self.attributes.get(id).copied().unwrap_or(0)
     }

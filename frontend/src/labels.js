@@ -154,6 +154,24 @@ export function parseMoney(text, locale) {
   return cents === 0 ? 0 : sign * cents
 }
 
+/** A value a correction changed, e.g. "Stress 1 → 3" (plan 10.2). */
+export function changeText(change, t, rules) {
+  const [group, key] = change.path.split('.')
+  const named = { health: 'sheet.health', stress: 'sheet.stress', talents: 'sheet.talents', android: 'sheet.android' }
+  let label = change.path
+  if ((group === 'attributes' || group === 'skills') && key) label = rules.name(key)
+  else if (group === 'supplies' && key) label = t(`supply.${key}`)
+  else if (named[group] && !key) label = t(named[group])
+  const value = (v) => {
+    if (v == null) return '–'
+    if (typeof v === 'boolean') return t(v ? 'choice.yes' : 'choice.no')
+    if (Array.isArray(v)) return v.length ? v.map((x) => (typeof x === 'string' ? rules.name(x) : JSON.stringify(x))).join(', ') : '–'
+    if (typeof v === 'object') return JSON.stringify(v)
+    return String(v)
+  }
+  return `${label} ${value(change.from)} → ${value(change.to)}`
+}
+
 /** The balance: the sum of the bookings, in cents. */
 export function balance(ledger) {
   return (ledger ?? []).reduce((sum, b) => sum + b.amount, 0)

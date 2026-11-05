@@ -255,12 +255,12 @@ impl Ctx<'_> {
     }
 
     /// A roll asked for by an operation, e.g. Freezing's STAMINA roll. A
-    /// Broken character cannot roll for skills [p. 98]; optional talents
-    /// that fit the roll are offered first.
+    /// Broken human cannot roll for skills [p. 98], a Broken android can
+    /// [p. 111]; optional talents that fit the roll are offered first.
     pub(crate) fn roll_for_op(&mut self, request: RollRequest, then: Continuation) -> Result<()> {
         let actor = request.actor.clone().unwrap_or_default();
         if let RollKind::Skill { skill } = &request.kind {
-            if self.actor(&actor)?.broken() {
+            if self.actor(&actor)?.incapacitated() {
                 self.emit(Event::RollSkipped {
                     actor,
                     skill: skill.clone(),
@@ -402,12 +402,25 @@ impl Ctx<'_> {
             None => return Err(RuleError::NotAllowed("this roll needs an actor".into())),
         };
 
-        if let (RollKind::Skill { .. }, Some(a)) = (&request.kind, &actor) {
-            if a.broken() {
+        match (&request.kind, &actor) {
+            (RollKind::Skill { .. }, Some(a)) if a.incapacitated() => {
                 return Err(RuleError::NotAllowed(
                     "a Broken character cannot roll for skills [p. 98]".into(),
                 ));
             }
+            // Death Rolls are for the Broken and the fatally injured, who
+            // roll on even with Health back; androids never [p. 99, 111].
+            (RollKind::Death, Some(a)) if a.android => {
+                return Err(RuleError::NotAllowed(
+                    "androids make no Death Rolls [p. 111]".into(),
+                ));
+            }
+            (RollKind::Death, Some(a)) if !a.broken() && !engine.fatally_injured(a) => {
+                return Err(RuleError::NotAllowed(
+                    "only the Broken or the fatally injured make Death Rolls [p. 99]".into(),
+                ));
+            }
+            _ => {}
         }
 
         let (mut skill, mut attribute) = match &request.kind {
@@ -663,24 +676,33 @@ impl Ctx<'_> {
             && (roll.facehuggers == 0 || roll.facehuggers_ignored)
     }
 
-    /// Story Point: Cinematic only, one per skill roll (F-06), not without
-    /// dice (F-21), not against a cancellation by panic (F-37) [p. 61].
-    fn can_spend_story_point(&self, roll: &RollState) -> bool {
+    /// The player who could spend a Story Point on the roll: Cinematic
+    /// only, one per skill roll (F-06), not without dice (F-21), not
+    /// against a cancellation by panic (F-37) [p. 61].
+    fn story_point_player(&self, roll: &RollState) -> Option<&str> {
         let player = roll
             .request
             .actor
             .as_deref()
             .and_then(|a| self.state.actor(a))
-            .and_then(|a| a.player.as_ref());
-        self.state.mode == Mode::Cinematic
+            .and_then(|a| a.player.as_deref());
+        let moment = self.state.mode == Mode::Cinematic
             && roll.is_skill()
             && !roll.story_point
             && !roll.automatic
             && !roll.cancelled
-            && !roll.dice.is_empty()
-            && player.is_some_and(|p| self.state.story_points.get(p).copied().unwrap_or(0) > 0)
+            && !roll.dice.is_empty();
+        player.filter(|_| moment)
     }
 
+    fn can_spend_story_point(&self, roll: &RollState) -> bool {
+        self.story_point_player(roll)
+            .is_some_and(|p| self.state.story_points.get(p).copied().unwrap_or(0) > 0)
+    }
+
+    /// Where a Story Point could be spent, the roll waits for its player,
+    /// whether they have one or not: a roll that waited only when they had
+    /// one would tell the others (A-01).
     fn offer_or_finish(&mut self, roll: RollState) -> Result<()> {
         let mut options = Vec::new();
         if self.can_push(&roll) {
@@ -689,7 +711,7 @@ impl Ctx<'_> {
         if self.can_spend_story_point(&roll) {
             options.push(Choice::StoryPoint);
         }
-        if options.is_empty() {
+        if options.is_empty() && self.story_point_player(&roll).is_none() {
             return self.finish(roll);
         }
         options.push(Choice::Accept);
@@ -698,10 +720,15 @@ impl Ctx<'_> {
 
     fn wait(&mut self, mut roll: RollState, options: Vec<Choice>) -> Result<()> {
         roll.offered = options.clone();
+        // The log is for everyone; a Story Point on offer would tell them
+        // the player has one. The open decision still offers it.
         self.emit(Event::Decision {
             pending: roll.id,
             actor: roll.request.actor.clone(),
-            options,
+            options: options
+                .into_iter()
+                .filter(|c| *c != Choice::StoryPoint)
+                .collect(),
         });
         self.state
             .pending
@@ -784,7 +811,13 @@ impl Ctx<'_> {
                     roll: roll.id,
                     player,
                 });
-                self.finish(roll)
+                // The automatic success stays through a push, like a six;
+                // pushing afterwards is allowed (F-78).
+                if self.engine.ruling_option(&self.state, "F-78") == "ends_roll" {
+                    self.finish(roll)
+                } else {
+                    self.offer_or_finish(roll)
+                }
             }
             Choice::Accept => {
                 if self.facehuggers_count(&roll) {
@@ -806,10 +839,25 @@ impl Ctx<'_> {
             slow_action: roll.request.action == Some(Speed::Slow),
         };
         roll.cancelled = self.panic_roll(&actor, cause)?;
-        if self.can_spend_story_point(&roll) {
-            return self.wait(roll, vec![Choice::StoryPoint, Choice::Accept]);
+        if self.story_point_player(&roll).is_some() {
+            let mut options = Vec::new();
+            if self.can_spend_story_point(&roll) {
+                options.push(Choice::StoryPoint);
+            }
+            options.push(Choice::Accept);
+            return self.wait(roll, options);
         }
         self.finish(roll)
+    }
+
+    /// Stunts come with skill rolls whose skill lists them [p. 58, 64–71];
+    /// not with Death Rolls, rolls of an attribute alone, supply rolls or
+    /// fixed pools such as armor, where every success counts [p. 96].
+    fn has_stunts(&self, roll: &RollState) -> bool {
+        match &roll.request.kind {
+            RollKind::Skill { skill } => self.engine.skill(skill).is_some_and(|s| !s.no_stunts),
+            _ => false,
+        }
     }
 
     fn finish(&mut self, roll: RollState) -> Result<()> {
@@ -840,6 +888,7 @@ impl Ctx<'_> {
                 }
             }
         };
+        let stunts = if self.has_stunts(&roll) { stunts } else { 0 };
         self.emit(Event::RollFinished {
             roll: roll.id,
             outcome,

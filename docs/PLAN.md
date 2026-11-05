@@ -351,6 +351,13 @@ Spieler würfeln per Klick vom eigenen Bogen aus. Die Spielleitung führt Kämpf
 - **Bibliothek:** typische NSC aus dem Buch, alle Kreaturen mit Werten und Angriffstabellen, eigene NSC aus dem Schnell-Assistenten. Die Spielleitung setzt beliebig viele Exemplare in eine Szene oder einen Kampf, zum Beispiel Drone 1 bis 3.
 - **Vereinfachungen für NSC:** kein Stress, kein Push, keine Panik, keine Munitionszählung. Die Spielleitung würfelt nur, wenn ein NSC direkt auf einen Spielercharakter wirkt; sonst setzt sie das Ergebnis. Unbedeutende NSC dürfen bei Broken einfach sterben [S. 62, 96, 99, 105, 214].
 - **NSC-Panik** setzt die Spielleitung von Hand und kann dabei Stress bei Spielercharakteren in der Nähe auslösen [S. 105].
+- **Vor dem Plan zu Phase 3 zu besprechen:**
+  - Ein Modell für alle Figuren (NSC als Charaktere der Art „NSC“ im Besitz der Spielleitung, Kreaturen als dritte Art) oder ein eigenes Gegner-Objekt.
+  - Vorlage und Exemplar: Buch-NSC (ab S. 354) und Kreaturen als Daten, eigene Vorlagen als freie Charaktere der Spielleitung, im Team Exemplare wie „Drone 1–3“.
+  - Auftreten: verborgen vorbereiten, dann auftreten lassen; was Spieler von einem Gegner sehen (Name, sichtbarer Zustand, Verletzung?).
+  - Würfe der Spielleitung für NSC offen oder verdeckt (A-02); Gruppen über die Helfen-Regel [S. 63].
+  - Wechsel zwischen Spieler und NSC: übrige Charaktere [S. 26], PvP [S. 32], Ersatz nach dem Tod [S. 101].
+  - Erfahrungen vom Tisch: wie viele Gegner gleichzeitig, vorbereitete oder improvisierte Szenen.
 
 ### 6.6 Kreaturen
 
@@ -831,4 +838,4 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 
 Offen:
 
-Derzeit keine. Phasen 0, 1, 2a, 2b.1 und 2b.2 sind abgeschlossen (PR #1 bis #13). Phase 2c.1 und 2c.2 sind abgeschlossen (PR #14 bis #17). Phase 2c.3 liegt als Pull Request vor; danach folgt die Testsitzung, die Phase 2 abschließt.
+Derzeit keine. Phasen 0, 1, 2a, 2b und 2c sind umgesetzt (PR #1 bis #19). Der Abnahmetest von Phase 2 (unabhängiger Datenabgleich und zwei Testsitzungen im Browser) hat Korrekturen ergeben, die als `abnahme-2a` (Regeln, Geheimes, Fehler) und `abnahme-2b` (Bedienung) folgen; danach schließt eine Testsitzung am echten Tisch die Phase ab. Die Fragen zu NSC und Gegnern (6.5) werden vor dem Plan zu Phase 3 besprochen.

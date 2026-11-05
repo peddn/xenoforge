@@ -76,6 +76,8 @@
     { "id": "F-73", "pages": [137, 139], "options": ["per_use"], "default": "per_use" },
     { "id": "F-74", "pages": [137, 139], "options": ["stacking"], "default": "stacking" },
     { "id": "F-75", "pages": [34, 134, 135], "options": ["in_items"], "default": "in_items" },
-    { "id": "F-76", "pages": [161], "options": ["covered"], "default": "covered" }
+    { "id": "F-76", "pages": [161], "options": ["covered"], "default": "covered" },
+    { "id": "F-77", "pages": [63, 86, 133], "options": ["no_bonus"], "default": "no_bonus" },
+    { "id": "F-78", "pages": [60, 61], "options": ["push_after", "ends_roll"], "default": "push_after" }
   ]
 }

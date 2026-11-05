@@ -308,6 +308,11 @@ pub struct Skill {
     pub id: Id,
     pub page: Page,
     pub attribute: Id,
+    /// No list of stunts: every success counts for the skill itself,
+    /// e.g. Health back or the bonus of an order (MEDICAL AID, COMMAND)
+    /// [p. 71].
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub no_stunts: bool,
 }
 
 /// When an action can be taken.
