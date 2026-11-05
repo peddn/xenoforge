@@ -27,6 +27,8 @@ import { mockApi, setup } from './helpers'
 import { createAppI18n } from '@/i18n'
 
 afterEach(() => {
+  // No reload of a team left over for the next test.
+  useTeamStore().close()
   vi.unstubAllGlobals()
   vi.useRealTimers()
 })
@@ -135,6 +137,68 @@ describe('rolling', () => {
     await wrapper.get('[data-test="choice-push"]').trigger('click')
     await flushPromises()
     expect(calls[0].body).toEqual({ command: { command: 'decide', pending: 4, choice: 'push' } })
+  })
+
+  it('names who asks the game master, why and what follows, and closes once decided (F-39)', async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    const targets = {
+      id: 3,
+      kind: 'targets',
+      actor: null,
+      options: [],
+      who: 'friendly_pcs_short_range',
+      candidates: ['1', '4'],
+      by: '2',
+      source: 'analysis',
+      ops: [{ op: 'stress', delta: -1 }],
+    }
+    const team = useTeamStore()
+    team.view = {
+      id: 5,
+      is_gm: true,
+      characters: [
+        { id: 1, name: 'Nat' },
+        { id: 2, name: 'Ilse Varga' },
+        { id: 4, name: 'David Daniels' },
+      ],
+      pending: [targets],
+    }
+    // Stress −1 at 0 changes nothing: the answer brings no log entry.
+    const calls = mockApi({
+      'POST /teams/5/commands': [],
+      'GET /teams/5': { ...team.view, pending: [] },
+    })
+    const wrapper = mount(DecisionDialog, { props: { pending: targets }, global: { plugins: [pinia, i18n] } })
+    expect(wrapper.get('[data-test="decision-cause"]').text()).toBe('Ilse Varga · analysis')
+    expect(wrapper.get('[data-test="decision-effect"]').text()).toBe('Folge für jeden Gewählten: Stress −1')
+    expect(wrapper.text()).toContain('David Daniels')
+    await wrapper.get('input[type="checkbox"]').setValue(true)
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({ command: { command: 'decide', pending: 3, choice: { targets: ['1'] } } })
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    expect(calls.some((c) => c.method === 'GET' && c.path === '/teams/5')).toBe(true)
+    expect(team.view.pending).toEqual([])
+  })
+
+  it('logs who the game master chose, also no one', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = { id: 5, characters: [{ id: 1, name: 'Nat' }, { id: 2, name: 'Ilse Varga' }] }
+    const entry = (id, event) => ({ id, batch: id, by: 'Mother', at: 0, entry: { type: 'engine', event } })
+    team.log = [
+      entry(1, { event: 'choose_targets', pending: 3, actor: '2', source: 'analysis', who: 'friendly_pcs_short_range', candidates: ['1'] }),
+      entry(2, { event: 'targets_chosen', pending: 3, actor: '2', source: 'analysis', targets: ['1'] }),
+      entry(3, { event: 'targets_chosen', pending: 4, actor: '2', source: 'analysis', targets: [] }),
+      entry(4, { event: 'choose_targets', pending: 1, actor: '2', who: 'friendly_pcs_short_range', candidates: ['1'] }),
+    ]
+    const text = mount(LogList, { global: { plugins: [pinia, i18n] } }).text()
+    expect(text).toContain('analysis (Ilse Varga): Die Spielleitung wählt, wer betroffen ist: befreundete SC auf kurzer Distanz')
+    expect(text).toContain('analysis (Ilse Varga) betrifft: Nat')
+    expect(text).toContain('analysis (Ilse Varga) betrifft: niemanden')
+    expect(text).toContain('Die Spielleitung wählt, wer betroffen ist: befreundete SC')
   })
 
   it('shows the bar only for one\'s own decisions, the game master sees all', () => {
@@ -270,7 +334,7 @@ describe('rolling', () => {
 
   it('lets go of a team that is no longer visible', async () => {
     setup()
-    mockApi({})
+    mockApi({ 'GET /teams/5': null })
     const team = useTeamStore()
     await team.open(5)
     expect(team.gone).toBe(true)

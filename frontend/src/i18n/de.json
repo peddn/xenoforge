@@ -109,6 +109,8 @@
   "decision": {
     "title": "Entscheidung",
     "targets": "Wer ist betroffen: {who}?",
+    "cause": "{actor} · {source}",
+    "effect": "Folge für jeden Gewählten: {effect}",
     "kind": {
       "roll": "Wurf: pushen oder annehmen?",
       "start_roll": "Vor dem Wurf: Talent einsetzen?",
@@ -120,6 +122,11 @@
     "titleFor": "Entscheidung: {name}",
     "pushesLeft": "kein Push mehr | 1 Push übrig | {n} Pushes übrig",
     "pushHint": "Pushen: Stress +1, alle Würfel ohne Erfolg werden neu geworfen."
+  },
+  "op": {
+    "stress": "Stress {delta}",
+    "damage": "{amount} Schaden",
+    "panic_roll": "Panikwurf"
   },
   "choice": {
     "accept": "Weiter",
@@ -219,6 +226,9 @@
     "decision": "Wartet auf {actor}: {options}",
     "question": "Frage an {actor}: {question}",
     "choose_targets": "Die Spielleitung wählt, wer betroffen ist: {who}",
+    "choose_targets_from": "{source} ({actor}): Die Spielleitung wählt, wer betroffen ist: {who}",
+    "targets_chosen": "{source} ({actor}) betrifft: {targets}",
+    "nobody": "niemanden",
     "stress_changed": "{actor}: Stress {from} → {to}",
     "damaged": "{actor} erleidet {amount} Schaden, Health {health}",
     "panic_rolled": "{actor}: Panikwurf W6 {d6} + Stress {stress} = {value}",

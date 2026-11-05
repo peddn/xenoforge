@@ -14,7 +14,7 @@ use axum::{Json, Router, routing::post};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 use xenoforge_engine::data::Id;
-use xenoforge_engine::data::effects::Who;
+use xenoforge_engine::data::effects::{Op, Who};
 use xenoforge_engine::dice::Die;
 use xenoforge_engine::roll::{RollKind, RollRequest, RollState};
 use xenoforge_engine::state::{Actor, GameState, Pending};
@@ -501,6 +501,15 @@ pub struct PendingView {
     /// For a roll waiting for push or Story Point: the roll so far, so the
     /// decision can be made with the dice in view.
     pub roll: Option<RollView>,
+    /// For a choice of targets: the character whose action or panic asks,
+    /// the talent, panic effect or rule behind it, and what happens to
+    /// each one chosen.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub by: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<Id>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub ops: Vec<Op>,
 }
 
 /// A roll as far as it has gone; the engine counts the successes.
@@ -544,6 +553,9 @@ pub fn pending_views(state: &GameState, is_gm: bool) -> Vec<PendingView> {
                 who: None,
                 candidates: Vec::new(),
                 roll: None,
+                by: None,
+                source: None,
+                ops: Vec::new(),
             };
             match pending {
                 Pending::Roll(roll) => {
@@ -565,7 +577,11 @@ pub fn pending_views(state: &GameState, is_gm: bool) -> Vec<PendingView> {
                     view.options = vec![Choice::Answer(true), Choice::Answer(false)];
                 }
                 Pending::Targets {
-                    who, candidates, ..
+                    actor,
+                    owner,
+                    who,
+                    candidates,
+                    ops,
                 } => {
                     if !is_gm {
                         return None;
@@ -573,6 +589,9 @@ pub fn pending_views(state: &GameState, is_gm: bool) -> Vec<PendingView> {
                     view.kind = "targets";
                     view.who = Some(*who);
                     view.candidates = candidates.clone();
+                    view.by = Some(actor.clone());
+                    view.source = Some(owner.clone());
+                    view.ops = ops.clone();
                 }
             }
             Some(view)

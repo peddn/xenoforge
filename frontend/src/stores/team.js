@@ -85,8 +85,12 @@ export const useTeamStore = defineStore('team', () => {
   }
 
   // `note`: why, in the person's words; shown with the command in the log.
+  // The view is refreshed afterwards also when the command logged nothing,
+  // so a decision made disappears.
   async function command(command, note) {
-    return post(`/teams/${view.value.id}/commands`, { command, note: note || undefined })
+    const entries = await post(`/teams/${view.value.id}/commands`, { command, note: note || undefined })
+    scheduleRefresh()
+    return entries
   }
 
   async function preview(request) {

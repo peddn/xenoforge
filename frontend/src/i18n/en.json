@@ -109,6 +109,8 @@
   "decision": {
     "title": "Decision",
     "targets": "Who is affected: {who}?",
+    "cause": "{actor} · {source}",
+    "effect": "For each one chosen: {effect}",
     "kind": {
       "roll": "Roll: push or accept?",
       "start_roll": "Before the roll: use a talent?",
@@ -120,6 +122,11 @@
     "titleFor": "Decision: {name}",
     "pushesLeft": "no push left | 1 push left | {n} pushes left",
     "pushHint": "Push: Stress +1, all dice without a success are rolled again."
+  },
+  "op": {
+    "stress": "stress {delta}",
+    "damage": "{amount} damage",
+    "panic_roll": "Panic Roll"
   },
   "choice": {
     "accept": "Go on",
@@ -219,6 +226,9 @@
     "decision": "Waiting for {actor}: {options}",
     "question": "Question for {actor}: {question}",
     "choose_targets": "The game master chooses who is affected: {who}",
+    "choose_targets_from": "{source} ({actor}): the game master chooses who is affected: {who}",
+    "targets_chosen": "{source} ({actor}) affects: {targets}",
+    "nobody": "no one",
     "stress_changed": "{actor}: stress {from} → {to}",
     "damaged": "{actor} suffers {amount} damage, Health {health}",
     "panic_rolled": "{actor}: Panic Roll D6 {d6} + stress {stress} = {value}",

@@ -60,7 +60,17 @@ function describe(entry) {
     case 'question':
       return { text: t('log.question', { actor, question: rules.text(ev.question) }) }
     case 'choose_targets':
-      return { text: t('log.choose_targets', { who: t(`who.${ev.who}`) }) }
+      // Older entries do not name the source.
+      if (!ev.source) return { text: t('log.choose_targets', { who: t(`who.${ev.who}`) }) }
+      return { text: t('log.choose_targets_from', { source: rules.name(ev.source), actor, who: t(`who.${ev.who}`) }) }
+    case 'targets_chosen':
+      return {
+        text: t('log.targets_chosen', {
+          source: rules.name(ev.source),
+          actor,
+          targets: ev.targets.length ? ev.targets.map(name).join(', ') : t('log.nobody'),
+        }),
+      }
     case 'stress_changed':
       return { text: t('log.stress_changed', { actor, from: ev.from, to: ev.to }) }
     case 'damaged':

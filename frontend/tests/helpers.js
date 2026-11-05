@@ -3,8 +3,11 @@ import { createPinia, setActivePinia } from 'pinia'
 
 import { createAppI18n } from '@/i18n'
 import { useRulesStore } from '@/stores/rules'
+import { useTeamStore } from '@/stores/team'
 
-/** Answers fetch calls by "METHOD /path" and records them. */
+/** Answers fetch calls by "METHOD /path" and records them; `null` answers
+ * 404. The team view reloaded after a command is the one in the store,
+ * unless a test gives its own. */
 export function mockApi(routes) {
   const calls = []
   vi.stubGlobal(
@@ -14,7 +17,9 @@ export function mockApi(routes) {
       const path = url.replace(/^\/api/, '')
       const body = options.body ? JSON.parse(options.body) : undefined
       calls.push({ method, path, body })
-      const handler = routes[`${method} ${path}`]
+      let handler = routes[`${method} ${path}`]
+      const team = useTeamStore().view
+      if (handler === undefined && method === 'GET' && team && path === `/teams/${team.id}`) handler = () => team
       if (!handler) return { ok: false, status: 404, statusText: 'not found', text: async () => '' }
       const value = typeof handler === 'function' ? handler(body) : handler
       return { ok: true, status: 200, text: async () => JSON.stringify(value) }
