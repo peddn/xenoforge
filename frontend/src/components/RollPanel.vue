@@ -38,6 +38,8 @@ const calming = ref('')
 const panicking = computed(() =>
   (team.view.characters ?? []).filter((c) => c.panicking && c.id !== props.character.id),
 )
+// A panic that ended meanwhile is no longer a purpose.
+const calmed = computed(() => panicking.value.find((c) => String(c.id) === String(calming.value)))
 let timer = null
 
 // The situation in which a talent's bonus counts, from its rule data.
@@ -67,8 +69,8 @@ const request = computed(() => {
     kind: kinds[kind],
     modifiers,
     helpers: Number(helpers.value) || 0,
-    ...(kind === 'skill' && id === 'command' && calming.value
-      ? { purpose: { stop_panic: { target: String(calming.value) } } }
+    ...(kind === 'skill' && id === 'command' && calmed.value
+      ? { purpose: { stop_panic: { target: String(calmed.value.id) } } }
       : {}),
     talents: talents.value,
     items: items.value,
@@ -155,9 +157,9 @@ function perform(action) {
               {{ t('roll.attributeOnly', { name: rules.name(attribute.id) }) }}
             </option>
           </optgroup>
-          <!-- Only the Broken roll for their life, androids never [p. 99, 111]. -->
+          <!-- The Broken and the fatally injured roll for their life, androids never [p. 99, 111]. -->
           <option
-            v-if="character.broken && !character.actor?.android"
+            v-if="(character.broken || character.fatally_injured) && !character.actor?.android"
             value="death:"
           >
             {{ t('roll.death') }}

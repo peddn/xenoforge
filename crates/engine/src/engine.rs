@@ -626,6 +626,15 @@ impl Engine {
         self.rules.critical_injuries.iter().find(|e| e.id == id)
     }
 
+    /// Has a fatal critical injury, which needs Death Rolls until someone
+    /// saves the character, Broken or not [p. 99].
+    pub fn fatally_injured(&self, actor: &Actor) -> bool {
+        actor.sources.iter().any(|s| match &s.origin {
+            Origin::Injury(id) => self.injury(id).is_some_and(|i| i.fatal.is_some()),
+            _ => false,
+        })
+    }
+
     pub(crate) fn panic_entry(&self, id: &str) -> Option<&PanicResult> {
         self.rules.panic.iter().find(|e| e.id == id)
     }
@@ -1282,18 +1291,23 @@ impl<'a> Ctx<'a> {
     }
 
     /// Proposes the friendly human player characters (F-39); the game
-    /// master picks who is affected.
+    /// master picks who is affected. The question comes whenever there are
+    /// other player characters, also when none is human: else its absence
+    /// would give away a covert android (A-14).
     fn ask_targets(&mut self, actor: &str, owner: &str, who: Who, ops: Vec<Op>) -> Result<()> {
-        let candidates: Vec<ActorId> = self
-            .state
-            .actors
-            .iter()
-            .filter(|(id, a)| id.as_str() != actor && a.human_pc())
-            .map(|(id, _)| id.clone())
-            .collect();
-        if candidates.is_empty() {
+        let others = || {
+            self.state
+                .actors
+                .iter()
+                .filter(move |(id, a)| id.as_str() != actor && a.kind == ActorKind::Pc)
+        };
+        if others().next().is_none() {
             return Ok(());
         }
+        let candidates: Vec<ActorId> = others()
+            .filter(|(_, a)| a.human_pc())
+            .map(|(id, _)| id.clone())
+            .collect();
         let pending = self.next_pending();
         self.state.pending.insert(
             pending,

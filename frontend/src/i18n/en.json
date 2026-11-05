@@ -291,6 +291,7 @@
     "removeConfirm": "Really take {name} out of the team?",
     "leave": "Leave the team",
     "leaveConfirm": "Leave the team with {name}?",
+    "leaveReturns": "Leave? {name} goes back to the game master and stays in the team.",
     "act": "Act {act}",
     "waiting": "Without a character:",
     "scenarioOver": "Scenario over",

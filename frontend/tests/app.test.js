@@ -136,6 +136,7 @@ describe('rolling', () => {
     expect(kinds(charlize, false)).not.toContain('death:')
     expect(kinds(charlize, true)).toContain('attribute:wits')
     expect(kinds({ ...charlize, broken: true }, false)).toContain('death:')
+    expect(kinds({ ...charlize, fatally_injured: true }, false)).toContain('death:')
     // Androids make no Death Rolls [p. 111].
     expect(kinds({ ...charlize, broken: true, actor: { android: true } }, true)).not.toContain('death:')
   })
@@ -153,6 +154,11 @@ describe('rolling', () => {
     await vi.advanceTimersByTimeAsync(200)
     await flushPromises()
     expect(calls.at(-1).body.purpose).toEqual({ stop_panic: { target: '7' } })
+    // The panic ended meanwhile: no longer a purpose.
+    useTeamStore().view = { id: 5, characters: [charlize, { id: 7, name: 'Rosa', panicking: false }] }
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    expect(calls.at(-1).body.purpose).toBeUndefined()
     wrapper.unmount()
   })
 

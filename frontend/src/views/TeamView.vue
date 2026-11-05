@@ -71,6 +71,12 @@ const current = computed(() => {
   const character = team.view.characters.find((c) => c.id === dialog.value.id)
   return character?.actor ? character : null
 })
+// Gone is gone: the dialog does not come back by itself, e.g. when the
+// character is offered again later.
+watch(current, (now) => {
+  if (dialog.value && !now) dialog.value = null
+})
+
 const title = computed(() => {
   const { kind } = dialog.value
   if (kind === 'decision') {

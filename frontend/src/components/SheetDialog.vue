@@ -380,7 +380,7 @@ async function leave() {
       <XConfirm
         variant="danger"
         :label="t('team.leave')"
-        :question="t('team.leaveConfirm', { name: character.name })"
+        :question="t(character.returns ? 'team.leaveReturns' : 'team.leaveConfirm', { name: character.name })"
         data-test="leave"
         @confirm="leave"
       />

@@ -137,6 +137,13 @@ struct CharacterInTeam {
     /// master only.
     #[serde(skip_serializing_if = "Option::is_none")]
     prepared: Option<bool>,
+    /// A fatal critical injury, which needs Death Rolls [p. 99], for the
+    /// same people.
+    fatally_injured: Option<bool>,
+    /// The game master's character the owner chose or was given: it goes
+    /// back when they leave (A-12). For the owner and the game master.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    returns: Option<bool>,
     /// Panicking, for everyone: the Panic Roll is in the shared log
     /// (A-01), and someone else's COMMAND roll can end it (F-36)
     /// [p. 71, 104].
@@ -256,6 +263,8 @@ async fn view(
                 .then(|| team.agendas.get(&character.id).cloned().unwrap_or_default()),
             broken: sees.then(|| character.data.actor.broken()),
             prepared: is_gm.then_some(character.data.status == characters::Status::Free),
+            fatally_injured: sees.then(|| state.engine.fatally_injured(&character.data.actor)),
+            returns: own.then_some(character.data.lent_by == Some(team.gm_id)),
             panicking: character.data.actor.panic.is_some(),
             health_max: sees.then(|| state.engine.full_health(&character.data.actor)),
             encumbrance: sees.then(|| state.engine.encumbrance(&character.data.actor)),
@@ -423,22 +432,23 @@ async fn remove(
     }
     if lent && !is_gm {
         characters::save(&mut tx, &character).await?;
-        drop_membership(&mut tx, id, player).await?;
+        let left = drop_membership(&mut tx, id, player).await?;
         // A new owner ends the undo history, as with a handover.
         sqlx::query("DELETE FROM snapshots WHERE team_id = ?")
             .bind(id)
             .execute(&mut *tx)
             .await?;
-        let entries = vec![
-            Entry::CharacterHandedOver {
-                character: character.id,
-                name: character.name.clone(),
-                to: name_of(&state, team.gm_id).await?,
-            },
-            Entry::MemberLeft {
+        let mut entries = vec![Entry::CharacterHandedOver {
+            character: character.id,
+            name: character.name.clone(),
+            to: name_of(&state, team.gm_id).await?,
+        }];
+        // Who still plays another character stays a member.
+        if left {
+            entries.push(Entry::MemberLeft {
                 name: user.name.clone(),
-            },
-        ];
+            });
+        }
         let stored = log::append(&mut tx, id, &user, entries, None).await?;
         tx.commit().await?;
         log::publish(&state, &stored);
@@ -491,13 +501,14 @@ async fn remove(
     Ok(Json(stored))
 }
 
-/// A player without a character in the team no longer sees it.
+/// A player without a character in the team no longer sees it; answers
+/// whether they left.
 async fn drop_membership(
     tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
     team_id: i64,
     user_id: i64,
-) -> ApiResult<()> {
-    sqlx::query(
+) -> ApiResult<bool> {
+    let left = sqlx::query(
         "DELETE FROM members WHERE team_id = ? AND user_id = ? AND NOT EXISTS \
          (SELECT 1 FROM characters WHERE team_id = ? AND owner_id = ?)",
     )
@@ -506,8 +517,9 @@ async fn drop_membership(
     .bind(team_id)
     .bind(user_id)
     .execute(&mut **tx)
-    .await?;
-    Ok(())
+    .await?
+    .rows_affected();
+    Ok(left > 0)
 }
 
 /// A player without a character in the team leaves it, or the game master
