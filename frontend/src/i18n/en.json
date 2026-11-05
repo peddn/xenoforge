@@ -66,7 +66,10 @@
     "cashRolled": "${amount} (rolled: {dice})",
     "edit": "Edit texts and agenda",
     "deleteConfirm": "Delete {name} for good?",
-    "editTexts": "Edit texts"
+    "editTexts": "Edit texts",
+    "covert": "Covert: poses as human",
+    "covertShort": "covert",
+    "open": "open"
   },
   "join": {
     "title": "Invitation",
@@ -161,7 +164,9 @@
     "actionsTitle": "Actions: {name}",
     "confirmEndSession": "Really end the session? Panic of 13 or more leads to the trauma roll.",
     "endActTitle": "End Act {act}",
-    "agendaQuestion": "Who furthered their Agenda in this Act, despite risk or sacrifice? Each player gets a Story Point for it, at most three. The log gives no reason (p. 216)."
+    "agendaQuestion": "Who furthered their Agenda in this Act, despite risk or sacrifice? Each player gets a Story Point for it, at most three. The log gives no reason (p. 216).",
+    "revealAndroid": "Reveal android",
+    "revealAndroidConfirm": "Reveal {name} as an android? Humans nearby gain stress."
   },
   "cold": {
     "above_freezing": "above freezing",
@@ -252,7 +257,8 @@
     "act_ended_n": "Act {act} ended: signature item and talents usable once per Act are available again.",
     "story_point_awarded": "{player} gets a Story Point",
     "member_left": "{name} leaves the team",
-    "member_removed": "{name} is no longer in the team"
+    "member_removed": "{name} is no longer in the team",
+    "android_revealed": "{actor} is an android"
   },
   "about": {
     "title": "About Xenoforge",

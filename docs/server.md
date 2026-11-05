@@ -48,7 +48,7 @@ Helfer stehen in `helpers`; es zählen höchstens drei (S. 63). Alles andere leh
 
 ## Sichtbarkeit (A-01)
 
-- Die Werte im Bogen (Attribute, Fertigkeiten, Talente, Stress, Zustände) sehen die Spielleitung und der Besitzer. Die anderen sehen Name und Spieler. Solange die Spielleitung einen Charakter zur Wahl anbietet, sehen alle im Team seinen Bogen, aber weder Agenda noch Notizen noch ob er ein Android ist (A-12, S. 29).
+- Die Werte im Bogen (Attribute, Fertigkeiten, Talente, Stress, Zustände) sehen die Spielleitung und der Besitzer. Die anderen sehen Name und Spieler. Solange die Spielleitung einen Charakter zur Wahl anbietet, sehen alle im Team seinen Bogen, aber weder Agenda noch Notizen; ein verdeckter Android erscheint dabei als Mensch (A-12, A-14, S. 29).
 - Agenden pro Akt (Cinematic) sieht die Spielleitung alle, der Besitzer nur die des laufenden Akts (A-13). Sie liegen beim Team, nicht im Charakter, damit sie über die Charakter-Schnittstelle nie herausgehen.
 - Was im Spiel geschieht, steht nach A-01 im gemeinsamen Protokoll, so wie es am Tisch angesagt würde: Würfe, Stress und Schaden, Panik, eingesetzte Talente und die Entscheidungen, auf die gewartet wird.
 - Story Points sieht jeder Spieler für sich, die Spielleitung für alle. Dass jemand beim Aktende einen bekommt, steht für alle im Protokoll (S. 216); was die Spielleitung von Hand setzt, nur für sie.

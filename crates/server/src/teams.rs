@@ -204,13 +204,14 @@ async fn view(
             name: character.name.clone(),
             owner_id: character.owner_id,
             owner_name: name_of(&state, character.owner_id).await?,
-            // An offered sheet for the others shows no agenda, no notes
-            // and not whether it is an android, who may pass as human
-            // (A-12, p. 29).
+            // An offered sheet for the others shows no agenda and no
+            // notes, and a covert android passes as human (A-12, A-14,
+            // p. 29).
             actor: sees.then(|| {
                 let mut actor = character.data.actor.clone();
-                if !own {
+                if !own && actor.covert {
                     actor.android = false;
+                    actor.covert = false;
                 }
                 actor
             }),

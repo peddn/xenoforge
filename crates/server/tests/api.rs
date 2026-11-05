@@ -1012,6 +1012,7 @@ async fn choosing_and_handing_over() {
         .to_owned();
     let mut prepared = Vec::new();
     for (name, android) in [("Nat", false), ("Ripley", true)] {
+        // Ripley is a covert android (A-14).
         let id = gm
             .ok(
                 "POST",
@@ -1024,7 +1025,7 @@ async fn choosing_and_handing_over() {
         gm.ok(
             "PUT",
             &format!("/api/characters/{id}"),
-            Some(json!({ "name": name, "data": { "actor": { "android": android, "attributes": { "strength": 3 } }, "sheet": { "notes": "secret" } } })),
+            Some(json!({ "name": name, "data": { "actor": { "android": android, "covert": android, "attributes": { "strength": 3 } }, "sheet": { "notes": "secret" } } })),
         )
         .await;
         gm.ok(
@@ -1087,8 +1088,8 @@ async fn choosing_and_handing_over() {
     let (status, _) = bob.call("POST", &path(nat, "claim"), None).await;
     assert_eq!(status, StatusCode::CONFLICT);
 
-    // An offered android passes as human; notes stay hidden. Who already
-    // plays a character takes no second one.
+    // An offered covert android passes as human; notes stay hidden. Who
+    // already plays a character takes no second one.
     gm.ok(
         "PUT",
         &path(ripley, "offer"),
@@ -1101,6 +1102,24 @@ async fn choosing_and_handing_over() {
     assert_eq!(offered["sheet"]["notes"], "");
     let (status, _) = ann.call("POST", &path(ripley, "claim"), None).await;
     assert_eq!(status, StatusCode::CONFLICT, "one character per player");
+
+    // Only the game master reveals the android; then everyone knows.
+    let reveal = json!({ "command": "reveal_android", "actor": ripley.to_string() });
+    let (status, _) = ann.command(team, reveal.clone()).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, entries) = gm.command(team, reveal).await;
+    assert_eq!(status, StatusCode::OK, "{entries}");
+    assert_eq!(events_of(&entries)[0]["event"], "android_revealed");
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(find(&view, ripley)["actor"]["android"], true);
+    // Ann is the only human nearby to choose; the game master skips it.
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let pending = view["pending"][0]["id"].clone();
+    gm.command(
+        team,
+        json!({ "command": "decide", "pending": pending, "choice": { "targets": [] } }),
+    )
+    .await;
 
     // In Cinematic play the scenario sets buddy and rival [p. 31].
     let relations = format!("/api/characters/{nat}/relations");

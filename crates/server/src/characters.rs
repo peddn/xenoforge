@@ -349,6 +349,7 @@ async fn update(
         let was_full = actor.health == state.engine.full_health(actor);
         let health_untouched = new.health == actor.health;
         actor.android = new.android;
+        actor.covert = new.android && new.covert;
         actor.attributes = new.attributes;
         actor.skills = new.skills;
         actor.talents = new.talents;

@@ -136,6 +136,18 @@ fn android() {
     d.android_bonus = vec!["strength".into(), "wits".into()];
     assert_eq!(t.engine.check_creation(&d), vec![]);
     let actor = t.engine.creation_actor(&d);
+    assert!(!actor.covert);
+    d.android_covert = true;
+    assert!(t.engine.creation_actor(&d).covert, "poses as human (A-14)");
+    assert!(
+        !t.engine
+            .creation_actor(&Draft {
+                android_covert: true,
+                ..nat()
+            })
+            .covert,
+        "only androids are covert"
+    );
     assert_eq!(actor.attribute("strength"), 8);
     assert_eq!(actor.attribute("wits"), 5);
     assert_eq!(actor.health, 8);

@@ -17,6 +17,7 @@ pub const MAX_PAGE: Page = 400;
 /// Constants the engine and the server read from `constants.json`.
 pub const REQUIRED_CONSTANTS: &[&str] = &[
     "android_attribute_bonus",
+    "android_reveal_stress",
     "android_bonus_attributes",
     "base_pushes",
     "cinematic_acts",

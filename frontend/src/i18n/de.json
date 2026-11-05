@@ -66,7 +66,10 @@
     "cashRolled": "{amount} $ (gewürfelt: {dice})",
     "edit": "Texte und Agenda bearbeiten",
     "deleteConfirm": "{name} endgültig löschen?",
-    "editTexts": "Texte bearbeiten"
+    "editTexts": "Texte bearbeiten",
+    "covert": "Verdeckt: gibt sich als Mensch aus",
+    "covertShort": "verdeckt",
+    "open": "offen"
   },
   "join": {
     "title": "Einladung",
@@ -161,7 +164,9 @@
     "actionsTitle": "Aktionen: {name}",
     "confirmEndSession": "Sitzung wirklich beenden? Nach Panik ab 13 folgt die Trauma-Probe.",
     "endActTitle": "Akt {act} beenden",
-    "agendaQuestion": "Wer ist in diesem Akt seiner Agenda gefolgt, trotz Risiko oder Opfer? Jeder Spieler bekommt dafür einen Story Point, höchstens drei. Das Protokoll nennt keinen Grund (S. 216)."
+    "agendaQuestion": "Wer ist in diesem Akt seiner Agenda gefolgt, trotz Risiko oder Opfer? Jeder Spieler bekommt dafür einen Story Point, höchstens drei. Das Protokoll nennt keinen Grund (S. 216).",
+    "revealAndroid": "Android enthüllen",
+    "revealAndroidConfirm": "{name} als Android enthüllen? Menschen in der Nähe bekommen Stress."
   },
   "cold": {
     "above_freezing": "über null",
@@ -252,7 +257,8 @@
     "act_ended_n": "Akt {act} beendet: Signature Item und Talente mit Einsatz pro Akt sind wieder verfügbar.",
     "story_point_awarded": "{player} bekommt einen Story Point",
     "member_left": "{name} verlässt das Team",
-    "member_removed": "{name} ist nicht mehr im Team"
+    "member_removed": "{name} ist nicht mehr im Team",
+    "android_revealed": "{actor} ist ein Android"
   },
   "about": {
     "title": "Über Xenoforge",

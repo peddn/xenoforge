@@ -86,6 +86,9 @@ pub enum Command {
     /// Sets a player's Story Points, e.g. those brought from the last
     /// scenario (F-53) [p. 61, 383].
     SetStoryPoints { player: PlayerId, points: u8 },
+    /// A covert android is revealed: humans nearby gain stress; the game
+    /// master picks them (A-14) [p. 103].
+    RevealAndroid { actor: ActorId },
     /// End of a game session: resets uses, trauma checks [p. 104].
     EndSession,
 }
@@ -274,6 +277,10 @@ pub enum Event {
     /// A game session ended: uses per session are free again, trauma
     /// checks follow [p. 76, 77, 104].
     SessionEnded,
+    /// A covert android was revealed (A-14) [p. 103].
+    AndroidRevealed {
+        actor: ActorId,
+    },
     SignatureItemUsed {
         actor: ActorId,
     },
@@ -716,6 +723,7 @@ impl<'a> Ctx<'a> {
                 self.perform_action(&actor, action)
             }
             Command::UseSignatureItem { actor } => self.use_signature_item(&actor),
+            Command::RevealAndroid { actor } => self.reveal_android(&actor),
             Command::EndAct { agenda } => self.end_act(&agenda),
             Command::SetStoryPoints { player, points } => {
                 self.cinematic("Story Points")?;
@@ -1443,6 +1451,32 @@ impl<'a> Ctx<'a> {
                 !(session || period == Some(UsePeriod::ActOrSession))
             });
         }
+    }
+
+    /// A covert android becomes open. A person nearby revealed as an
+    /// android gives stress [p. 103]; who was near is the game master's
+    /// choice among the human player characters (F-39).
+    fn reveal_android(&mut self, actor: &str) -> Result<()> {
+        let a = self.actor_mut(actor)?;
+        if !(a.android && a.covert) {
+            return Err(RuleError::NotAllowed(format!(
+                "\"{actor}\" is no covert android"
+            )));
+        }
+        a.covert = false;
+        self.emit(Event::AndroidRevealed {
+            actor: actor.to_owned(),
+        });
+        let delta = i8::try_from(self.engine.constant("android_reveal_stress")).unwrap_or(0);
+        self.ask_targets(
+            actor,
+            "android_reveal_stress",
+            Who::FriendlyPcsShortRange,
+            vec![Op::Stress {
+                delta,
+                who: Who::Bearer,
+            }],
+        )
     }
 
     /// Story Points and Acts exist only in Cinematic play (F-06).

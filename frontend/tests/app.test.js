@@ -754,3 +754,35 @@ describe('choosing and Acts (A-12, A-13)', () => {
   })
 })
 
+describe('covert android (A-14)', () => {
+  it('chooses covert in the wizard, reveals by the game master and shows it on the sheet', async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    const calls = mockApi({
+      'PUT /characters/7': (body) => ({ id: 7, name: '', data: { status: 'draft', draft: body.data.draft, sheet: {}, actor: {} }, problems: [] }),
+      'POST /teams/5/commands': [],
+    })
+    const wizard = mount(CreationWizard, {
+      props: { character: { id: 7, name: '', data: { status: 'draft', draft: {}, sheet: {}, actor: {} }, problems: [{ step: 'career', code: 'career_missing', page: 27 }] } },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(wizard.find('[data-test="android-covert"]').exists()).toBe(false)
+    await wizard.get('[data-test="android"]').setValue(true)
+    await wizard.get('[data-test="android-covert"]').setValue(true)
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+    expect(calls.at(-1).body.data.draft).toMatchObject({ android: true, android_covert: true })
+
+    const holroyd = { id: 4, name: 'Holroyd', owner_id: 1, owner_name: 'Mother', actor: { android: true, covert: true, sources: [] } }
+    useTeamStore().view = { id: 5, is_gm: true, mode: 'cinematic', act: 1, gm: { id: 1, name: 'Mother' }, members: [], characters: [holroyd], story_points: {} }
+    const actions = mount(CharacterActions, { props: { character: holroyd }, global: { plugins: [pinia, i18n] } })
+    await actions.get('[data-test="reveal-android"]').trigger('click')
+    await actions.get('[data-test="confirm"]').trigger('click')
+    await flushPromises()
+    expect(calls.at(-1).body.command).toEqual({ command: 'reveal_android', actor: '4' })
+
+    const sheet = mount(CharacterSheet, { props: { sheet: {}, actor: holroyd.actor }, global: { plugins: [pinia, i18n] } })
+    expect(sheet.text()).toContain('Androidverdeckt')
+  })
+})
+

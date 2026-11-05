@@ -33,7 +33,8 @@ const facts = computed(() => {
   if (props.texts) list.push([t('sheet.signatureItem'), props.sheet.signature_item])
   const health = props.healthMax == null ? props.actor.health : `${props.actor.health}/${props.healthMax}`
   list.push([t('sheet.health'), String(health ?? 0)])
-  if (!props.actor.android) list.push([t('sheet.stress'), String(props.actor.stress ?? 0)])
+  if (props.actor.android) list.push([t('sheet.android'), t(props.actor.covert ? 'sheet.covertShort' : 'sheet.open')])
+  else list.push([t('sheet.stress'), String(props.actor.stress ?? 0)])
   if (props.startCash) {
     list.push([
       t('sheet.startCash'),

@@ -72,7 +72,7 @@ Jede Person hat ein Benutzerkonto und wählt bei der Registrierung, ob sie Spiel
 | --- | --- | --- |
 | Charaktere | Im eigenen Team alle sehen und ändern; Charaktere der Mitglieder dem Team zuordnen oder aus ihm lösen | Eigene Charaktere jederzeit anlegen und verwalten, auch ohne Team; die Bögen der anderen sehen sie nicht |
 | Persönliche Agenda | Alle sehen; in Cinematic bis zu drei pro Charakter vorbereiten, eine pro Akt (A-13) [S. 31, 216] | Nur die eigene sehen [S. 213]; in Campaign gibt die App alle Agenden beim Sitzungsabschluss für die gemeinsame XP-Runde frei [S. 31] |
-| Verdeckter Android | Weiß Bescheid | Nur der eigene Charakter; die Enthüllung löst bei Anwesenden Stress aus [S. 103] |
+| Verdeckter Android | Weiß Bescheid, enthüllt ihn | Nur der eigene Charakter; die Enthüllung löst bei Anwesenden Stress aus (A-14) [S. 103] |
 | NSC und Kreaturen | Anlegen, Werte sehen, würfeln | Sehen nur Namen und Wirkungen, keine Werte |
 | Würfe | Würfe für NSC und Kreaturen öffentlich oder verdeckt | Immer offen, denn über den Push entscheidet, wer das Ergebnis sieht [S. 60]. Ergebnisse stehen im gemeinsamen Protokoll |
 | Kampf und Raumkampf | Starten, Reihenfolge führen, Gegner steuern, beenden | Eigene Aktionen ausführen, wenn sie dran sind |
@@ -264,7 +264,7 @@ Ein Android ist ein Schalter am Charakter, kein eigener Charaktertyp. Er wirkt i
 | Reparatur statt Heilung | Eine Schicht Arbeit und eine COMTECH-Probe stellen alles wieder her, auch selbst. Nach Shutdown erst reaktivieren (Strom, ein Turn, COMTECH), danach dauerhaftes Trauma | 111 |
 | Vorräte und Zustände | Braucht weder Luft noch Nahrung, Wasser oder Schlaf; immun gegen Vakuum, Kälte, Krankheit | 111 |
 | Entwicklung | XP-Frage „Panic Roll gemacht?“ entfällt; Talente, die nur Stress oder Push betreffen, markiert der Assistent als wirkungslos | 35 |
-| Verdeckt | Kann sich als Mensch ausgeben; bei Enthüllung bekommen Menschen in der Nähe Stress +1 | 103 |
+| Verdeckt | Kann sich als Mensch ausgeben, auch solange er zur Wahl steht; bei Enthüllung durch die Spielleitung bekommen Menschen in der Nähe Stress +1 (A-14) | 29, 103 |
 
 ### 5.4 Ausrüstung und Traglast
 

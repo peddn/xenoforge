@@ -85,6 +85,10 @@ pub enum Supply {
 pub struct Actor {
     pub kind: ActorKind,
     pub android: bool,
+    /// An android that poses as human; others do not learn it until the
+    /// reveal (A-14) [p. 29, 103].
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub covert: bool,
     /// Player who controls the character, for Story Points.
     pub player: Option<PlayerId>,
     pub attributes: BTreeMap<Id, u8>,

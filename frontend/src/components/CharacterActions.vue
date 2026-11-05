@@ -136,6 +136,14 @@ function apply() {
       <XButton @click="run({ command: 'use_signature_item', actor })">
         {{ t('gm.signatureItem') }}
       </XButton>
+      <!-- A covert android revealed: humans nearby gain stress (A-14, p. 103). -->
+      <XConfirm
+        v-if="character.actor?.android && character.actor?.covert"
+        :label="t('gm.revealAndroid')"
+        :question="t('gm.revealAndroidConfirm', { name: character.name })"
+        data-test="reveal-android"
+        @confirm="run({ command: 'reveal_android', actor })"
+      />
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <XField :label="t('gm.source')">
