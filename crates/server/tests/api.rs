@@ -1803,20 +1803,24 @@ async fn choosing_and_handing_over() {
         Some(json!({ "agendas": ["Bring it home."] })),
     )
     .await;
-    let entries = bob
-        .ok(
-            "DELETE",
-            &format!("/api/teams/{team}/characters/{ripley}"),
-            None,
-        )
+    // Bob also gets Nat; giving one back, he stays a member.
+    gm.ok("PUT", &path(nat, "owner"), Some(json!({ "owner": bob_id })))
         .await;
-    let kinds: Vec<&str> = entries
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|e| e["entry"]["type"].as_str().unwrap())
-        .collect();
-    assert_eq!(kinds, ["character_handed_over", "member_left"]);
+    let view = bob.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(find(&view, ripley)["returns"], true);
+    let kinds = |entries: &Value| -> Vec<String> {
+        entries
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["entry"]["type"].as_str().unwrap().to_owned())
+            .collect()
+    };
+    let leave = |c: i64| format!("/api/teams/{team}/characters/{c}");
+    let entries = bob.ok("DELETE", &leave(nat), None).await;
+    assert_eq!(kinds(&entries), ["character_handed_over"]);
+    let entries = bob.ok("DELETE", &leave(ripley), None).await;
+    assert_eq!(kinds(&entries), ["character_handed_over", "member_left"]);
     let (status, _) = bob.call("GET", &format!("/api/teams/{team}"), None).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
