@@ -2,8 +2,9 @@
 //! ones, where they are, encumbrance and the bonuses of gear in a roll
 //! [p. 33–34, 62, 98, 118].
 //!
-//! Carried and worn items count for encumbrance; stowed ones do not and
-//! cannot be used in a roll. A worn suit works by itself: its modifiers
+//! Items of one kind at one place form one stack, except those with a
+//! supply of their own and a worn suit. Carried and worn items count for
+//! encumbrance; stowed ones do not and cannot be used in a roll. A worn suit works by itself: its modifiers
 //! count and it may protect in a vacuum (F-18). Other gear is offered in
 //! the roll dialog; each chosen item counts once, a weapon only for the
 //! skill it is used with, and only one weapon per roll (F-59).
@@ -376,24 +377,72 @@ impl Engine {
     }
 }
 
-/// Gives the actor a new item; it gets the next number.
+/// Gives the actor a new item. It joins a stack of the same item at the
+/// same place, or gets the next number; answers where it ended up.
 pub(crate) fn give(engine: &Engine, actor: &mut Actor, new: &NewItem) -> Result<u32> {
-    let uid = actor.next_item;
-    let possession = engine.possession(new, uid)?;
+    let possession = engine.possession(new, actor.next_item)?;
     if possession.place == Place::Worn {
-        take_off(actor);
+        take_off(engine, actor);
     }
+    Ok(add(engine, actor, possession))
+}
+
+/// Adds a possession under a new number and stacks it.
+fn add(engine: &Engine, actor: &mut Actor, mut possession: Possession) -> u32 {
+    possession.uid = actor.next_item;
+    actor.next_item += 1;
+    let uid = possession.uid;
     actor.items.push(possession);
-    actor.next_item = uid + 1;
-    Ok(uid)
+    settle(engine, actor, uid)
+}
+
+/// Things of one kind at one place form one stack: same catalog entry, or
+/// a free item with the same name and weight. Spare reloads add up, since
+/// they belong to the stack (F-61). Items with a supply of their own and
+/// a worn suit stay single [p. 34, 98]. Answers the stack's number.
+fn settle(engine: &Engine, actor: &mut Actor, uid: u32) -> u32 {
+    let Some(index) = actor.items.iter().position(|p| p.uid == uid) else {
+        return uid;
+    };
+    let p = &actor.items[index];
+    let own_supply = p
+        .item
+        .as_deref()
+        .and_then(|id| engine.item(id))
+        .is_some_and(|i| i.supply.is_some());
+    if p.place == Place::Worn || own_supply {
+        return uid;
+    }
+    let same = |o: &Possession| {
+        o.uid != uid
+            && o.place == p.place
+            && o.item == p.item
+            && (p.item.is_some() || (o.name == p.name && o.weight == p.weight))
+    };
+    let Some(target) = actor.items.iter().position(same) else {
+        return uid;
+    };
+    let part = actor.items.remove(index);
+    let target = if target > index { target - 1 } else { target };
+    let stack = &mut actor.items[target];
+    stack.count = stack.count.saturating_add(part.count);
+    stack.reloads = stack.reloads.saturating_add(part.reloads);
+    stack.uid
 }
 
 /// One suit at a time: the worn one is carried again [p. 98].
-fn take_off(actor: &mut Actor) {
-    for p in &mut actor.items {
-        if p.place == Place::Worn {
+fn take_off(engine: &Engine, actor: &mut Actor) {
+    let worn: Vec<u32> = actor
+        .items
+        .iter()
+        .filter(|p| p.place == Place::Worn)
+        .map(|p| p.uid)
+        .collect();
+    for uid in worn {
+        if let Some(p) = actor.items.iter_mut().find(|p| p.uid == uid) {
             p.place = Place::Carried;
         }
+        settle(engine, actor, uid);
     }
 }
 
@@ -421,20 +470,18 @@ impl Ctx<'_> {
     pub(crate) fn add_item(&mut self, actor: &str, new: &NewItem) -> Result<()> {
         let engine = self.engine;
         let a = self.actor_mut(actor)?;
+        let added = engine.possession(new, a.next_item)?;
         let uid = give(engine, a, new)?;
         let snapshot = a.clone();
         engine.check_load(&snapshot, actor)?;
-        let possession = snapshot.items.iter().find(|p| p.uid == uid).cloned();
-        if let Some(p) = possession {
-            self.emit(Event::ItemAdded {
-                actor: actor.to_owned(),
-                uid,
-                item: p.item,
-                name: p.name,
-                count: p.count,
-                place: p.place,
-            });
-        }
+        self.emit(Event::ItemAdded {
+            actor: actor.to_owned(),
+            uid,
+            item: added.item,
+            name: added.name,
+            count: added.count,
+            place: added.place,
+        });
         Ok(())
     }
 
@@ -462,31 +509,20 @@ impl Ctx<'_> {
                 "there are {have} of item {uid}"
             )));
         }
-        // Part of a stack goes elsewhere on the character: it becomes an
-        // item of its own. Spare reloads belong to the whole stack and stay
-        // with what is left (F-61).
-        let split = count < have
-            && matches!(
-                to,
-                Destination::Carried | Destination::Stowed | Destination::Worn
-            );
         let (item, name) = (a.items[index].item.clone(), a.items[index].name.clone());
-        let index = if split {
-            let mut part = a.items[index].clone();
-            a.items[index].count -= count;
-            part.uid = a.next_item;
-            part.count = count;
-            part.reloads = 0;
-            a.next_item += 1;
-            a.items.push(part);
-            a.items.len() - 1
-        } else {
-            index
+        let place = match &to {
+            Destination::Carried => Some(Place::Carried),
+            Destination::Stowed => Some(Place::Stowed),
+            Destination::Worn => Some(Place::Worn),
+            Destination::Dropped | Destination::Character(_) => None,
         };
-        match &to {
-            Destination::Carried => a.items[index].place = Place::Carried,
-            Destination::Stowed => a.items[index].place = Place::Stowed,
-            Destination::Worn => {
+        if let Some(place) = place {
+            if a.items[index].place == place {
+                return Err(RuleError::NotAllowed(format!(
+                    "item {uid} is there already"
+                )));
+            }
+            if place == Place::Worn {
                 let suit = a.items[index]
                     .item
                     .as_deref()
@@ -496,33 +532,48 @@ impl Ctx<'_> {
                 if !suit {
                     return Err(RuleError::NotAllowed("only suits are worn".into()));
                 }
-                if a.items[index].count > 1 {
+                if count > 1 {
                     return Err(RuleError::NotAllowed("one suit at a time [p. 98]".into()));
                 }
-                take_off(a);
-                a.items[index].place = Place::Worn;
+                take_off(engine, a);
             }
-            Destination::Dropped | Destination::Character(_) => {
+            // Taking off may have stacked other items: find it again.
+            let index = a
+                .items
+                .iter()
+                .position(|p| p.uid == uid)
+                .ok_or_else(|| RuleError::NotAllowed(format!("no item {uid}")))?;
+            if count == have {
+                a.items[index].place = place;
+                settle(engine, a, uid);
+            } else {
+                // Part of a stack goes elsewhere on the character; spare
+                // reloads stay with what is left (F-61).
                 let mut part = a.items[index].clone();
-                if count == have {
-                    a.items.remove(index);
-                } else {
-                    a.items[index].count -= count;
-                    part.reloads = 0;
+                a.items[index].count -= count;
+                part.count = count;
+                part.reloads = 0;
+                part.place = place;
+                add(engine, a, part);
+            }
+        } else {
+            let mut part = a.items[index].clone();
+            if count == have {
+                a.items.remove(index);
+            } else {
+                a.items[index].count -= count;
+                part.reloads = 0;
+            }
+            if let Destination::Character(other) = &to {
+                if other == actor {
+                    return Err(RuleError::NotAllowed("give it to someone else".into()));
                 }
-                if let Destination::Character(other) = &to {
-                    if other == actor {
-                        return Err(RuleError::NotAllowed("give it to someone else".into()));
-                    }
-                    let b = self.actor_mut(other)?;
-                    part.uid = b.next_item;
-                    part.count = count;
-                    part.place = Place::Carried;
-                    b.next_item += 1;
-                    b.items.push(part);
-                    let snapshot = b.clone();
-                    engine.check_load(&snapshot, other)?;
-                }
+                let b = self.actor_mut(other)?;
+                part.count = count;
+                part.place = Place::Carried;
+                add(engine, b, part);
+                let snapshot = b.clone();
+                engine.check_load(&snapshot, other)?;
             }
         }
         let after = engine.encumbrance(self.actor(actor)?);
