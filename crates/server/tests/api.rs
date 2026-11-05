@@ -623,17 +623,29 @@ async fn correction_and_undo() {
         4
     );
 
-    gm.command(
-        team,
-        json!({ "command": "change_stress", "actors": [actor], "delta": 1 }),
-    )
-    .await;
+    let (_, entries) = gm
+        .command(
+            team,
+            json!({ "command": "change_stress", "actors": [actor], "delta": 1 }),
+        )
+        .await;
     assert_eq!(
         stress(&player.ok("GET", &format!("/api/teams/{team}"), None).await),
         5
     );
-    gm.ok("POST", &format!("/api/teams/{team}/undo"), None)
+    // The game master learns what undo takes back, and the log says so.
+    let batch = entries[0]["batch"].clone();
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(view["undo"]["batch"], batch);
+    let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(view["undo"].is_null(), "the game master's");
+    let undone = gm
+        .ok("POST", &format!("/api/teams/{team}/undo"), None)
         .await;
+    assert_eq!(
+        undone[0]["entry"],
+        json!({ "type": "undone", "batch": batch })
+    );
     assert_eq!(
         stress(&player.ok("GET", &format!("/api/teams/{team}"), None).await),
         4

@@ -1240,6 +1240,10 @@
             }
           ]
         },
+        "no_effect_for_androids": {
+          "description": "Works only through stress, pushes or panic, which androids do not\nhave; the wizard marks it for them (plan 5.3) [p. 29, 111].",
+          "type": "boolean"
+        },
         "page": {
           "type": "integer",
           "format": "uint16",

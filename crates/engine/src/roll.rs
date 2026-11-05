@@ -595,6 +595,7 @@ impl Ctx<'_> {
             stress_dice_removed: removed,
             modifications,
             max_pushes,
+            death: matches!(request.kind, RollKind::Death),
         });
         if let Some(actor) = &actor_id {
             for uid in used_up {

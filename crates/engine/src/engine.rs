@@ -192,6 +192,9 @@ pub enum Event {
         stress_dice_removed: u8,
         modifications: Vec<Modification>,
         max_pushes: u8,
+        /// A Death Roll, which uses STAMINA [p. 99].
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        death: bool,
     },
     DiceThrown {
         roll: PendingId,

@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useCharactersStore } from '@/stores/characters'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
+import { refusal } from '@/labels'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -57,7 +58,7 @@ async function removeMember(member) {
     await del(`/teams/${team.view.id}/members/${member.id}`)
     await team.refresh()
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 const freeOwn = computed(() => characters.list.filter((c) => !c.team_id && c.data.status !== 'draft'))
@@ -105,7 +106,7 @@ async function addOwn() {
     await characters.load()
     await team.refresh()
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 </script>

@@ -28,6 +28,9 @@ export function originLabel(origin, t, rules) {
 
 /** What an open decision is about, e.g. "Roll: push or accept?". */
 export function decisionText(pending, t, rules) {
+  // Which roll waits, so two open rolls of one character differ.
+  const rolled = pending.roll?.skill ?? pending.roll?.attribute
+  if (pending.kind === 'roll' && rolled) return t('decision.rollOf', { what: rules.name(rolled) })
   if (['roll', 'start_roll', 'overkill'].includes(pending.kind)) return t(`decision.kind.${pending.kind}`)
   if (pending.question) return rules.text(pending.question)
   if (pending.who) return t('decision.targets', { who: t(`who.${pending.who}`) })
@@ -170,6 +173,15 @@ export function changeText(change, t, rules) {
     return String(v)
   }
   return `${label} ${value(change.from)} → ${value(change.to)}`
+}
+
+/**
+ * An error to show: what the server refused, marked as such in the
+ * interface's language; its reason comes as the server gives it.
+ */
+export function refusal(error, t) {
+  const refused = error?.status >= 400 && error?.status < 500 && error.status !== 401
+  return refused ? t('common.refused', { message: error.message }) : (error?.message ?? String(error))
 }
 
 /** The balance: the sum of the bookings, in cents. */

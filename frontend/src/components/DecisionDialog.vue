@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
 import XDie from '@/ui/XDie.vue'
-import { choiceLabel, decisionText, opsText } from '@/labels'
+import { choiceLabel, decisionText, opsText, refusal } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
@@ -24,7 +24,7 @@ async function decide(choice) {
   try {
     await team.command({ command: 'decide', pending: props.pending.id, choice })
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 

@@ -29,7 +29,8 @@
     "remove": "Remove",
     "add": "Add",
     "close": "Close",
-    "note": "Reason (optional)"
+    "note": "Reason (optional)",
+    "refused": "Refused: {message}"
   },
   "home": {
     "characters": "My characters",
@@ -73,7 +74,9 @@
     "startGear": "Starting gear rolled",
     "gearRolled": "{name} × {count} (rolled: {dice})",
     "supplies": "Supplies",
-    "supplyRoll": "Supply roll"
+    "supplyRoll": "Supply roll",
+    "useSignatureItem": "Use signature item (stress −1)",
+    "signatureItemUsed": "already used this Act or session"
   },
   "gear": {
     "title": "Gear",
@@ -201,7 +204,8 @@
     "waiting": "Waiting for {name} · {what}",
     "titleFor": "Decision: {name}",
     "pushesLeft": "no push left | 1 push left | {n} pushes left",
-    "pushHint": "Push: Stress +1, all dice without a success are rolled again."
+    "pushHint": "Push: Stress +1, all dice without a success are rolled again.",
+    "rollOf": "Roll {what}: push or accept?"
   },
   "op": {
     "stress": "stress {delta}",
@@ -255,7 +259,9 @@
     "revealAndroid": "Reveal android",
     "revealAndroidConfirm": "Reveal {name} as an android? Humans nearby gain stress.",
     "correctionStale": "The values changed in the meantime, for example because someone used an item. Reload the correction so nothing is lost.",
-    "reloadCorrection": "Reload"
+    "reloadCorrection": "Reload",
+    "confirmUndo": "Take back: {step}?",
+    "undoSilent": "the last step (no log entry)"
   },
   "cold": {
     "above_freezing": "above freezing",
@@ -367,7 +373,9 @@
     "item_refilled": "{actor}: {item} refilled, {from} → {to}",
     "supply_changed": "{actor}: {supply} {from} → {to}",
     "booked": "{actor}: {amount} – {reason}, balance {balance}",
-    "reloads_added": "{actor}: {item} + {count} reload(s)"
+    "reloads_added": "{actor}: {item} + {count} reload(s)",
+    "roll_result": "{actor}, {what}: {result}",
+    "undoneMark": "taken back"
   },
   "about": {
     "title": "About Xenoforge",
@@ -450,7 +458,8 @@
     "or": "or",
     "gearDice": "{dice} × {name}",
     "gearCount": "{count} × {name}",
-    "gearExtras": "Firearms come with two full reloads. Quantities in dice are rolled by the server when finishing. You have clothes anyway."
+    "gearExtras": "Firearms come with two full reloads. Quantities in dice are rolled by the server when finishing. You have clothes anyway.",
+    "noEffectForAndroids": "No effect for an android: stress, pushes or panic only (p. 29)."
   },
   "cast": {
     "offer": "Offer to choose",

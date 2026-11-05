@@ -179,11 +179,13 @@ struct Snapshot {
     characters: Vec<(i64, Actor)>,
 }
 
+/// Keeps the state before a command or correction; answers the row, so
+/// the entries the step writes can be noted with it (`mark_snapshot`).
 async fn save_snapshot(
     tx: &mut Transaction<'_, Sqlite>,
     team: &Team,
     characters: &[Character],
-) -> ApiResult<()> {
+) -> ApiResult<i64> {
     let snapshot = Snapshot {
         team: team.state.clone(),
         characters: characters
@@ -191,12 +193,13 @@ async fn save_snapshot(
             .map(|c| (c.id, c.data.actor.clone()))
             .collect(),
     };
-    sqlx::query("INSERT INTO snapshots (team_id, state, created_at) VALUES (?, ?, ?)")
+    let row = sqlx::query("INSERT INTO snapshots (team_id, state, created_at) VALUES (?, ?, ?)")
         .bind(team.id)
         .bind(serde_json::to_string(&snapshot)?)
         .bind(now())
         .execute(&mut **tx)
-        .await?;
+        .await?
+        .last_insert_rowid();
     sqlx::query(
         "DELETE FROM snapshots WHERE team_id = ? AND id NOT IN \
          (SELECT id FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT ?)",
@@ -206,7 +209,33 @@ async fn save_snapshot(
     .bind(UNDO_DEPTH)
     .execute(&mut **tx)
     .await?;
+    Ok(row)
+}
+
+/// Notes which log entries the step after a snapshot wrote.
+async fn mark_snapshot(
+    tx: &mut Transaction<'_, Sqlite>,
+    snapshot: i64,
+    stored: &[Stored],
+) -> ApiResult<()> {
+    sqlx::query("UPDATE snapshots SET batch = ? WHERE id = ?")
+        .bind(stored.first().map(|s| s.batch))
+        .bind(snapshot)
+        .execute(&mut **tx)
+        .await?;
     Ok(())
+}
+
+/// What undo would take back, for the game master: the batch of log
+/// entries of the last step, none if it wrote none (A-01 for the rest).
+pub async fn undo_target(pool: &sqlx::SqlitePool, team: i64) -> ApiResult<Option<Option<i64>>> {
+    Ok(
+        sqlx::query("SELECT batch FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1")
+            .bind(team)
+            .fetch_optional(pool)
+            .await?
+            .map(|row| row.get::<Option<i64>, _>("batch")),
+    )
 }
 
 /// The actor whose owner decides a pending decision; `None` means only
@@ -384,13 +413,14 @@ async fn command(
         let mut dice = state.dice.lock().unwrap_or_else(PoisonError::into_inner);
         state.engine.apply(&mut game, body.command, &mut **dice)?
     };
-    save_snapshot(&mut tx, &team, &characters).await?;
+    let snapshot = save_snapshot(&mut tx, &team, &characters).await?;
     store(&mut tx, id, game, &mut characters).await?;
     let entries = events
         .into_iter()
         .map(|event| Entry::Engine { event })
         .collect();
     let stored = log::append(&mut tx, id, &user, entries, note).await?;
+    mark_snapshot(&mut tx, snapshot, &stored).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(
@@ -439,12 +469,13 @@ async fn undo(
         return Err(ApiError::forbidden("only the game master can undo"));
     }
     let mut tx = begin_write(&state.pool).await?;
-    let row =
-        sqlx::query("SELECT id, state FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1")
-            .bind(id)
-            .fetch_optional(&mut *tx)
-            .await?
-            .ok_or_else(|| ApiError::conflict("nothing to undo"))?;
+    let row = sqlx::query(
+        "SELECT id, state, batch FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1",
+    )
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?
+    .ok_or_else(|| ApiError::conflict("nothing to undo"))?;
     let mut snapshot: Snapshot = serde_json::from_str(row.get("state"))?;
     // Numbers of decisions and rolls are never handed out twice: the log
     // already names the newer ones.
@@ -464,7 +495,8 @@ async fn undo(
         .bind(row.get::<i64, _>("id"))
         .execute(&mut *tx)
         .await?;
-    let stored = log::append(&mut tx, id, &user, vec![Entry::Undone], None).await?;
+    let batch: Option<i64> = row.get("batch");
+    let stored = log::append(&mut tx, id, &user, vec![Entry::Undone { batch }], None).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))
@@ -527,7 +559,7 @@ pub async fn correct(
         .retain(|s, _| matches!(s, Supply::Food | Supply::Water));
     characters::check_actor(&state, &actor)?;
     state.engine.check_overload(&character.data.actor, &actor)?;
-    save_snapshot(&mut tx, &team, &characters).await?;
+    let snapshot = save_snapshot(&mut tx, &team, &characters).await?;
     let before = std::mem::replace(&mut character.data.actor, actor);
     characters::save(&mut tx, &character).await?;
     let changes = log::changes(&before, &character.data.actor);
@@ -543,6 +575,7 @@ pub async fn correct(
         });
     }
     let stored = log::append(&mut tx, id, &user, entries, note).await?;
+    mark_snapshot(&mut tx, snapshot, &stored).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))

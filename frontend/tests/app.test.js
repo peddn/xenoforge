@@ -15,7 +15,8 @@ import CreationWizard from '@/components/CreationWizard.vue'
 import GearPanel from '@/components/GearPanel.vue'
 import RollPanel from '@/components/RollPanel.vue'
 import SheetDialog from '@/components/SheetDialog.vue'
-import { bookingReason, cashFormula, choiceLabel, moneyText, modsText, originLabel, parseMoney, problemText, quarters, weightText } from '@/labels'
+import { bookingReason, cashFormula, choiceLabel, moneyText, modsText, originLabel, parseMoney, problemText, quarters, refusal, weightText } from '@/labels'
+import { ApiError } from '@/api'
 import { guard, routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
@@ -1250,10 +1251,14 @@ describe('choosing and Acts (A-12, A-13)', () => {
   it('lets a player take an offered character', async () => {
     const { pinia, i18n } = setup()
     const calls = mockApi({ 'POST /teams/5/characters/9/claim': [], 'GET /teams/5': view(false) })
+    // Ann plays Ripley already and takes no second one.
     useAuthStore().user = { id: 2, name: 'Ann', role: 'player' }
     useTeamStore().view = view(false)
+    const ann = mount(CrewList, { global: { plugins: [pinia, i18n] } })
+    expect(ann.get('[data-test="crew-9"]').text()).toContain('Zur Wahl')
+    expect(ann.find('[data-test="claim-9"]').exists()).toBe(false)
+    useAuthStore().user = { id: 3, name: 'Bob', role: 'player' }
     const wrapper = mount(CrewList, { global: { plugins: [pinia, i18n] } })
-    expect(wrapper.get('[data-test="crew-9"]').text()).toContain('Zur Wahl')
     await wrapper.get('[data-test="claim-9"]').trigger('click')
     await flushPromises()
     expect(calls[0]).toMatchObject({ method: 'POST', path: '/teams/5/characters/9/claim' })
@@ -1303,6 +1308,28 @@ describe('choosing and Acts (A-12, A-13)', () => {
     await other.get('[data-test="set-story-points"]').trigger('click')
     await flushPromises()
     expect(calls.at(-1).body.command).toEqual({ command: 'set_story_points', player: '2', points: 3 })
+  })
+
+  it("hands over only where the server allows, and greys out what cannot work (A-12)", async () => {
+    const { pinia, i18n } = setup()
+    useTeamStore().view = { ...view(true), members: [{ id: 2, name: 'Ann' }, { id: 3, name: 'Bob' }] }
+    const options = (character) =>
+      mount(CharacterActions, { props: { character }, global: { plugins: [pinia, i18n] } })
+        .findAll('[data-test="new-owner"] option')
+        .map((o) => o.text())
+    // The game master's own goes to members; a prepared one of a player
+    // only back to the game master; one the player built not at all.
+    expect(options(nat)).toEqual(['Ann', 'Bob'])
+    expect(options({ ...ripley, prepared: true })).toEqual(['Mother (Spielleitung, als NSC)'])
+    expect(options({ ...ripley, prepared: false })).toEqual([])
+    const android = mount(CharacterActions, {
+      props: { character: { ...nat, actor: { ...nat.actor, android: true } } },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(android.get('[data-test="stress-up"]').attributes('disabled')).toBeDefined()
+    expect(android.get('[data-test="gm-signature-item"]').attributes('disabled')).toBeDefined()
+    const calm = mount(CharacterActions, { props: { character: nat }, global: { plugins: [pinia, i18n] } })
+    expect(calm.get('[data-test="stress-down"]').attributes('disabled')).toBeDefined()
   })
 
   it('lets a player without a character leave, and only the GM sets buddy and rival in Cinematic', async () => {
@@ -1397,3 +1424,70 @@ describe('covert android (A-14)', () => {
   })
 })
 
+
+describe('acceptance of phase 2 (Bedienung)', () => {
+  it('marks what the server refused', () => {
+    const { i18n } = setup()
+    const t = i18n.global.t
+    expect(refusal(new ApiError(422, 'rule', 'one weapon per roll (F-59)'), t)).toBe('Abgelehnt: one weapon per roll (F-59)')
+    expect(refusal(new ApiError(500, 'internal', 'internal error'), t)).toBe('internal error')
+  })
+
+  it('lets the owner use the signature item once, not an android', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/commands': [] })
+    useAuthStore().user = { id: 2, role: 'player' }
+    const character = { id: 3, name: 'Gorman', owner_id: 2, actor: { items: [], stress: 2 }, sheet: {}, hints: [] }
+    useTeamStore().view = { id: 5, mode: 'campaign', is_gm: false, characters: [character] }
+    const wrapper = mount(SheetDialog, { props: { character }, global: { plugins: [pinia, i18n] } })
+    await wrapper.get('[data-test="use-signature-item"]').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({ command: { command: 'use_signature_item', actor: '3' } })
+    const used = mount(SheetDialog, {
+      props: { character: { ...character, actor: { ...character.actor, signature_item_used: true } } },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(used.get('[data-test="use-signature-item"]').attributes('disabled')).toBeDefined()
+    const android = mount(SheetDialog, {
+      props: { character: { ...character, actor: { ...character.actor, android: true } } },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(android.find('[data-test="use-signature-item"]').exists()).toBe(false)
+  })
+
+  it('names the step undo takes back and marks it in the log', async () => {
+    const { pinia, i18n } = setup()
+    mockApi({ 'POST /teams/5/undo': [] })
+    const team = useTeamStore()
+    team.view = { id: 5, mode: 'campaign', is_gm: true, characters: [{ id: 9, name: 'Charlize' }], undo: { batch: 2 } }
+    const stress = { type: 'engine', event: { event: 'stress_changed', actor: '9', from: 1, to: 2 } }
+    team.log = [{ id: 2, batch: 2, by: 'Mother', at: 0, entry: stress }]
+    const bar = mount(GmBar, { global: { plugins: [pinia, i18n] } })
+    await bar.get('[data-test="undo"]').trigger('click')
+    expect(bar.get('[role="alertdialog"]').text()).toContain('Zurücknehmen: Mother: Charlize: Stress 1 → 2?')
+    team.log = [...team.log, { id: 3, batch: 3, by: 'Mother', at: 0, entry: { type: 'undone', batch: 2 } }]
+    const log = mount(LogList, { global: { plugins: [pinia, i18n] } })
+    const blocks = log.findAll('[data-test="log-block"]')
+    expect(blocks[0].find('[data-test="log-undone"]').exists()).toBe(true)
+    expect(blocks[1].find('[data-test="log-undone"]').exists()).toBe(false)
+    // Nothing to take back: no button.
+    team.view = { ...team.view, undo: undefined }
+    expect(mount(GmBar, { global: { plugins: [pinia, i18n] } }).find('[data-test="undo"]').exists()).toBe(false)
+  })
+
+  it('names whose roll a result is, and the Death Roll as such', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = { id: 5, characters: [{ id: 9, name: 'Charlize' }] }
+    const engine = (id, event) => ({ id, batch: id, by: 'Gina', at: 0, entry: { type: 'engine', event } })
+    team.log = [
+      engine(1, { event: 'roll_started', roll: 4, actor: '9', skill: 'stamina', base_dice: 2, stress_dice: 0, modifications: [], death: true }),
+      engine(2, { event: 'roll_finished', roll: 4, outcome: 'failure', successes: 0, stunts: 0 }),
+    ]
+    const rows = mount(LogList, { global: { plugins: [pinia, i18n] } })
+      .findAll('[data-test="log-entry"]')
+      .map((r) => r.text())
+    expect(rows[0]).toContain('Charlize würfelt Death Roll')
+    expect(rows[1]).toContain('Charlize, Death Roll: kein Erfolg')
+  })
+})

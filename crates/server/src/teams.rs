@@ -132,6 +132,11 @@ struct CharacterInTeam {
     agendas: Option<Vec<String>>,
     /// Broken as the engine sees it [p. 98], for the same people.
     broken: Option<bool>,
+    /// Prepared by a game master (status free): such a character goes back
+    /// to the game master in Cinematic play (A-12) [p. 32]. For the game
+    /// master only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    prepared: Option<bool>,
     /// Panicking, for everyone: the Panic Roll is in the shared log
     /// (A-01), and someone else's COMMAND roll can end it (F-36)
     /// [p. 71, 104].
@@ -161,6 +166,16 @@ struct TeamView {
     /// By user id; players see their own.
     story_points: BTreeMap<String, u8>,
     rulings: BTreeMap<String, String>,
+    /// For the game master: what undo would take back, if anything.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    undo: Option<Undo>,
+}
+
+/// The last step undo takes back: its log entries by their first number,
+/// none if it wrote none.
+#[derive(Serialize)]
+struct Undo {
+    batch: Option<i64>,
 }
 
 pub async fn name_of(state: &AppState, user_id: i64) -> ApiResult<String> {
@@ -240,6 +255,7 @@ async fn view(
             agendas: (is_gm && cinematic)
                 .then(|| team.agendas.get(&character.id).cloned().unwrap_or_default()),
             broken: sees.then(|| character.data.actor.broken()),
+            prepared: is_gm.then_some(character.data.status == characters::Status::Free),
             panicking: character.data.actor.panic.is_some(),
             health_max: sees.then(|| state.engine.full_health(&character.data.actor)),
             encumbrance: sees.then(|| state.engine.encumbrance(&character.data.actor)),
@@ -283,6 +299,13 @@ async fn view(
             .map(|(k, v)| (k.clone(), *v))
             .collect(),
         rulings: team.state.rulings.clone().into_iter().collect(),
+        undo: if is_gm {
+            game::undo_target(&state.pool, id)
+                .await?
+                .map(|batch| Undo { batch })
+        } else {
+            None
+        },
     }))
 }
 

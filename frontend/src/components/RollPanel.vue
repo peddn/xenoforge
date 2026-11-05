@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
 import XField from '@/ui/XField.vue'
-import { itemName, modsText } from '@/labels'
+import { itemName, modsText, refusal } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
@@ -96,7 +96,7 @@ watch(
         error.value = ''
       } catch (e) {
         preview.value = null
-        error.value = e.message
+        error.value = refusal(e, t)
       }
     }, 150)
   },
@@ -114,7 +114,7 @@ async function send(command) {
     await team.command(command, note.value)
     emit('done')
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 

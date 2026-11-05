@@ -29,7 +29,8 @@
     "remove": "Entfernen",
     "add": "Hinzufügen",
     "close": "Schließen",
-    "note": "Anlass (freiwillig)"
+    "note": "Anlass (freiwillig)",
+    "refused": "Abgelehnt: {message}"
   },
   "home": {
     "characters": "Meine Charaktere",
@@ -73,7 +74,9 @@
     "startGear": "Startausrüstung gewürfelt",
     "gearRolled": "{name} × {count} (gewürfelt: {dice})",
     "supplies": "Vorräte",
-    "supplyRoll": "Vorratswurf"
+    "supplyRoll": "Vorratswurf",
+    "useSignatureItem": "Signature Item einsetzen (Stress −1)",
+    "signatureItemUsed": "in diesem Akt oder dieser Sitzung schon eingesetzt"
   },
   "gear": {
     "title": "Ausrüstung",
@@ -201,7 +204,8 @@
     "waiting": "Wartet auf {name} · {what}",
     "titleFor": "Entscheidung: {name}",
     "pushesLeft": "kein Push mehr | 1 Push übrig | {n} Pushes übrig",
-    "pushHint": "Pushen: Stress +1, alle Würfel ohne Erfolg werden neu geworfen."
+    "pushHint": "Pushen: Stress +1, alle Würfel ohne Erfolg werden neu geworfen.",
+    "rollOf": "Wurf {what}: pushen oder annehmen?"
   },
   "op": {
     "stress": "Stress {delta}",
@@ -255,7 +259,9 @@
     "revealAndroid": "Android enthüllen",
     "revealAndroidConfirm": "{name} als Android enthüllen? Menschen in der Nähe bekommen Stress.",
     "correctionStale": "Die Werte haben sich inzwischen geändert, etwa weil jemand etwas benutzt hat. Lade die Korrektur neu, damit nichts verloren geht.",
-    "reloadCorrection": "Neu laden"
+    "reloadCorrection": "Neu laden",
+    "confirmUndo": "Zurücknehmen: {step}?",
+    "undoSilent": "den letzten Schritt (ohne Protokolleintrag)"
   },
   "cold": {
     "above_freezing": "über null",
@@ -367,7 +373,9 @@
     "item_refilled": "{actor}: {item} aufgefüllt, {from} → {to}",
     "supply_changed": "{actor}: {supply} {from} → {to}",
     "booked": "{actor}: {amount} – {reason}, Kontostand {balance}",
-    "reloads_added": "{actor}: {item} + {count} Magazin(e)"
+    "reloads_added": "{actor}: {item} + {count} Magazin(e)",
+    "roll_result": "{actor}, {what}: {result}",
+    "undoneMark": "zurückgenommen"
   },
   "about": {
     "title": "Über Xenoforge",
@@ -450,7 +458,8 @@
     "or": "oder",
     "gearDice": "{dice} × {name}",
     "gearCount": "{count} × {name}",
-    "gearExtras": "Schusswaffen kommen mit zwei vollen Magazinen. Mengen in Würfeln würfelt der Server beim Fertigstellen. Kleidung hast du ohnehin."
+    "gearExtras": "Schusswaffen kommen mit zwei vollen Magazinen. Mengen in Würfeln würfelt der Server beim Fertigstellen. Kleidung hast du ohnehin.",
+    "noEffectForAndroids": "Wirkt bei einem Android nicht: nur Stress, Push oder Panik (S. 29)."
   },
   "cast": {
     "offer": "Zur Wahl anbieten",

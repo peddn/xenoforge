@@ -96,8 +96,12 @@ pub enum Entry {
         name: String,
         changes: Vec<Change>,
     },
-    /// The game master took back the last step.
-    Undone,
+    /// The game master took back the last step; `batch` names its
+    /// entries, if it wrote any.
+    Undone {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        batch: Option<i64>,
+    },
 }
 
 /// One value a correction changed: where in the character's values
