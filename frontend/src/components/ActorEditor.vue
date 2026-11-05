@@ -17,7 +17,7 @@ const skillsOf = (attribute) => rules.list('skills').filter((s) => s.attribute =
 
 function setNumber(group, id, value) {
   const number = Math.max(0, Math.trunc(Number(value) || 0))
-  actor.value = { ...actor.value, [group]: { ...actor.value[group], [id]: number } }
+  actor.value = { ...actor.value, [group]: { ...(actor.value[group] ?? {}), [id]: number } }
 }
 
 function toggleTalent(id, on) {
@@ -69,6 +69,20 @@ function toggleTalent(id, on) {
         :disabled="disabled"
         :value="actor.health ?? 0"
         @input="actor = { ...actor, health: Math.max(0, Math.trunc(Number($event.target.value) || 0)) }"
+      >
+    </XField>
+    <XField
+      v-for="supply in ['food', 'water']"
+      :key="supply"
+      :label="t(`supply.${supply}`)"
+    >
+      <input
+        type="number"
+        min="0"
+        :disabled="disabled"
+        :value="actor.supplies?.[supply] ?? 0"
+        :data-test="`supply-${supply}`"
+        @input="setNumber('supplies', supply, $event.target.value)"
       >
     </XField>
     <XField :label="t('sheet.stress')">

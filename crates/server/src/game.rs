@@ -17,7 +17,7 @@ use xenoforge_engine::data::Id;
 use xenoforge_engine::data::effects::{Op, Who};
 use xenoforge_engine::dice::Die;
 use xenoforge_engine::roll::{RollKind, RollRequest, RollState};
-use xenoforge_engine::state::{Actor, GameState, Pending};
+use xenoforge_engine::state::{Actor, GameState, Pending, Supply};
 use xenoforge_engine::{Choice, Command, Engine, Preview};
 
 use crate::auth::User;
@@ -484,9 +484,14 @@ pub async fn correct(
         .ok_or_else(|| ApiError::not_found("character"))?;
     // Items change only through item commands, so a correction made with
     // an older copy never brings back what was handed over or used up.
+    // Doses per Shift are the engine's count.
     let mut actor = body.actor;
     actor.items = character.data.actor.items.clone();
     actor.next_item = character.data.actor.next_item;
+    actor.doses = character.data.actor.doses.clone();
+    actor
+        .supplies
+        .retain(|s, _| matches!(s, Supply::Food | Supply::Water));
     characters::check_actor(&state, &actor)?;
     save_snapshot(&mut tx, &team, &characters).await?;
     character.data.actor = actor;

@@ -776,6 +776,52 @@ describe('gear', () => {
     expect(calls[0].body).toEqual({ command: { command: 'move_item', uid: 0, to: 'stowed', actor: '3' } })
   })
 
+  it('uses doses, drinks and devices, and lets the game master refill (F-75)', async () => {
+    const { pinia, i18n } = setup()
+    const send = vi.fn(async () => true)
+    const items = [
+      { uid: 0, item: 'beer', count: 2, place: 'carried' },
+      { uid: 1, item: 'm314_motion_tracker', count: 1, place: 'carried', supply: 0 },
+      { uid: 2, item: 'beer', count: 1, place: 'stowed' },
+      { uid: 3, item: 'knife', count: 1, place: 'carried' },
+    ]
+    const player = mount(GearPanel, {
+      props: { actor: { items }, canMove: true, canUse: true, send },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(player.get('[data-test="item-1"]').text()).toContain('Energie 0/5 (leer)')
+    expect(player.find('[data-test="use-1"]').exists()).toBe(false)
+    expect(player.find('[data-test="use-2"]').exists()).toBe(false)
+    expect(player.find('[data-test="use-3"]').exists()).toBe(false)
+    expect(player.find('[data-test="refill-1"]').exists()).toBe(false)
+    await player.get('[data-test="use-0"]').trigger('click')
+    const gm = mount(GearPanel, {
+      props: { actor: { items }, canRefill: true, send },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(gm.find('[data-test="move-0"]').exists()).toBe(false)
+    await gm.get('[data-test="refill-1"]').trigger('click')
+    expect(send.mock.calls.map((c) => c[0])).toEqual([
+      { command: 'use_item', uid: 0 },
+      { command: 'refill_item', uid: 1 },
+    ])
+  })
+
+  it('shows Food and Water on the sheet and lets the game master roll supplies', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/commands': [] })
+    useAuthStore().user = { id: 1, role: 'gm' }
+    const character = { id: 3, name: 'Gorman', owner_id: 2, actor: { supplies: { food: 2 }, items: [] }, sheet: {}, hints: [] }
+    useTeamStore().view = { id: 5, mode: 'campaign', is_gm: true, characters: [character] }
+    const wrapper = mount(SheetDialog, { props: { character }, global: { plugins: [pinia, i18n] } })
+    expect(wrapper.text()).toContain('Nahrung 2 · Wasser 0')
+    await wrapper.get('[data-test="supply-roll-air"]').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({
+      command: { command: 'roll', request: { actor: '3', kind: { supply: { supply: 'air' } } } },
+    })
+  })
+
   it('names items in the log and weights as the book writes them', () => {
     const { pinia, i18n } = setup()
     const team = useTeamStore()
@@ -785,11 +831,21 @@ describe('gear', () => {
       event({ event: 'item_added', actor: '3', uid: 0, item: 'knife', count: 1, place: 'carried' }),
       event({ event: 'item_moved', actor: '3', uid: 1, name: 'Tagebuch', to: { character: '9' }, count: 1 }),
       event({ event: 'item_used_up', actor: '9', uid: 2, item: 'personal_medkit' }),
+      event({ event: 'item_used', actor: '3', uid: 3, item: 'beer' }),
+      event({ event: 'supply_changed', actor: '3', uid: 4, supply: 'food', from: 2, to: 3 }),
+      event({ event: 'supply_rolled', actor: '3', uid: 5, supply: 'power', item: 1, dice: [{ kind: 'stress', face: 1, locked: false }], from: 5, to: 4 }),
+      event({ event: 'item_refilled', actor: '3', uid: 6, item: 'm314_motion_tracker', from: 0, to: 5 }),
+      event({ event: 'source_applied', actor: '3', uid: 7, origin: { used: { item: 'beer', index: 0 } }, ends: { after: { unit: 'shift', left: 1 } } }),
     ]
     const text = mount(LogList, { global: { plugins: [pinia, i18n] } }).text()
     expect(text).toContain('Gorman bekommt knife × 1')
     expect(text).toContain('Gorman: Tagebuch × 1 – an Charlize gegeben')
     expect(text).toContain('Charlize: personal_medkit verbraucht')
+    expect(text).toContain('Gorman benutzt beer')
+    expect(text).toContain('Gorman: Nahrung 2 → 3')
+    expect(text).toContain('Gorman: Vorratswurf Energie, 5 → 4')
+    expect(text).toContain('Gorman: m314_motion_tracker aufgefüllt, 0 → 5')
+    expect(text).toContain('Gorman: beer')
     expect([0, 1, 2, 4, 14].map(quarters)).toEqual(['0', '¼', '½', '1', '3½'])
     expect(weightText('1/4')).toBe('¼')
   })

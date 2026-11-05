@@ -93,6 +93,18 @@ async function item(command) {
   }
 }
 
+// Supply rolls are the game master's: Food and Water, Air on the worn
+// suit (F-75) [p. 34].
+const SUPPLIES = ['food', 'water', 'air']
+async function supplyRoll(supply) {
+  error.value = ''
+  try {
+    await team.command({ command: 'roll', request: { actor: String(props.character.id), kind: { supply: { supply } } } })
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 async function leave() {
   error.value = ''
   try {
@@ -146,6 +158,8 @@ async function leave() {
         :encumbrance="character.encumbrance"
         :gear-move="own || team.view.is_gm"
         :gear-add="team.view.is_gm"
+        :gear-use="own || team.view.is_gm"
+        :gear-refill="team.view.is_gm"
         :others="others"
         :send-item="item"
       />
@@ -237,6 +251,21 @@ async function leave() {
       >
         {{ t('gm.correct') }}
       </XButton>
+      <span
+        v-if="!editing"
+        class="flex flex-wrap items-center gap-2"
+      >
+        <span class="text-sm text-dim uppercase">{{ t('sheet.supplyRoll') }}</span>
+        <XButton
+          v-for="supply in SUPPLIES"
+          :key="supply"
+          size="small"
+          :data-test="`supply-roll-${supply}`"
+          @click="supplyRoll(supply)"
+        >
+          {{ t(`supply.${supply}`) }}
+        </XButton>
+      </span>
     </div>
     <div
       v-else-if="character.owner_id === auth.user?.id"

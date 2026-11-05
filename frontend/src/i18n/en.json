@@ -71,7 +71,9 @@
     "covertShort": "covert",
     "open": "open",
     "startGear": "Starting gear rolled",
-    "gearRolled": "{name} × {count} (rolled: {dice})"
+    "gearRolled": "{name} × {count} (rolled: {dice})",
+    "supplies": "Supplies",
+    "supplyRoll": "Supply roll"
   },
   "gear": {
     "title": "Gear",
@@ -116,7 +118,16 @@
     "weightLabel": "Weight",
     "where": "Where",
     "addGo": "Add",
-    "reloadsLabel": "Reloads"
+    "reloadsLabel": "Reloads",
+    "use": "Use",
+    "refill": "Refill",
+    "empty": "empty"
+  },
+  "supply": {
+    "food": "Food",
+    "water": "Water",
+    "air": "Air",
+    "power": "Power"
   },
   "join": {
     "title": "Invitation",
@@ -292,7 +303,7 @@
     "story_point_spent": "Story Point spent",
     "next_slow_action_lost": "{actor} loses the next slow action",
     "item_dropped": "{actor} drops something; the game master picks what",
-    "supply_rolled": "{actor}: supply roll",
+    "supply_rolled": "{actor}: supply roll {supply}, {from} → {to}",
     "signature_item_used": "{actor} uses the signature item",
     "action_performed": "{actor}: {action}",
     "roll_skipped": "{actor} is Broken and does not roll",
@@ -327,7 +338,10 @@
       "stowed": "stowed",
       "dropped": "dropped"
     },
-    "toCharacter": "given to {name}"
+    "toCharacter": "given to {name}",
+    "item_used": "{actor} uses {item}",
+    "item_refilled": "{actor}: {item} refilled, {from} → {to}",
+    "supply_changed": "{actor}: {supply} {from} → {to}"
   },
   "about": {
     "title": "About Xenoforge",

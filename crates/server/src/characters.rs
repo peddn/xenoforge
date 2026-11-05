@@ -19,7 +19,7 @@ use xenoforge_engine::Command;
 use xenoforge_engine::creation::{Cash, CreationProblem, Draft, GearRoll};
 use xenoforge_engine::data::Id;
 use xenoforge_engine::inventory::{Destination, Encumbrance, NewItem};
-use xenoforge_engine::state::{Actor, ActorKind, GameState, Mode};
+use xenoforge_engine::state::{Actor, ActorKind, GameState, Mode, Supply};
 
 use crate::auth::{Role, User};
 use crate::error::{ApiError, ApiResult};
@@ -376,6 +376,12 @@ async fn update(
         };
         actor.stress = new.stress;
         actor.talent_params = new.talent_params;
+        // Food and Water; air and power are in the items (F-75).
+        actor.supplies = new
+            .supplies
+            .into_iter()
+            .filter(|(s, _)| matches!(s, Supply::Food | Supply::Water))
+            .collect();
         // The stored items with the new values, e.g. a lower STRENGTH.
         check_actor(&state, actor)?;
     }

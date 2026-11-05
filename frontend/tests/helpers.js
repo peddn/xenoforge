@@ -71,6 +71,8 @@ export const rulesData = {
     { id: 'knife', page: 126, category: 'close_combat', weight: '1/2', weapon: { skill: 'close_combat', damage: 2, range: 'engaged' } },
     { id: 'deck_of_cards', page: 39, category: 'other', weight: '0' },
     { id: 'autodoc', page: 135, category: 'medical' },
+    { id: 'beer', page: 137, category: 'food', weight: '1/4', on_use: { ops: [{ op: 'stress', delta: -1 }] } },
+    { id: 'm314_motion_tracker', page: 133, category: 'vision', weight: '1', supply: { kind: 'power', max: 5 } },
   ],
   talents: [
     { id: 'stoic', page: 79, effects: [] },
