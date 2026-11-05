@@ -188,8 +188,18 @@ pub enum Event {
     ChooseTargets {
         pending: PendingId,
         actor: ActorId,
+        /// The talent, panic effect or rule that asks, e.g. `analysis`.
+        #[serde(default)]
+        source: Id,
         who: Who,
         candidates: Vec<ActorId>,
+    },
+    /// The game master chose who is affected; none is a choice too.
+    TargetsChosen {
+        pending: PendingId,
+        actor: ActorId,
+        source: Id,
+        targets: Vec<ActorId>,
     },
     StressChanged {
         actor: ActorId,
@@ -821,6 +831,7 @@ impl<'a> Ctx<'a> {
                 other => Err(RuleError::InvalidChoice(format!("{other:?}"))),
             },
             Pending::Targets {
+                actor,
                 owner,
                 candidates,
                 ops,
@@ -832,6 +843,13 @@ impl<'a> Ctx<'a> {
                             "\"{bad}\" is not a candidate"
                         )));
                     }
+                    // Logged even when nothing changes, e.g. stress −1 at 0.
+                    self.emit(Event::TargetsChosen {
+                        pending: id,
+                        actor,
+                        source: owner.clone(),
+                        targets: chosen.clone(),
+                    });
                     for target in chosen {
                         self.queue.push_back(Task::Ops {
                             actor: target,
@@ -1077,6 +1095,7 @@ impl<'a> Ctx<'a> {
         self.emit(Event::ChooseTargets {
             pending,
             actor: actor.to_owned(),
+            source: owner.to_owned(),
             who,
             candidates,
         });

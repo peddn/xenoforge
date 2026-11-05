@@ -33,6 +33,17 @@ export function decisionText(pending, t, rules) {
   return t('decision.title')
 }
 
+/** What happens to each one chosen, e.g. "Stress −1" or "Panic Roll". */
+export function opsText(ops, t) {
+  return ops
+    .map((op) => {
+      if (op.op === 'stress') return t('op.stress', { delta: `${op.delta > 0 ? '+' : '−'}${Math.abs(op.delta)}` })
+      if (op.op === 'damage') return t('op.damage', { amount: op.amount })
+      return t(`op.${op.op}`)
+    })
+    .join(', ')
+}
+
 export function blockLabel(blocks, t, rules) {
   if (typeof blocks === 'string') return t(`blocks.${blocks}`)
   return rules.name(blocks.action)

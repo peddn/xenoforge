@@ -59,7 +59,7 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 - **Wert:** W6 + Stresslevel + Modifikationen (Nerves of Steel −2). Unter 1 zählt als 1–6.
 - **Mehr Panik:** Läuft eine Panik, wird ein niedrigerer Wert auf eine Stufe über dem laufenden angehoben; gleich bleibt gleich (F-23), über 15+ bleibt es Catatonic (F-24). Eine Panik läuft ab 7, bis sie endet, auch wenn ihr Effekt schon vorbei ist (F-25).
 - **Ende:** ein Turn oder eine Schicht vergeht, Broken, eine gelungene COMMAND-Probe eines anderen, die Spielleitung [S. 104].
-- **Ketten:** Wer etwas hört, sieht oder auf kurzer Distanz ist, kennt die App nicht. Sie schlägt alle anderen menschlichen Spielercharaktere vor (F-39), die Spielleitung wählt aus.
+- **Ketten:** Wer etwas hört, sieht oder auf kurzer Distanz ist, kennt die App nicht. Sie schlägt alle anderen menschlichen Spielercharaktere vor (F-39), die Spielleitung wählt aus. Die Frage nennt Auslöser und Quelle (`choose_targets`), die Wahl ist ein eigenes Ereignis (`targets_chosen`), auch wenn niemand gewählt wird oder sich nichts ändert.
 - **Overkill** bietet die Engine ab 11 an; der Wert bleibt für Mehr Panik und die Trauma-Schwelle maßgeblich (F-26, F-30).
 - **Broken:** Eine Panik endet, wenn man Broken wird. Beginnt sie, während man schon Broken ist, endet sie sofort; die sofortigen Folgen gelten (F-48).
 - **Trauma:** Wer in der Sitzung 13+ hatte, würfelt bei `end_session` einmal EMPATHY ohne Stresswürfel und ohne Push (F-27, F-42); misslingt sie, entsteht ein Trauma (F-01).

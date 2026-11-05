@@ -973,6 +973,77 @@ async fn talent_action_with_target() {
     );
 }
 
+/// The game master's choice of targets names who asks, why and what
+/// happens; the choice is logged even when nothing changes (F-39).
+#[tokio::test]
+async fn choosing_targets() {
+    let server = server("targets").await;
+    let (mut gm, _player, team, charlize) = table(&server).await;
+    let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut scientist = Client::new(&server);
+    scientist.register("Ilse", "player").await;
+    let ilse = scientist
+        .character(
+            "Ilse",
+            json!({ "attributes": { "strength": 2, "wits": 2 }, "talents": ["analysis"], "health": 2 }),
+        )
+        .await;
+    scientist
+        .ok(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": ilse })),
+        )
+        .await;
+    server.dice(&[6, 3]);
+    scientist
+        .command(
+            team,
+            json!({ "command": "perform_action", "actor": ilse.to_string(), "action": "analyze" }),
+        )
+        .await;
+    let view = scientist
+        .ok("GET", &format!("/api/teams/{team}"), None)
+        .await;
+    let roll = view["pending"][0]["id"].clone();
+    scientist
+        .command(
+            team,
+            json!({ "command": "decide", "pending": roll, "choice": "accept" }),
+        )
+        .await;
+
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let choice = &view["pending"][0];
+    assert_eq!(choice["kind"], "targets");
+    assert_eq!(choice["by"], ilse.to_string());
+    assert_eq!(choice["source"], "analysis");
+    assert_eq!(choice["ops"], json!([{ "op": "stress", "delta": -1 }]));
+    assert_eq!(choice["candidates"], json!([charlize.to_string()]));
+    let player_view = scientist
+        .ok("GET", &format!("/api/teams/{team}"), None)
+        .await;
+    assert_eq!(player_view["pending"], json!([]), "only the GM sees it");
+
+    // Charlize is at stress 0: the choice changes nothing but is logged.
+    let (status, entries) = gm
+        .command(
+            team,
+            json!({ "command": "decide", "pending": choice["id"], "choice": { "targets": [charlize.to_string()] } }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let events = events_of(&entries);
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0]["event"], "targets_chosen");
+    assert_eq!(events[0]["targets"], json!([charlize.to_string()]));
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(view["pending"], json!([]));
+}
+
 /// Choosing prepared characters and handing them over (A-12), Agendas per
 /// Act and Story Points (A-13) [p. 26, 32, 216].
 #[tokio::test]

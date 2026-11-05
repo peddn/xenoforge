@@ -141,6 +141,33 @@ fn analysis_success() {
     );
 }
 
+/// The game master's choice is an event of its own, also when it changes
+/// nothing: no one picked, or stress −1 at 0 (F-39).
+#[test]
+fn choosing_targets_is_logged() {
+    let mut t = Table::new(Mode::Campaign)
+        .with("s", pc().attr("wits", 2).talent("analysis"))
+        .with("b", pc());
+    let ev = t.run(act("s", "analyze", None), &[6, 3]);
+    let ev = t.decide(&ev, Choice::Accept, &[]);
+    assert!(has(&ev, |e| matches!(
+        e,
+        Event::ChooseTargets { actor, source, .. } if actor == "s" && source == "analysis"
+    )));
+    let chosen = t.decide(&ev, Choice::Targets(vec!["b".into()]), &[]);
+    assert_eq!(
+        chosen,
+        [Event::TargetsChosen {
+            pending: pending(&ev),
+            actor: "s".into(),
+            source: "analysis".into(),
+            targets: vec!["b".into()],
+        }],
+        "stress stays 0, but the choice is in the log"
+    );
+    assert!(t.state.pending.is_empty());
+}
+
 /// Analysis: a failure raises the others' stress by one [p. 77].
 #[test]
 fn analysis_failure() {

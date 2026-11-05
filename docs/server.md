@@ -147,7 +147,7 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `POST /teams/{id}/undo` | – | Eintrag `undone` |
 | `GET /teams/{id}/events` | `Last-Event-ID` oder `?after=<id>` | Server-Sent Events, je Eintrag `{ id, batch, visible_to, by, at, entry }` |
 
-Offene Entscheidungen (`pending` in der Ansicht des Teams) bringen bei einem Wurf den bisherigen Stand mit (`roll`): Fertigkeit oder Attribut, Würfel, Erfolge und übrige Pushes. Die Erfolge zählt die Engine.
+Offene Entscheidungen (`pending` in der Ansicht des Teams) bringen bei einem Wurf den bisherigen Stand mit (`roll`): Fertigkeit oder Attribut, Würfel, Erfolge und übrige Pushes. Die Erfolge zählt die Engine. Bei der Wahl der Betroffenen, die nur die Spielleitung sieht, kommen dazu, wessen Aktion oder Panik fragt (`by`), welches Talent, welcher Panikeffekt oder welche Regel dahintersteht (`source`) und was jedem Gewählten geschieht (`ops`, z. B. Stress −1). Die Wahl selbst steht als `targets_chosen` im Protokoll, auch wenn sie nichts ändert. Die Oberfläche lädt die Ansicht nach jedem Befehl neu, nicht nur bei neuen Einträgen.
 
 Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `character_joined`, `character_removed` (durch die Spielleitung), `character_left` (der Spieler tritt aus), `corrected`, `undone`. Alle Einträge eines Befehls tragen in `batch` die Nummer des ersten; die Oberfläche zeigt sie als einen Block. Eine Notiz zum Befehl (`note`, höchstens 200 Zeichen) steht am ersten Eintrag; sie ist für alle sichtbar wie der Befehl selbst.
 

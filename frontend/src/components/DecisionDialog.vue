@@ -4,12 +4,14 @@ import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
 import XDie from '@/ui/XDie.vue'
-import { choiceLabel, decisionText } from '@/labels'
+import { choiceLabel, decisionText, opsText } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // One open decision with everything needed to make it: for a roll the dice
-// so far, the successes and the pushes left, all as the server sends them.
+// so far, the successes and the pushes left; for a choice of targets who
+// asks, why and what happens to each one chosen. All as the server sends
+// them.
 const props = defineProps({ pending: { type: Object, required: true } })
 const { t } = useI18n()
 const rules = useRulesStore()
@@ -36,7 +38,21 @@ function toggle(id, on) {
     class="grid gap-3"
     data-test="decision"
   >
+    <p
+      v-if="pending.kind === 'targets' && pending.source"
+      class="text-strong"
+      data-test="decision-cause"
+    >
+      {{ t('decision.cause', { actor: team.characterNames[pending.by] ?? pending.by, source: rules.name(pending.source) }) }}
+    </p>
     <p>{{ decisionText(pending, t, rules) }}</p>
+    <p
+      v-if="pending.ops?.length"
+      class="text-dim"
+      data-test="decision-effect"
+    >
+      {{ t('decision.effect', { effect: opsText(pending.ops, t) }) }}
+    </p>
     <div
       v-if="pending.roll"
       class="grid gap-2 border border-line p-3"
