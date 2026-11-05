@@ -489,6 +489,8 @@ pub async fn correct(
     actor.items = character.data.actor.items.clone();
     actor.next_item = character.data.actor.next_item;
     actor.doses = character.data.actor.doses.clone();
+    // Money changes only through bookings (F-76).
+    actor.ledger = character.data.actor.ledger.clone();
     actor
         .supplies
         .retain(|s, _| matches!(s, Supply::Food | Supply::Water));

@@ -575,6 +575,10 @@ async fn finish(
                 .roll_start_gear(&mut actor, &draft, &mut **dice),
         )
     };
+    // The starting cash is the first booking [p. 33].
+    if let Some(cash) = &start_cash {
+        xenoforge_engine::money::open_account(&mut actor, cash);
+    }
     character.name = check_name(&draft.name)?;
     character.data = CharacterData {
         status: Status::Finished,

@@ -22,6 +22,7 @@ use crate::data::model::{
 use crate::data::{Id, RuleData};
 use crate::dice::{Dice, Die, throw};
 use crate::inventory::{Destination, ItemOffer, NewItem};
+use crate::money::Booking;
 use crate::panic::{PanicCause, StopReason};
 use crate::roll::{Outcome, RollRequest};
 use crate::state::{
@@ -114,6 +115,30 @@ pub enum Command {
         uid: u32,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         supply: Option<u8>,
+    },
+    /// Money in or out, in cents, with a reason: wages, a reward, a loan
+    /// (F-76).
+    Book {
+        actor: ActorId,
+        amount: i64,
+        note: String,
+    },
+    /// Sells an item to a character for its price in cents, or the
+    /// catalog's (F-76) [p. 118].
+    BuyItem {
+        actor: ActorId,
+        item: NewItem,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        price: Option<u64>,
+    },
+    /// Sells spare reloads for a firearm; about 5% of the weapon each
+    /// unless a price is given [p. 124].
+    BuyReloads {
+        actor: ActorId,
+        uid: u32,
+        count: u8,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        price: Option<u64>,
     },
 }
 
@@ -374,6 +399,19 @@ pub enum Event {
         item: Id,
         from: u8,
         to: u8,
+    },
+    /// Money in or out; only the owner and the game master see it (A-15).
+    Booked {
+        actor: ActorId,
+        booking: Booking,
+        /// The balance afterwards, in cents.
+        balance: i64,
+    },
+    ReloadsAdded {
+        actor: ActorId,
+        uid: u32,
+        item: Id,
+        count: u8,
     },
 }
 
@@ -886,6 +924,18 @@ impl<'a> Ctx<'a> {
             } => self.move_item(&actor, uid, to, count),
             Command::UseItem { actor, uid } => self.use_item(&actor, uid),
             Command::RefillItem { actor, uid, supply } => self.refill_item(&actor, uid, supply),
+            Command::Book {
+                actor,
+                amount,
+                note,
+            } => self.book_note(&actor, amount, &note),
+            Command::BuyItem { actor, item, price } => self.buy_item(&actor, &item, price),
+            Command::BuyReloads {
+                actor,
+                uid,
+                count,
+                price,
+            } => self.buy_reloads(&actor, uid, count, price),
         }
     }
 

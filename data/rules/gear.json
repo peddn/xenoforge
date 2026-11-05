@@ -225,6 +225,18 @@
       "weapon": { "skill": "ranged_combat", "bonus": 3, "damage": 5, "range": "extreme", "features": ["armor_piercing"] }
     },
     {
+      "id": "hellhound_ii_missile",
+      "page": 147,
+      "category": "ammunition",
+      "cost": { "cents": 1200000 }
+    },
+    {
+      "id": "headlock_missile",
+      "page": 147,
+      "category": "ammunition",
+      "cost": { "cents": 900000 }
+    },
+    {
       "id": "m3_personnel_armor",
       "page": 127,
       "category": "armor",

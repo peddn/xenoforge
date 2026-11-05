@@ -150,6 +150,10 @@ fn visibility(entry: &Entry) -> &'static str {
         Entry::Engine {
             event: Event::StoryPointsChanged { .. },
         } => "gm",
+        // Money is for the owner's sheet and the game master (A-15).
+        Entry::Engine {
+            event: Event::Booked { .. },
+        } => "gm",
         _ => "all",
     }
 }

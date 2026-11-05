@@ -12,6 +12,7 @@
     { "id": "supply_per_item", "page": 34, "value": 4 },
     { "id": "start_reloads", "page": 33, "value": 2 },
     { "id": "start_gear_items", "page": 39, "value": 2 },
+    { "id": "reload_cost_percent", "page": 124, "value": 5 },
     { "id": "creation_attribute_points", "page": 28, "value": 14 },
     { "id": "creation_attribute_min", "page": 28, "value": 2 },
     { "id": "creation_attribute_max", "page": 28, "value": 4 },

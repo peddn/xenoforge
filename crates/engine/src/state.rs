@@ -158,6 +158,9 @@ pub struct Actor {
     /// Doses taken this Shift, by item, e.g. Naproleve (F-74) [p. 137].
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub doses: BTreeMap<Id, u8>,
+    /// Money in and out, in cents; the balance is the sum (plan 5.4).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub ledger: Vec<crate::money::Booking>,
     /// Traumas, conditions, injuries and blocks currently in effect.
     pub sources: Vec<ActiveSource>,
     pub panic: Option<ActivePanic>,
