@@ -28,6 +28,9 @@ const talents = ref([])
 const items = ref([])
 const note = ref('')
 const preview = ref(null)
+// The last talents and items the server offered stay visible when a preview
+// fails, so a choice that no longer fits can be taken back.
+const offers = ref({ talents: [], items: [] })
 const error = ref('')
 const target = ref(null)
 let timer = null
@@ -75,6 +78,7 @@ watch(
     timer = setTimeout(async () => {
       try {
         preview.value = await team.preview(request.value)
+        offers.value = { talents: preview.value.talents, items: preview.value.items ?? [] }
         // Assign only on a change: a new array would start the next preview.
         const offered = talents.value.filter((id) => preview.value.talents.includes(id))
         if (offered.length !== talents.value.length) talents.value = offered
@@ -90,6 +94,12 @@ watch(
   },
   { immediate: true, deep: true },
 )
+
+// Ticks belong to one roll: another skill starts without them.
+watch(what, () => {
+  talents.value = []
+  items.value = []
+})
 
 async function send(command) {
   try {
@@ -186,11 +196,11 @@ function perform(action) {
       {{ t('roll.difficultyByGm') }}
     </p>
     <div
-      v-if="preview?.talents.length"
+      v-if="offers.talents.length"
       class="flex flex-wrap items-center gap-2"
     >
       <label
-        v-for="id in preview.talents"
+        v-for="id in offers.talents"
         :key="id"
         class="flex flex-wrap items-center gap-2"
       >
@@ -208,13 +218,13 @@ function perform(action) {
       </label>
     </div>
     <div
-      v-if="preview?.items?.length"
+      v-if="offers.items.length"
       class="flex flex-wrap items-center gap-2"
       data-test="items"
     >
       <span class="text-sm text-dim uppercase">{{ t('roll.items') }}</span>
       <label
-        v-for="offer in preview.items"
+        v-for="offer in offers.items"
         :key="offer.uid"
         class="flex flex-wrap items-center gap-2"
       >

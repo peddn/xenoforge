@@ -433,3 +433,133 @@ fn splitting_a_stack() {
     assert_eq!(items, [(0, 2, Place::Carried), (1, 1, Place::Stowed)]);
     assert_eq!(load(&t, "nat").carried, 2);
 }
+
+/// Two of the same kind of item count once in a roll and are offered once
+/// (F-71).
+#[test]
+fn the_same_item_counts_once() {
+    let mut t = table();
+    let kits = give(
+        &mut t,
+        "nat",
+        NewItem {
+            count: Some(2),
+            ..catalog("personal_medkit")
+        },
+    );
+    let events = t.run(
+        Command::MoveItem {
+            actor: "nat".into(),
+            uid: kits,
+            to: Destination::Carried,
+            count: Some(1),
+        },
+        &[],
+    );
+    assert!(has(&events, |e| matches!(e, Event::ItemMoved { .. })));
+    let preview = t
+        .engine
+        .preview(&t.state, RollRequest::skill("nat", "medical_aid"))
+        .unwrap();
+    assert_eq!(preview.items.len(), 1);
+    let mut request = RollRequest::skill("nat", "medical_aid");
+    request.items = vec![0, 1];
+    assert!(t.try_run(Command::Roll { request }, &[]).is_err());
+}
+
+/// One suit at a time, also from a stack [p. 98].
+#[test]
+fn one_suit_from_a_stack() {
+    let mut t = table();
+    let refused = t.try_run(
+        Command::AddItem {
+            actor: "nat".into(),
+            item: NewItem {
+                count: Some(2),
+                place: Place::Worn,
+                ..catalog("m3_personnel_armor")
+            },
+        },
+        &[],
+    );
+    assert!(refused.is_err());
+    let suits = give(
+        &mut t,
+        "nat",
+        NewItem {
+            count: Some(2),
+            ..catalog("m3_personnel_armor")
+        },
+    );
+    assert!(move_item(&mut t, suits, Destination::Worn).is_err());
+    t.run(
+        Command::MoveItem {
+            actor: "nat".into(),
+            uid: suits,
+            to: Destination::Worn,
+            count: Some(1),
+        },
+        &[],
+    );
+    let places: Vec<_> = t
+        .actor("nat")
+        .items
+        .iter()
+        .map(|p| (p.count, p.place))
+        .collect();
+    assert_eq!(places, [(1, Place::Carried), (1, Place::Worn)]);
+}
+
+/// Spare reloads belong to the stack and stay with what is left (F-61).
+#[test]
+fn reloads_stay_with_the_stack() {
+    let mut t = table();
+    let pistols = give(
+        &mut t,
+        "nat",
+        NewItem {
+            count: Some(2),
+            reloads: 2,
+            ..catalog("m4a3_service_pistol")
+        },
+    );
+    t.run(
+        Command::MoveItem {
+            actor: "nat".into(),
+            uid: pistols,
+            to: Destination::Character("ilse".into()),
+            count: Some(1),
+        },
+        &[],
+    );
+    assert_eq!(t.actor("nat").items[0].reloads, 2);
+    assert_eq!(t.actor("ilse").items[0].reloads, 0);
+}
+
+/// Over the most a character can carry, dropping or stowing still works;
+/// taking more does not [p. 34].
+#[test]
+fn too_much_can_still_be_dropped() {
+    let mut t = table();
+    let gun = give(&mut t, "nat", catalog("m56a2_smart_gun"));
+    let stowed = give(
+        &mut t,
+        "nat",
+        NewItem {
+            place: Place::Stowed,
+            ..catalog("m56a2_smart_gun")
+        },
+    );
+    give(&mut t, "nat", catalog("m56a2_smart_gun"));
+    give(&mut t, "nat", catalog("m56a2_smart_gun"));
+    // STRENGTH falls to 2: 9 items carried, 8 at most.
+    t.state
+        .actors
+        .get_mut("nat")
+        .unwrap()
+        .attributes
+        .insert("strength".into(), 2);
+    assert!(move_item(&mut t, stowed, Destination::Carried).is_err());
+    move_item(&mut t, gun, Destination::Stowed).unwrap();
+    assert_eq!(load(&t, "nat").carried, 24);
+}

@@ -79,14 +79,17 @@ async function save() {
   }
 }
 
-// Item commands go to the team for this character.
+// Item commands go to the team for this character; true when they went
+// through.
 async function item(command) {
   error.value = ''
   try {
     await team.command({ ...command, actor: String(props.character.id) })
     await team.refresh()
+    return true
   } catch (e) {
     error.value = e.message
+    return false
   }
 }
 
@@ -144,7 +147,7 @@ async function leave() {
         :gear-move="own || team.view.is_gm"
         :gear-add="team.view.is_gm"
         :others="others"
-        @item="item"
+        :send-item="item"
       />
       <div
         v-if="setsRelations && others.length"

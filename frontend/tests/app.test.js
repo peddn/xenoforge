@@ -116,6 +116,48 @@ describe('rolling', () => {
     expect(rolls[1].body.note).toBe('Tür zum Labor')
   })
 
+  it('keeps the items to untick when a preview fails, and clears them for another skill', async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    const offer = { base_dice: 4, stress_dice: 0, modifications: [], talents: [], max_pushes: 1 }
+    const weapons = [
+      { uid: 0, item: 'm4a3_service_pistol', value: 2, weapon: true },
+      { uid: 1, item: 'knife', value: 0, weapon: true },
+    ]
+    const calls = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url, options = {}) => {
+        const body = JSON.parse(options.body)
+        calls.push(body)
+        if (body.items?.length > 1) {
+          return { ok: false, status: 422, statusText: 'rule', text: async () => JSON.stringify({ message: 'one weapon per roll (F-59)' }) }
+        }
+        return { ok: true, status: 200, text: async () => JSON.stringify({ ...offer, items: weapons }) }
+      }),
+    )
+    useTeamStore().view = { id: 5, characters: [] }
+    const wrapper = mount(RollPanel, {
+      props: { character: { id: 9, name: 'Charlize', actor: { items: [] } } },
+      global: { plugins: [pinia, i18n] },
+    })
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    await wrapper.get('[data-test="roll-item-0"]').setValue(true)
+    await wrapper.get('[data-test="roll-item-1"]').setValue(true)
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    expect(wrapper.text()).toContain('one weapon per roll')
+    await wrapper.get('[data-test="roll-item-1"]').setValue(false)
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    await wrapper.get('[data-test="roll-what"]').setValue('attribute:wits')
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    expect(calls.at(-1).items).toEqual([])
+  })
+
   const pushDecision = {
     id: 4,
     kind: 'roll',
@@ -584,12 +626,17 @@ describe('gear', () => {
 
   it('shows items and the load from the server, and moves them', async () => {
     const { pinia, i18n } = setup()
+    const send = vi.fn(async () => true)
     const wrapper = mount(GearPanel, {
       props: {
-        actor,
+        actor: {
+          ...actor,
+          items: [...actor.items, { uid: 4, item: 'irc_mk50_compression_suit', count: 2, place: 'carried' }],
+        },
         encumbrance: { carried: 7, normal: 4, max: 8 },
         canMove: true,
         others: [{ id: 9, name: 'Charlize' }],
+        send,
       },
       global: { plugins: [pinia, i18n] },
     })
@@ -610,17 +657,22 @@ describe('gear', () => {
     await wrapper.get('[data-test="move-2"]').setValue('character:9')
     await wrapper.get('[data-test="drop-3"]').trigger('click')
     await wrapper.get('[data-test="item-3"] [data-test="confirm"]').trigger('click')
-    expect(wrapper.emitted('command').map((e) => e[0])).toEqual([
+    // One suit of a stack is put on [p. 98].
+    await wrapper.get('[data-test="move-4"]').setValue('worn')
+    expect(send.mock.calls.map((c) => c[0])).toEqual([
       { command: 'move_item', uid: 0, to: 'stowed' },
       { command: 'move_item', uid: 2, to: { character: '9' }, count: 2 },
       { command: 'move_item', uid: 3, to: 'dropped' },
+      { command: 'move_item', uid: 4, to: 'worn', count: 1 },
     ])
   })
 
   it('lets the game master add from the catalog or a free item', async () => {
     const { pinia, i18n } = setup()
+    const answers = [false, true, true]
+    const send = vi.fn(async () => answers.shift())
     const wrapper = mount(GearPanel, {
-      props: { actor: { items: [] }, canAdd: true },
+      props: { actor: { items: [] }, canAdd: true, send },
       global: { plugins: [pinia, i18n] },
     })
     expect(wrapper.find('[data-test="move-0"]').exists()).toBe(false)
@@ -628,15 +680,23 @@ describe('gear', () => {
     expect(wrapper.find('[data-test="pick-autodoc"]').exists()).toBe(false)
     await wrapper.get('[data-test="gear-search"]').setValue('m4a3')
     await wrapper.get('[data-test="pick-m4a3_service_pistol"]').trigger('click')
+    // Refused: the choice stays for another try.
     await wrapper.get('[data-test="add-go"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-test="pick-m4a3_service_pistol"]').attributes('aria-pressed')).toBe('true')
+    await wrapper.get('[data-test="add-go"]').trigger('click')
+    await flushPromises()
     await wrapper.get('[data-test="add-free"]').setValue(true)
     expect(wrapper.get('[data-test="add-go"]').attributes('disabled')).toBeDefined()
     await wrapper.get('[data-test="free-name"]').setValue(' Kiste ')
     await wrapper.get('[data-test="add-go"]').trigger('click')
-    expect(wrapper.emitted('command').map((e) => e[0])).toEqual([
+    await flushPromises()
+    expect(send.mock.calls.map((c) => c[0])).toEqual([
+      { command: 'add_item', item: { item: 'm4a3_service_pistol' } },
       { command: 'add_item', item: { item: 'm4a3_service_pistol' } },
       { command: 'add_item', item: { name: 'Kiste', weight: '1' } },
     ])
+    expect(wrapper.get('[data-test="free-name"]').element.value).toBe('')
   })
 
   it('sends the item commands of the sheet to the team for the character', async () => {

@@ -299,6 +299,8 @@
   "F-69.every_four": "Je angefangene 4 ein Gegenstand",
   "F-70.name": "Gewicht der Magazine",
   "F-70.weightless": "Zählen nicht",
+  "F-71.name": "Gleiche Gegenstände in einer Probe",
+  "F-71.once_per_kind": "Zählen einmal",
   "difficulty_trivial.name": "Trivial",
   "difficulty_simple.name": "Einfach",
   "difficulty_easy.name": "Leicht",

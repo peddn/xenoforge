@@ -12,9 +12,10 @@ import { useRulesStore } from '@/stores/rules'
 // What a character has [p. 33–34]: the items and where they are, and the
 // encumbrance as the server counts it. With `canMove` items are carried,
 // put on, stowed, dropped or handed to one of `others`; with `canAdd` the
-// game master adds items from the catalog or free ones. Commands go out as
-// `command` without the actor; the parent sends them, so the same panel
-// works in a team and outside one. The rules stay with the server.
+// game master adds items from the catalog or free ones. Commands go to
+// `send` without the actor; the parent sends them, so the same panel works
+// in a team and outside one, and answers whether they went through. The
+// rules stay with the server.
 const props = defineProps({
   actor: { type: Object, required: true },
   encumbrance: { type: Object, default: null },
@@ -22,8 +23,9 @@ const props = defineProps({
   canAdd: { type: Boolean, default: false },
   // Other characters to hand items to: { id, name }.
   others: { type: Array, default: () => [] },
+  // async (command) => true when the server took it.
+  send: { type: Function, default: async () => false },
 })
-const emit = defineEmits(['command'])
 const { t } = useI18n()
 const rules = useRulesStore()
 
@@ -76,8 +78,10 @@ function move(p, value) {
   if (!value) return
   const to = value.startsWith('character:') ? { character: value.slice('character:'.length) } : value
   const command = { command: 'move_item', uid: p.uid, to }
-  if (countOf(p) < p.count) command.count = countOf(p)
-  emit('command', command)
+  // One suit is put on at a time [p. 98].
+  const n = to === 'worn' ? 1 : countOf(p)
+  if (n < p.count) command.count = n
+  props.send(command)
 }
 
 // Adding: from the catalog (things that can be carried, F-63) or free.
@@ -101,14 +105,15 @@ const matches = computed(() => {
 const pickedEntry = computed(() => (picked.value ? rules.entry('gear', picked.value) : null))
 const canAddNow = computed(() => (free.value ? !!name.value.trim() : !!picked.value))
 
-function add() {
+async function add() {
   const item = free.value ? { name: name.value.trim(), weight: weight.value } : { item: picked.value }
   const n = Math.max(1, Math.trunc(Number(count.value) || 1))
   if (n > 1) item.count = n
   if (place.value !== 'carried') item.place = place.value
   const spare = Math.max(0, Math.trunc(Number(reloads.value) || 0))
   if (!free.value && pickedEntry.value?.weapon?.reloads && spare) item.reloads = spare
-  emit('command', { command: 'add_item', item })
+  // The form stays filled if the server refuses, e.g. as too heavy.
+  if (!(await props.send({ command: 'add_item', item }))) return
   picked.value = null
   search.value = ''
   name.value = ''

@@ -299,6 +299,8 @@
   "F-69.every_four": "One item per started 4",
   "F-70.name": "Weight of reloads",
   "F-70.weightless": "Do not count",
+  "F-71.name": "Identical items in one roll",
+  "F-71.once_per_kind": "Count once",
   "difficulty_trivial.name": "Trivial",
   "difficulty_simple.name": "Simple",
   "difficulty_easy.name": "Easy",

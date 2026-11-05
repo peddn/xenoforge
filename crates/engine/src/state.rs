@@ -102,8 +102,8 @@ pub struct Possession {
     pub count: u16,
     /// Where it is: carried, worn (a suit) or stowed [p. 33, 98].
     pub place: Place,
-    /// Spare reloads of a firearm (F-61); they weigh nothing (F-70)
-    /// [p. 33].
+    /// Spare reloads of a firearm, for the whole stack (F-61); they weigh
+    /// nothing (F-70) [p. 33].
     #[serde(skip_serializing_if = "is_zero_u8")]
     pub reloads: u8,
     /// Air or power left, for items with a supply [p. 34].

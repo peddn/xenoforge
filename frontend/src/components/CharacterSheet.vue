@@ -8,7 +8,7 @@ import { useRulesStore } from '@/stores/rules'
 
 // The character sheet to read, in the order of the printed one [p. 389]:
 // texts, attributes with their skills, talents, gear. Where items can be
-// moved or added, the commands come out as `item`.
+// moved or added, `sendItem` sends the commands.
 const props = defineProps({
   sheet: { type: Object, required: true },
   actor: { type: Object, required: true },
@@ -23,12 +23,12 @@ const props = defineProps({
   gearAdd: { type: Boolean, default: false },
   // Characters to hand items to.
   others: { type: Array, default: () => [] },
+  sendItem: { type: Function, default: undefined },
   // Names of the team's characters; without them buddy and rival are left out.
   names: { type: Object, default: null },
   // Without the texts, where they are edited next to the sheet.
   texts: { type: Boolean, default: true },
 })
-const emit = defineEmits(['item'])
 const { t } = useI18n()
 const rules = useRulesStore()
 
@@ -120,7 +120,7 @@ const talentText = (id) => {
       :can-move="gearMove"
       :can-add="gearAdd"
       :others="others"
-      @command="emit('item', $event)"
+      :send="sendItem"
     />
   </div>
 </template>

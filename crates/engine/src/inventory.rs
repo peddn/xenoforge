@@ -197,16 +197,20 @@ impl Engine {
     }
 
     /// Carried items that fit a roll, for the roll dialog (F-59).
+    /// The same kind of item is offered once (F-71).
     pub fn item_offers(&self, actor: &Actor, roll: RollMatch) -> Vec<ItemOffer> {
-        actor
-            .items
-            .iter()
-            .filter_map(|p| self.item_bonus(p, roll))
-            .collect()
+        let mut out: Vec<ItemOffer> = Vec::new();
+        for offer in actor.items.iter().filter_map(|p| self.item_bonus(p, roll)) {
+            if !out.iter().any(|o| o.item == offer.item) {
+                out.push(offer);
+            }
+        }
+        out
     }
 
     /// Modifications of the items chosen for a roll: each once, carried,
-    /// fitting the roll, at most one weapon (F-59).
+    /// fitting the roll, at most one weapon (F-59); two of the same kind
+    /// count once (F-71).
     pub(crate) fn item_modifications(
         &self,
         actor: &Actor,
@@ -214,6 +218,7 @@ impl Engine {
         roll: RollMatch,
     ) -> Result<Vec<Modification>> {
         let mut out = Vec::new();
+        let mut kinds: Vec<Id> = Vec::new();
         let mut weapons = 0;
         for (i, uid) in uids.iter().enumerate() {
             if uids[..i].contains(uid) {
@@ -227,6 +232,14 @@ impl Engine {
             let offer = self.item_bonus(possession, roll).ok_or_else(|| {
                 RuleError::NotAllowed(format!("item {uid} does not help with this roll"))
             })?;
+            if let Some(kind) = &offer.item {
+                if kinds.contains(kind) {
+                    return Err(RuleError::NotAllowed(format!(
+                        "\"{kind}\" counts once per roll (F-71)"
+                    )));
+                }
+                kinds.push(kind.clone());
+            }
             if offer.weapon {
                 weapons += 1;
             }
@@ -290,6 +303,9 @@ impl Engine {
         };
         if new.place == Place::Worn && item.and_then(|i| i.armor).is_none() {
             return Err(RuleError::NotAllowed("only suits are worn".into()));
+        }
+        if new.place == Place::Worn && count > 1 {
+            return Err(RuleError::NotAllowed("one suit at a time [p. 98]".into()));
         }
         Ok(Possession {
             uid,
@@ -430,6 +446,9 @@ impl Ctx<'_> {
         count: Option<u16>,
     ) -> Result<()> {
         let engine = self.engine;
+        // Moving never makes too much worse; dropping or stowing always
+        // helps (p. 34).
+        let before = engine.encumbrance(self.actor(actor)?).carried;
         let a = self.actor_mut(actor)?;
         let index = a
             .items
@@ -444,7 +463,8 @@ impl Ctx<'_> {
             )));
         }
         // Part of a stack goes elsewhere on the character: it becomes an
-        // item of its own.
+        // item of its own. Spare reloads belong to the whole stack and stay
+        // with what is left (F-61).
         let split = count < have
             && matches!(
                 to,
@@ -456,6 +476,7 @@ impl Ctx<'_> {
             a.items[index].count -= count;
             part.uid = a.next_item;
             part.count = count;
+            part.reloads = 0;
             a.next_item += 1;
             a.items.push(part);
             a.items.len() - 1
@@ -475,6 +496,9 @@ impl Ctx<'_> {
                 if !suit {
                     return Err(RuleError::NotAllowed("only suits are worn".into()));
                 }
+                if a.items[index].count > 1 {
+                    return Err(RuleError::NotAllowed("one suit at a time [p. 98]".into()));
+                }
                 take_off(a);
                 a.items[index].place = Place::Worn;
             }
@@ -484,6 +508,7 @@ impl Ctx<'_> {
                     a.items.remove(index);
                 } else {
                     a.items[index].count -= count;
+                    part.reloads = 0;
                 }
                 if let Destination::Character(other) = &to {
                     if other == actor {
@@ -500,8 +525,12 @@ impl Ctx<'_> {
                 }
             }
         }
-        let snapshot = self.actor(actor)?.clone();
-        engine.check_load(&snapshot, actor)?;
+        let after = engine.encumbrance(self.actor(actor)?);
+        if after.carried > after.max && after.carried > before {
+            return Err(RuleError::NotAllowed(format!(
+                "\"{actor}\" cannot carry that much (p. 34)"
+            )));
+        }
         self.emit(Event::ItemMoved {
             actor: actor.to_owned(),
             uid,

@@ -457,8 +457,8 @@ pub struct Correction {
     note: Option<String>,
 }
 
-/// The game master overwrites a character's values; logged and undoable
-/// (plan section 3).
+/// The game master overwrites a character's values except the items;
+/// logged and undoable (plan section 3).
 pub async fn correct(
     State(state): State<AppState>,
     user: User,
@@ -472,7 +472,6 @@ pub async fn correct(
             "only the game master can correct values",
         ));
     }
-    characters::check_actor(&state, &body.actor)?;
     let note = log::note(body.note)?;
     let mut tx = begin_write(&state.pool).await?;
     let characters = team_characters(&mut tx, id).await?;
@@ -481,8 +480,14 @@ pub async fn correct(
         .find(|c| c.id == character_id)
         .cloned()
         .ok_or_else(|| ApiError::not_found("character"))?;
+    // Items change only through item commands, so a correction made with
+    // an older copy never brings back what was handed over or used up.
+    let mut actor = body.actor;
+    actor.items = character.data.actor.items.clone();
+    actor.next_item = character.data.actor.next_item;
+    characters::check_actor(&state, &actor)?;
     save_snapshot(&mut tx, &team, &characters).await?;
-    character.data.actor = body.actor;
+    character.data.actor = actor;
     characters::save(&mut tx, &character).await?;
     let entry = Entry::Corrected {
         character: character.id,

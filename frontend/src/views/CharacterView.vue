@@ -60,8 +60,10 @@ async function item(command) {
     character.value.data.actor.items = saved.data.actor.items
     character.value.data.actor.next_item = saved.data.actor.next_item
     character.value.encumbrance = saved.encumbrance
+    return true
   } catch (e) {
     error.value = e.message
+    return false
   }
 }
 
@@ -164,7 +166,7 @@ async function remove() {
         :encumbrance="character.encumbrance"
         :can-move="!character.team_id"
         :can-add="!character.team_id"
-        @command="item"
+        :send="item"
       />
     </template>
     <CharacterSheet

@@ -93,6 +93,7 @@ Standard ist „wie gedruckt“, außer bei offensichtlichen Druckfehlern. Jede 
 | F-68 | Persönliches Medkit, S. 136 | MEDICAL AID +2, „nur einmal verwendbar“; offen, wann es verbraucht ist | Wird es für eine Probe angekreuzt, ist es danach verbraucht, auch wenn die Probe misslingt; ein Stapel verliert eins | – |
 | F-69 | Nahrung und Wasser, S. 34 | Die Tabelle endet bei Vorrat 8 (zwei Gegenstände) | Fortgeschrieben: je angefangene 4 Vorrat ein Gegenstand, 9–12 also drei | – |
 | F-70 | Gewicht der Magazine, S. 33, 124 | Das Buch nennt für Reservemagazine einen Preis, aber kein Gewicht | Sie stehen als Zahl an der Waffe und zählen nicht zur Traglast | – |
+| F-71 | Gleiche Gegenstände in einer Probe, S. 62 | Offen, ob zwei gleiche Gegenstände (zwei Medkits, zwei Ferngläser) ihren Bonus zweimal geben | Pro Art eines Gegenstands ein Bonus je Probe, ob als Stapel oder einzeln geführt; ein Medkit wird verbraucht | – |
 
 ## Entscheidungen zur App
 

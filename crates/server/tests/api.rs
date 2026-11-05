@@ -960,7 +960,8 @@ async fn gear_in_play() {
 }
 
 /// Outside a team only free characters of a game master get items, through
-/// the engine's rules (A-09); corrections are checked the same way.
+/// the engine's rules (A-09); new values are checked against the items, and
+/// corrections leave the items alone.
 #[tokio::test]
 async fn gear_outside_a_team() {
     let server = server("gear-free").await;
@@ -1038,22 +1039,50 @@ async fn gear_outside_a_team() {
         .await;
     assert_eq!(status, StatusCode::NOT_FOUND, "not the GM's character");
 
-    // A correction with items the engine would not allow is refused.
-    let correction = format!("/api/teams/{team}/characters/{character}");
-    for items in [
-        json!([{ "uid": 0, "item": "autodoc", "count": 1 }]),
-        json!([{ "uid": 0, "item": "knife", "count": 1 }, { "uid": 0, "item": "knife", "count": 1 }]),
-        json!([{ "uid": 0, "item": "knife", "count": 1, "place": "worn" }]),
-    ] {
-        let actor = json!({ "attributes": { "strength": 3 }, "items": items, "next_item": 1 });
-        let (status, _) = gm
-            .call("PUT", &correction, Some(json!({ "actor": actor })))
-            .await;
-        assert!(status.is_client_error(), "{items}");
-    }
-    let actor = json!({ "attributes": { "strength": 3 }, "health": 3, "items": [{ "uid": 0, "item": "knife", "count": 1 }], "next_item": 1 });
-    gm.ok("PUT", &correction, Some(json!({ "actor": actor })))
+    // A lower STRENGTH that leaves too much to carry is refused.
+    gm.ok(
+        "POST",
+        &path,
+        Some(json!({ "command": "add_item", "item": { "name": "Kiste", "weight": "4" } })),
+    )
+    .await;
+    let (status, _) = gm
+        .call(
+            "PUT",
+            &format!("/api/characters/{free}"),
+            Some(json!({ "name": "Ripley", "data": { "actor": { "attributes": { "strength": 0 } } } })),
+        )
         .await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+
+    // Corrections leave the items alone: they change only through item
+    // commands, so an older copy brings nothing back.
+    let actor = character.to_string();
+    for _ in 0..3 {
+        gm.command(
+            team,
+            json!({ "command": "add_item", "actor": actor, "item": { "item": "m56a2_smart_gun" } }),
+        )
+        .await;
+    }
+    let correction = format!("/api/teams/{team}/characters/{character}");
+    let stale = json!({ "attributes": { "strength": 3, "wits": 4 }, "health": 2, "items": [{ "uid": 0, "item": "autodoc", "count": 1 }], "next_item": 1 });
+    gm.ok("PUT", &correction, Some(json!({ "actor": stale })))
+        .await;
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let me = &view["characters"][0]["actor"];
+    assert_eq!(me["health"], 2);
+    assert_eq!(me["items"].as_array().unwrap().len(), 3);
+    assert_eq!(me["next_item"], 3);
+    let weaker = json!({ "attributes": { "strength": 2, "wits": 4 }, "health": 2 });
+    let (status, _) = gm
+        .call("PUT", &correction, Some(json!({ "actor": weaker })))
+        .await;
+    assert_eq!(
+        status,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "9 items, 8 at most"
+    );
 }
 
 /// Buddy and rival: other player characters of the same team, not the

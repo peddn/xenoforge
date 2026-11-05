@@ -70,6 +70,7 @@
     { "id": "F-67", "pages": [126, 136], "options": ["close_combat"], "default": "close_combat" },
     { "id": "F-68", "pages": [136], "options": ["used_up"], "default": "used_up" },
     { "id": "F-69", "pages": [34], "options": ["every_four"], "default": "every_four" },
-    { "id": "F-70", "pages": [33, 124], "options": ["weightless"], "default": "weightless" }
+    { "id": "F-70", "pages": [33, 124], "options": ["weightless"], "default": "weightless" },
+    { "id": "F-71", "pages": [62], "options": ["once_per_kind"], "default": "once_per_kind" }
   ]
 }
