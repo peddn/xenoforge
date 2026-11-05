@@ -214,7 +214,7 @@ fn devices_with_power() {
         e,
         Event::SupplyRolled {
             supply: Supply::Power,
-            item: Some(_),
+            uid: Some(_),
             from: 5,
             to: 0,
             ..
@@ -308,4 +308,102 @@ fn stowed_is_not_at_hand() {
         )
         .is_err()
     );
+}
+
+/// A roll waiting for a push still finishes when its device was emptied
+/// in the meantime; nothing more to roll for it (F-75).
+#[test]
+fn an_emptied_device_does_not_block_a_roll() {
+    let mut t = table();
+    let torch = give(&mut t, "cutting_torch", 1);
+    let mut request = RollRequest::skill("nat", "heavy_machinery");
+    request.items = vec![torch];
+    let ev = t.roll(request, &[6, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3]);
+    use_item(&mut t, torch, &[1, 1, 1, 1, 1]);
+    let done = t.decide(&ev, Choice::Accept, &[]);
+    assert!(!has(&done, |e| matches!(e, Event::SupplyRolled { .. })));
+    assert!(has(&done, |e| matches!(e, Event::RollFinished { .. })));
+}
+
+/// Devices with power come singly, each with its own battery [p. 34].
+#[test]
+fn devices_come_singly() {
+    let mut t = table();
+    let first = give(&mut t, "m314_motion_tracker", 2);
+    let trackers: Vec<_> = t
+        .actor("nat")
+        .items
+        .iter()
+        .map(|p| (p.count, p.supply))
+        .collect();
+    assert_eq!(trackers, [(1, Some(5)), (1, Some(5))]);
+    use_item(&mut t, first, &[1, 2, 2, 2, 2]);
+    let left: Vec<_> = t.actor("nat").items.iter().map(|p| p.supply).collect();
+    assert_eq!(left, [Some(4), Some(5)]);
+}
+
+/// A Broken character can't act: no using, no talent actions [p. 98].
+#[test]
+fn broken_characters_cannot_use_items() {
+    let mut t = table();
+    let beer = give(&mut t, "beer", 1);
+    t.state.actors.get_mut("nat").unwrap().health = 0;
+    let refused = t.try_run(
+        Command::UseItem {
+            actor: "nat".into(),
+            uid: beer,
+        },
+        &[],
+    );
+    assert!(refused.is_err());
+    let analyst =
+        Table::new(Mode::Campaign).with("s", pc().attr("wits", 2).talent("analysis").health(0));
+    let mut analyst = analyst;
+    assert!(
+        analyst
+            .try_run(
+                Command::PerformAction {
+                    actor: "s".into(),
+                    action: "analyze".into(),
+                    target: None,
+                },
+                &[],
+            )
+            .is_err()
+    );
+}
+
+/// Synthetics need no air, food or water: no Supply rolls [p. 111].
+#[test]
+fn androids_roll_no_supplies() {
+    let mut t = Table::new(Mode::Campaign).with(
+        "ash",
+        pc().android()
+            .supply(Supply::Food, 3)
+            .wearing("irc_mk50_compression_suit", 5),
+    );
+    for supply in [Supply::Food, Supply::Air] {
+        let request = RollRequest::new("ash", xenoforge_engine::roll::RollKind::Supply { supply });
+        assert!(t.try_run(Command::Roll { request }, &[]).is_err());
+    }
+}
+
+/// Eating may take a character over the most they can carry; values set
+/// by hand afterwards are refused only when they make it worse [p. 34].
+#[test]
+fn overload_from_eating() {
+    let mut t =
+        Table::new(Mode::Campaign).with("nat", pc().attr("strength", 2).supply(Supply::Food, 4));
+    // 32 quarters at most: Food 4, a meal, two smart guns, a knife = 31.
+    let meal = give(&mut t, "prefab_meal", 1);
+    give(&mut t, "m56a2_smart_gun", 2);
+    give(&mut t, "knife", 1);
+    let before = t.actor("nat").clone();
+    use_item(&mut t, meal, &[]);
+    let fed = t.actor("nat").clone();
+    assert!(t.engine.encumbrance(&fed).carried > t.engine.encumbrance(&fed).max);
+    let mut calmer = fed.clone();
+    calmer.stress = 0;
+    assert!(t.engine.check_overload(&fed, &calmer).is_ok());
+    assert!(t.engine.check_overload(&before, &fed).is_err());
 }

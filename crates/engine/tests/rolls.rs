@@ -474,7 +474,7 @@ fn calm_breather_and_ruling_f09() {
     assert!(has(&ev, |e| matches!(
         e,
         Event::SupplyRolled {
-            item: Some(0),
+            uid: Some(0),
             from: 2,
             to: 1,
             ..

@@ -260,12 +260,13 @@ impl Engine {
     }
 
     /// The chosen items that run on power: each needs a Power Supply roll
-    /// after the roll (F-75) [p. 34].
+    /// after the roll (F-75) [p. 34]. One emptied in the meantime, e.g.
+    /// used while the roll waited for a push, needs none.
     pub(crate) fn powered(&self, actor: &Actor, uids: &[u32]) -> Vec<u32> {
         actor
             .items
             .iter()
-            .filter(|p| uids.contains(&p.uid))
+            .filter(|p| uids.contains(&p.uid) && p.supply != Some(0))
             .filter(|p| {
                 p.item
                     .as_deref()
@@ -363,6 +364,12 @@ impl Engine {
                 reloads: p.reloads,
             };
             let full = self.possession(&new, p.uid)?.supply;
+            if full.is_some() && p.count > 1 {
+                return Err(RuleError::NotAllowed(format!(
+                    "item {} has a supply of its own and comes singly",
+                    p.uid
+                )));
+            }
             let fits = match (p.supply, full) {
                 (None, _) => true,
                 (Some(left), Some(max)) => left <= max,
@@ -381,7 +388,24 @@ impl Engine {
         if worn > 1 {
             return Err(RuleError::NotAllowed("one suit at a time [p. 98]".into()));
         }
-        self.check_load(actor, "the character")
+        Ok(())
+    }
+
+    /// New values set by hand must not make overloading worse, e.g. a
+    /// lower STRENGTH [p. 34]. A character already over the most, say
+    /// after eating, may still be corrected otherwise.
+    pub fn check_overload(&self, before: &Actor, after: &Actor) -> Result<()> {
+        let over = |a: &Actor| {
+            let load = self.encumbrance(a);
+            i64::from(load.carried) - i64::from(load.max)
+        };
+        let now = over(after);
+        if now > 0 && now > over(before) {
+            return Err(RuleError::NotAllowed(
+                "the character cannot carry that much (p. 34)".into(),
+            ));
+        }
+        Ok(())
     }
 
     /// Too much to carry, even overloaded [p. 34].
@@ -402,6 +426,20 @@ pub(crate) fn give(engine: &Engine, actor: &mut Actor, new: &NewItem) -> Result<
     let possession = engine.possession(new, actor.next_item)?;
     if possession.place == Place::Worn {
         take_off(engine, actor);
+    }
+    // Items with air or power of their own come one by one, each with its
+    // own supply [p. 34].
+    if possession.supply.is_some() && possession.count > 1 {
+        let mut first = None;
+        for _ in 0..possession.count {
+            let single = Possession {
+                count: 1,
+                ..possession.clone()
+            };
+            let uid = add(engine, actor, single);
+            first.get_or_insert(uid);
+        }
+        return Ok(first.unwrap_or(possession.uid));
     }
     Ok(add(engine, actor, possession))
 }
@@ -484,6 +522,7 @@ impl Ctx<'_> {
     /// Supply roll follows (F-75).
     pub(crate) fn use_item(&mut self, actor: &str, uid: u32) -> Result<()> {
         let engine = self.engine;
+        self.able(actor)?;
         let a = self.actor_mut(actor)?;
         let possession = a
             .items

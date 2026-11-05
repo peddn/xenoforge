@@ -359,6 +359,7 @@ async fn update(
     }
     if free && character.team_id.is_none() {
         let new = body.data.actor;
+        let before = character.data.actor.clone();
         let actor = &mut character.data.actor;
         // A character at full Health stays at full Health when STRENGTH
         // changes, unless Health itself was changed [p. 30].
@@ -384,6 +385,7 @@ async fn update(
             .collect();
         // The stored items with the new values, e.g. a lower STRENGTH.
         check_actor(&state, actor)?;
+        state.engine.check_overload(&before, actor)?;
     }
     let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;

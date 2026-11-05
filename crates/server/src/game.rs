@@ -493,6 +493,7 @@ pub async fn correct(
         .supplies
         .retain(|s, _| matches!(s, Supply::Food | Supply::Water));
     characters::check_actor(&state, &actor)?;
+    state.engine.check_overload(&character.data.actor, &actor)?;
     save_snapshot(&mut tx, &team, &characters).await?;
     character.data.actor = actor;
     characters::save(&mut tx, &character).await?;

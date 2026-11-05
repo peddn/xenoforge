@@ -304,6 +304,7 @@
     "next_slow_action_lost": "{actor} loses the next slow action",
     "item_dropped": "{actor} drops something; the game master picks what",
     "supply_rolled": "{actor}: supply roll {supply}, {from} → {to}",
+    "supply_rolled_item": "{actor}: supply roll {supply} ({item}), {from} → {to}",
     "signature_item_used": "{actor} uses the signature item",
     "action_performed": "{actor}: {action}",
     "roll_skipped": "{actor} is Broken and does not roll",

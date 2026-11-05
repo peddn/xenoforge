@@ -811,10 +811,13 @@ describe('gear', () => {
     const { pinia, i18n } = setup()
     const calls = mockApi({ 'POST /teams/5/commands': [] })
     useAuthStore().user = { id: 1, role: 'gm' }
-    const character = { id: 3, name: 'Gorman', owner_id: 2, actor: { supplies: { food: 2 }, items: [] }, sheet: {}, hints: [] }
+    const suit = { uid: 0, item: 'irc_mk50_compression_suit', count: 1, place: 'worn', supply: 3 }
+    const character = { id: 3, name: 'Gorman', owner_id: 2, actor: { supplies: { food: 2 }, items: [suit] }, sheet: {}, hints: [] }
     useTeamStore().view = { id: 5, mode: 'campaign', is_gm: true, characters: [character] }
     const wrapper = mount(SheetDialog, { props: { character }, global: { plugins: [pinia, i18n] } })
     expect(wrapper.text()).toContain('Nahrung 2 · Wasser 0')
+    // Water 0 has nothing to roll; air is the worn suit's (F-75).
+    expect(wrapper.find('[data-test="supply-roll-water"]').exists()).toBe(false)
     await wrapper.get('[data-test="supply-roll-air"]').trigger('click')
     await flushPromises()
     expect(calls[0].body).toEqual({
@@ -833,7 +836,7 @@ describe('gear', () => {
       event({ event: 'item_used_up', actor: '9', uid: 2, item: 'personal_medkit' }),
       event({ event: 'item_used', actor: '3', uid: 3, item: 'beer' }),
       event({ event: 'supply_changed', actor: '3', uid: 4, supply: 'food', from: 2, to: 3 }),
-      event({ event: 'supply_rolled', actor: '3', uid: 5, supply: 'power', item: 1, dice: [{ kind: 'stress', face: 1, locked: false }], from: 5, to: 4 }),
+      event({ event: 'supply_rolled', actor: '3', uid: 5, supply: 'power', item: 'm314_motion_tracker', dice: [{ kind: 'stress', face: 1, locked: false }], from: 5, to: 4 }),
       event({ event: 'item_refilled', actor: '3', uid: 6, item: 'm314_motion_tracker', from: 0, to: 5 }),
       event({ event: 'source_applied', actor: '3', uid: 7, origin: { used: { item: 'beer', index: 0 } }, ends: { after: { unit: 'shift', left: 1 } } }),
     ]
@@ -843,7 +846,7 @@ describe('gear', () => {
     expect(text).toContain('Charlize: personal_medkit verbraucht')
     expect(text).toContain('Gorman benutzt beer')
     expect(text).toContain('Gorman: Nahrung 2 → 3')
-    expect(text).toContain('Gorman: Vorratswurf Energie, 5 → 4')
+    expect(text).toContain('Gorman: Vorratswurf Energie (m314_motion_tracker), 5 → 4')
     expect(text).toContain('Gorman: m314_motion_tracker aufgefüllt, 0 → 5')
     expect(text).toContain('Gorman: beer')
     expect([0, 1, 2, 4, 14].map(quarters)).toEqual(['0', '¼', '½', '1', '3½'])

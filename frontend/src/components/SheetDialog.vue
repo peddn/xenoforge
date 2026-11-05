@@ -93,9 +93,19 @@ async function item(command) {
   }
 }
 
-// Supply rolls are the game master's: Food and Water, Air on the worn
-// suit (F-75) [p. 34].
-const SUPPLIES = ['food', 'water', 'air']
+// Supply rolls are the game master's: Food and Water while there is any,
+// Air on a worn suit that holds some (F-75) [p. 34]; synthetics need
+// none [p. 111].
+const supplyRolls = computed(() => {
+  const actor = props.character.actor ?? {}
+  if (actor.android) return []
+  const list = ['food', 'water'].filter((s) => (actor.supplies?.[s] ?? 0) > 0)
+  const suit = (actor.items ?? []).find(
+    (p) => p.place === 'worn' && rules.entry('gear', p.item)?.supply?.kind === 'air',
+  )
+  if (suit && (suit.supply ?? 1) > 0) list.push('air')
+  return list
+})
 async function supplyRoll(supply) {
   error.value = ''
   try {
@@ -252,12 +262,12 @@ async function leave() {
         {{ t('gm.correct') }}
       </XButton>
       <span
-        v-if="!editing"
+        v-if="!editing && supplyRolls.length"
         class="flex flex-wrap items-center gap-2"
       >
         <span class="text-sm text-dim uppercase">{{ t('sheet.supplyRoll') }}</span>
         <XButton
-          v-for="supply in SUPPLIES"
+          v-for="supply in supplyRolls"
           :key="supply"
           size="small"
           :data-test="`supply-roll-${supply}`"

@@ -282,9 +282,12 @@ pub enum Event {
     SupplyRolled {
         actor: ActorId,
         supply: Supply,
-        /// The suit or device whose air or power it was (F-75).
+        /// The suit or device whose air or power it was, by number and
+        /// catalog entry (F-75).
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        item: Option<u32>,
+        uid: Option<u32>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        item: Option<Id>,
         dice: Vec<Die>,
         from: u8,
         to: u8,
@@ -476,7 +479,9 @@ impl Engine {
             (Some(actor), crate::roll::RollKind::Death) => ctx.fitting_talents(actor, "stamina")?,
             (
                 _,
-                crate::roll::RollKind::Supply { .. } | crate::roll::RollKind::StressDice { .. },
+                crate::roll::RollKind::Supply { .. }
+                | crate::roll::RollKind::ItemSupply { .. }
+                | crate::roll::RollKind::StressDice { .. },
             ) => {
                 return Err(RuleError::NotAllowed(
                     "no preview for this roll kind".into(),
@@ -769,6 +774,16 @@ impl<'a> Ctx<'a> {
             .actors
             .get_mut(id)
             .ok_or_else(|| RuleError::UnknownActor(id.to_owned()))
+    }
+
+    /// A Broken character can crawl and mumble, nothing else [p. 98].
+    pub fn able(&self, id: &str) -> Result<()> {
+        if self.actor(id)?.broken() {
+            return Err(RuleError::NotAllowed(format!(
+                "\"{id}\" is Broken and cannot act [p. 98]"
+            )));
+        }
+        Ok(())
     }
 
     /// Effects working on an actor right now.
@@ -1527,6 +1542,7 @@ impl<'a> Ctx<'a> {
     // ---- actions, signature item, sessions -----------------------------------
 
     fn perform_action(&mut self, actor: &str, action: Id) -> Result<()> {
+        self.able(actor)?;
         let Some(entry) = self.engine.rules.actions.iter().find(|a| a.id == action) else {
             return Err(RuleError::UnknownEntry(action));
         };

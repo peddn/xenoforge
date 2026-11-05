@@ -915,6 +915,11 @@ impl Ctx<'_> {
             .actor
             .clone()
             .ok_or_else(|| RuleError::NotAllowed("a supply roll needs an actor".into()))?;
+        if self.actor(&actor)?.android {
+            return Err(RuleError::NotAllowed(
+                "synthetics need no air, food or water [p. 111]".into(),
+            ));
+        }
         match supply {
             // Air is the worn suit's, power the device's (F-75).
             Supply::Air => {
@@ -962,6 +967,7 @@ impl Ctx<'_> {
                 self.emit(Event::SupplyRolled {
                     actor,
                     supply,
+                    uid: None,
                     item: None,
                     dice,
                     from: rating,
@@ -1009,7 +1015,8 @@ impl Ctx<'_> {
         self.emit(Event::SupplyRolled {
             actor: actor.to_owned(),
             supply,
-            item: Some(uid),
+            uid: Some(uid),
+            item: possession.item,
             dice,
             from: rating,
             to,
