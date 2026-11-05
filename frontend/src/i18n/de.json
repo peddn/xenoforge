@@ -140,10 +140,13 @@
     "reason": "Grund",
     "buy": "Kaufen",
     "sell": "Verkaufen statt geben",
-    "price": "Preis in $ (leer: Katalog)",
-    "catalog": "Katalogpreis {price}",
+    "price": "Gesamtpreis in $ (leer: Katalog)",
+    "catalog": "Katalogpreis {price} je Stück",
     "noPrice": "kein Katalogpreis, bitte Preis angeben",
-    "buyReload": "Magazin kaufen"
+    "buyReload": "Magazin kaufen",
+    "reloadShare": "Magazine je {percent} % des Waffenpreises",
+    "purchaseReloads": "Kauf: {item} × {count} mit Magazinen × {reloads}",
+    "invalid": "kein gültiger Betrag"
   },
   "join": {
     "title": "Einladung",

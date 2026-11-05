@@ -68,7 +68,12 @@ fn bookings() {
             text: "Lohn".into()
         }
     );
-    for (amount, note) in [(-104_001, "Bar"), (0, "Nichts"), (100, " ")] {
+    for (amount, note) in [
+        (-104_001, "Bar"),
+        (0, "Nichts"),
+        (100, " "),
+        (i64::MAX, "Zu viel"),
+    ] {
         let refused = t.try_run(
             Command::Book {
                 actor: "nat".into(),
@@ -106,6 +111,7 @@ fn buying_gear() {
             item: Some("prefab_meal".into()),
             name: None,
             count: 2,
+            reloads: 0,
         }
     );
     // A range: the lower end, unless the game master names a price.
@@ -144,6 +150,48 @@ fn buying_gear() {
     }
     assert_eq!(balance(&t), 37_000, "nothing booked for refusals");
     assert_eq!(t.actor("nat").items.len(), 2);
+}
+
+/// A firearm with spare reloads: the reloads are paid for as well, at the
+/// catalog's price; a price named by the game master is for all of it
+/// [p. 118, 124].
+#[test]
+fn buying_a_firearm_with_reloads() {
+    let mut t = table();
+    t.run(
+        Command::BuyItem {
+            actor: "nat".into(),
+            item: NewItem {
+                reloads: 2,
+                ..catalog("m4a3_service_pistol")
+            },
+            price: None,
+        },
+        &[],
+    );
+    assert_eq!(balance(&t), 40_000 - 20_000 - 2 * 1_000);
+    assert_eq!(t.actor("nat").items[0].reloads, 2);
+    assert_eq!(
+        t.actor("nat").ledger[1].reason,
+        Reason::Purchase {
+            item: Some("m4a3_service_pistol".into()),
+            name: None,
+            count: 1,
+            reloads: 2,
+        }
+    );
+    t.run(
+        Command::BuyItem {
+            actor: "nat".into(),
+            item: NewItem {
+                reloads: 1,
+                ..catalog("m4a3_service_pistol")
+            },
+            price: Some(15_000),
+        },
+        &[],
+    );
+    assert_eq!(balance(&t), 3_000);
 }
 
 /// Reloads: about 5% of the weapon each, for firearms that take them
@@ -192,4 +240,27 @@ fn buying_reloads() {
         &[],
     );
     assert!(refused.is_err(), "a knife takes no reloads");
+    // No more than fit; nothing is paid for what would not.
+    let mut t = table();
+    t.run(
+        Command::AddItem {
+            actor: "nat".into(),
+            item: NewItem {
+                reloads: 254,
+                ..catalog("m4a3_service_pistol")
+            },
+        },
+        &[],
+    );
+    let refused = t.try_run(
+        Command::BuyReloads {
+            actor: "nat".into(),
+            uid: 0,
+            count: 2,
+            price: None,
+        },
+        &[],
+    );
+    assert!(refused.is_err(), "too many reloads");
+    assert_eq!(balance(&t), 40_000);
 }

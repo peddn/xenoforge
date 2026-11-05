@@ -93,6 +93,7 @@ export const rulesData = {
     { id: 'story_points_max', page: 61, value: 3 },
     { id: 'start_gear_items', page: 39, value: 2 },
     { id: 'gear_bonus_max', page: 128, value: 3 },
+    { id: 'reload_cost_percent', page: 124, value: 5 },
   ],
 }
 

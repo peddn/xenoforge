@@ -708,6 +708,26 @@ async fn event_stream_replays_the_log() {
     }
     assert!(text.contains("id: 1"), "{text}");
 
+    // A booking stays hidden; the player only hears to load again (A-15).
+    let (status, _) = gm
+        .command(
+            team,
+            json!({ "command": "book", "actor": character.to_string(), "amount": 500, "note": "Lohn" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    while !text.contains("event: refresh") {
+        let frame = tokio::time::timeout(Duration::from_secs(2), body.frame())
+            .await
+            .expect("the signal arrives")
+            .unwrap()
+            .unwrap();
+        if let Some(data) = frame.data_ref() {
+            text.push_str(std::str::from_utf8(data).unwrap());
+        }
+    }
+    assert!(!text.contains("booked") && !text.contains("Lohn"), "{text}");
+
     // When a character leaves, the stream ends after telling so.
     gm.ok(
         "DELETE",
@@ -1275,6 +1295,18 @@ async fn money() {
         )
         .await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "$800 > $280");
+    let long = "x".repeat(201);
+    let (status, _) = gm
+        .command(
+            team,
+            json!({ "command": "book", "actor": actor, "amount": 100, "note": long }),
+        )
+        .await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "a reason as long as a note"
+    );
 
     let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
     let me = &view["characters"][0]["actor"];

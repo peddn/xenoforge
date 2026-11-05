@@ -64,7 +64,13 @@ export const useTeamStore = defineStore('team', () => {
       return
     }
     source = new EventSource(`/api/teams/${id}/events`)
-    source.onopen = () => (connected.value = true)
+    // After a reconnect the view may have missed a hidden change.
+    let opened = false
+    source.onopen = () => {
+      connected.value = true
+      if (opened) scheduleRefresh()
+      opened = true
+    }
     source.onerror = () => {
       connected.value = false
       // The browser gives up for good on 401 or 404; find out which.
@@ -75,6 +81,8 @@ export const useTeamStore = defineStore('team', () => {
       if (!log.value.some((e) => e.id === entry.id)) log.value.push(entry)
       scheduleRefresh()
     }
+    // A change hidden from the log, such as one's own balance (A-15).
+    source.addEventListener('refresh', () => scheduleRefresh())
   }
 
   function close() {

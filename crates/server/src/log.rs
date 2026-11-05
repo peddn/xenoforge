@@ -4,7 +4,9 @@
 //! entry is visible to everyone in the team or only to the game master;
 //! the filter is here and nowhere else. Clients follow the log as
 //! Server-Sent Events; after a reconnect the browser sends the last id it
-//! saw (`Last-Event-ID`) and gets what it missed.
+//! saw (`Last-Event-ID`) and gets what it missed. A hidden entry that
+//! changes a player's own sheet reaches the players as a bare `refresh`
+//! event, without what it says.
 
 use std::convert::Infallible;
 
@@ -125,7 +127,7 @@ struct Payload {
 }
 
 /// How long a note may be, in characters.
-const NOTE_MAX: usize = 200;
+pub const NOTE_MAX: usize = 200;
 
 /// A note as sent: trimmed, empty means none, at most `NOTE_MAX` characters.
 pub fn note(text: Option<String>) -> ApiResult<Option<String>> {
@@ -160,6 +162,24 @@ fn visibility(entry: &Entry) -> &'static str {
 
 pub fn visible(stored: &Stored, is_gm: bool) -> bool {
     is_gm || stored.visible_to == "all"
+}
+
+/// Hidden entries that change what a player sees on their own sheet: the
+/// balance (A-15) and the Story Points (p. 216). Players get a signal to
+/// load their view again; hints for the game master change nothing there.
+fn refreshes(stored: &Stored) -> bool {
+    matches!(
+        stored.entry,
+        Entry::Engine {
+            event: Event::Booked { .. } | Event::StoryPointsChanged { .. }
+        }
+    )
+}
+
+/// What the live stream sends: an entry, or the signal to reload.
+enum Live {
+    Entry(Box<Stored>),
+    Refresh,
 }
 
 /// Writes entries in the open transaction; the note goes with the first.
@@ -229,6 +249,12 @@ fn to_sse(stored: &Stored) -> Result<SseEvent, Infallible> {
         .unwrap_or_else(|_| SseEvent::default().comment("unserializable entry")))
 }
 
+/// Without an id, so a reconnect starts after the last entry seen; with
+/// data, since browsers drop events without.
+fn refresh_sse() -> Result<SseEvent, Infallible> {
+    Ok(SseEvent::default().event("refresh").data("{}"))
+}
+
 async fn events(
     State(state): State<AppState>,
     user: User,
@@ -286,20 +312,35 @@ async fn events(
         .filter_map(move |item| {
             let ready = item
                 .ok()
-                .filter(|s| s.team_id == id && s.id > last && visible(s, is_gm));
+                .filter(|s| s.team_id == id && s.id > last)
+                .and_then(|s| {
+                    if visible(&s, is_gm) {
+                        Some(Live::Entry(Box::new(s)))
+                    } else {
+                        refreshes(&s).then_some(Live::Refresh)
+                    }
+                });
             std::future::ready(ready)
         })
-        .flat_map(|stored| {
+        .flat_map(|live| {
             let leaves = matches!(
-                stored.entry,
-                Entry::CharacterRemoved { .. }
-                    | Entry::CharacterLeft { .. }
-                    | Entry::MemberLeft { .. }
-                    | Entry::MemberRemoved { .. }
+                &live,
+                Live::Entry(s) if matches!(
+                    s.entry,
+                    Entry::CharacterRemoved { .. }
+                        | Entry::CharacterLeft { .. }
+                        | Entry::MemberLeft { .. }
+                        | Entry::MemberRemoved { .. }
+                )
             );
-            stream::iter(std::iter::once(Some(stored)).chain(leaves.then_some(None)))
+            stream::iter(std::iter::once(Some(live)).chain(leaves.then_some(None)))
         })
         .take_while(|item| std::future::ready(item.is_some()))
-        .filter_map(|item| std::future::ready(item.map(|s| to_sse(&s))));
+        .filter_map(|item| {
+            std::future::ready(item.map(|live| match live {
+                Live::Entry(s) => to_sse(&s),
+                Live::Refresh => refresh_sse(),
+            }))
+        });
     Ok(Sse::new(replay.chain(live)).keep_alive(KeepAlive::default()))
 }

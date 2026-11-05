@@ -15,7 +15,7 @@ import CreationWizard from '@/components/CreationWizard.vue'
 import GearPanel from '@/components/GearPanel.vue'
 import RollPanel from '@/components/RollPanel.vue'
 import SheetDialog from '@/components/SheetDialog.vue'
-import { cashFormula, choiceLabel, moneyText, modsText, originLabel, problemText, quarters, weightText } from '@/labels'
+import { bookingReason, cashFormula, choiceLabel, moneyText, modsText, originLabel, parseMoney, problemText, quarters, weightText } from '@/labels'
 import { guard, routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
@@ -278,6 +278,7 @@ describe('rolling', () => {
     vi.stubGlobal(
       'EventSource',
       class {
+        addEventListener() {}
         close() {}
       },
     )
@@ -320,6 +321,7 @@ describe('rolling', () => {
     vi.stubGlobal(
       'EventSource',
       class {
+        addEventListener() {}
         close() {}
       },
     )
@@ -539,6 +541,63 @@ describe('labels', () => {
     expect(originLabel({ block: { blocks: 'stress_relief', by: 'depression' } }, t, rules)).toBe(
       '<depression>: Stressabbau gesperrt',
     )
+  })
+})
+
+describe('money', () => {
+  it('reads sums as typed in either language', () => {
+    expect(['', '12', '12,5', '12.5', '1.234,56', '1.234', '−20', '-1.000 $'].map((s) => parseMoney(s, 'de'))).toEqual([
+      null, 1200, 1250, 1250, 123456, 123400, -2000, -100000,
+    ])
+    expect(['$1,234.50', '12,50', '1,234'].map((s) => parseMoney(s, 'en'))).toEqual([123450, 1250, 123400])
+    for (const [s, locale] of [['abc', 'de'], ['12,345', 'de'], ['1.23.4', 'de'], ['1.234', 'en'], ['--5', 'en']]) {
+      expect(parseMoney(s, locale), s).toBeNaN()
+    }
+  })
+
+  it('names what a booking was for', () => {
+    const { i18n } = setup()
+    const rules = { name: (id) => `<${id}>` }
+    const reason = { kind: 'purchase', item: 'm4a3_service_pistol', count: 1, reloads: 2 }
+    expect(bookingReason(reason, i18n.global.t, rules)).toBe('Kauf: <m4a3_service_pistol> × 1 mit Magazinen × 2')
+  })
+
+  it('loads the view again when a hidden change is signalled (A-15)', async () => {
+    setup()
+    const listeners = {}
+    let source
+    vi.stubGlobal(
+      'EventSource',
+      class {
+        constructor() {
+          source = this
+        }
+        addEventListener(name, f) {
+          listeners[name] = f
+        }
+        close() {}
+      },
+    )
+    const view = { id: 5, name: 'Hope', characters: [], members: [], pending: [] }
+    const calls = mockApi({ 'GET /teams/5': view })
+    vi.useFakeTimers()
+    try {
+      const team = useTeamStore()
+      await team.open(5)
+      const before = calls.length
+      listeners.refresh()
+      await vi.runAllTimersAsync()
+      expect(calls.length).toBe(before + 1)
+      // Reconnecting may have missed one, too; the first opening not.
+      source.onopen()
+      await vi.runAllTimersAsync()
+      expect(calls.length).toBe(before + 1)
+      source.onopen()
+      await vi.runAllTimersAsync()
+      expect(calls.length).toBe(before + 2)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
@@ -841,18 +900,26 @@ describe('gear', () => {
     await wrapper.get('[data-test="gear-search"]').setValue('m4a3')
     await wrapper.get('[data-test="pick-m4a3_service_pistol"]').trigger('click')
     await wrapper.get('[data-test="buying"]').setValue(true)
-    expect(wrapper.get('[data-test="catalog-price"]').text()).toBe(`Katalogpreis ${moneyText(20000, 'de')}`)
+    expect(wrapper.get('[data-test="catalog-price"]').text()).toBe(`Katalogpreis ${moneyText(20000, 'de')} je Stück`)
     await wrapper.get('[data-test="add-go"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-test="gear-search"]').setValue('m4a3')
     await wrapper.get('[data-test="pick-m4a3_service_pistol"]').trigger('click')
-    await wrapper.get('[data-test="price"]').setValue('150,50')
+    // Spare reloads are paid for too, as the server counts them [p. 124].
+    await wrapper.get('[data-test="add-item"] input[min="0"]').setValue(2)
+    expect(wrapper.get('[data-test="catalog-price"]').text()).toContain('Magazine je 5 % des Waffenpreises')
+    // A price that is none says so and is not sent.
+    await wrapper.get('[data-test="price"]').setValue('12,345')
+    expect(wrapper.find('[data-test="price-invalid"]').exists()).toBe(true)
+    expect(wrapper.get('[data-test="add-go"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-test="price"]').setValue('1.150,50')
+    expect(wrapper.find('[data-test="price-invalid"]').exists()).toBe(false)
     await wrapper.get('[data-test="add-go"]').trigger('click')
     await flushPromises()
     expect(send.mock.calls.map((c) => c[0])).toEqual([
       { command: 'buy_reloads', uid: 0, count: 1 },
       { command: 'buy_item', item: { item: 'm4a3_service_pistol' } },
-      { command: 'buy_item', item: { item: 'm4a3_service_pistol' }, price: 15050 },
+      { command: 'buy_item', item: { item: 'm4a3_service_pistol', reloads: 2 }, price: 115050 },
     ])
   })
 
@@ -871,11 +938,14 @@ describe('gear', () => {
     const bookings = wrapper.get('[data-test="ledger"]').text()
     expect(bookings).toContain('Kauf: beer × 5')
     expect(bookings.indexOf('Kauf')).toBeLessThan(bookings.indexOf('Startgeld'))
-    await wrapper.get('[data-test="booking-amount"]').setValue('-12,5')
     await wrapper.get('[data-test="booking-reason"]').setValue('Miete')
+    await wrapper.get('[data-test="booking-amount"]').setValue('12,5,0')
+    expect(wrapper.find('[data-test="booking-invalid"]').exists()).toBe(true)
+    expect(wrapper.get('[data-test="booking-go"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-test="booking-amount"]').setValue('−1.012,5')
     await wrapper.get('[data-test="booking-go"]').trigger('click')
     await flushPromises()
-    expect(calls[0].body).toEqual({ command: { command: 'book', actor: '3', amount: -1250, note: 'Miete' } })
+    expect(calls[0].body).toEqual({ command: { command: 'book', actor: '3', amount: -101250, note: 'Miete' } })
     const other = mount(CharacterSheet, {
       props: { sheet: {}, actor: { ledger: [], items: [] } },
       global: { plugins: [pinia, i18n] },
@@ -1099,6 +1169,7 @@ describe('choosing and Acts (A-12, A-13)', () => {
     vi.stubGlobal(
       'EventSource',
       class {
+        addEventListener() {}
         close() {}
       },
     )

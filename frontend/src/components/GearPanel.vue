@@ -6,7 +6,7 @@ import XButton from '@/ui/XButton.vue'
 import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import XStatus from '@/ui/XStatus.vue'
-import { itemName, moneyText, quarters, weightText } from '@/labels'
+import { itemName, moneyText, parseMoney, quarters, weightText } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 
 // What a character has [p. 33–34]: the items and where they are, and the
@@ -114,7 +114,8 @@ const name = ref('')
 const weight = ref('1')
 const count = ref(1)
 const reloads = ref(0)
-// Buying instead of giving; an empty price means the catalog's.
+// Buying instead of giving. The price is for all of it, spare reloads
+// included; empty means the catalog's, which the server counts [p. 118, 124].
 const buying = ref(false)
 const price = ref('')
 const catalogPrice = computed(() => {
@@ -123,10 +124,8 @@ const catalogPrice = computed(() => {
   const range = cost.up_to_cents ? `–${moneyText(cost.up_to_cents, locale.value)}` : ''
   return t('money.catalog', { price: `${moneyText(cost.cents, locale.value)}${range}` })
 })
-const priceCents = () => {
-  const value = Number(String(price.value).replace(',', '.'))
-  return String(price.value).trim() && Number.isFinite(value) && value >= 0 ? Math.round(value * 100) : undefined
-}
+const priceCents = computed(() => parseMoney(price.value, locale.value))
+const priceBad = computed(() => buying.value && props.canBuy && priceCents.value !== null && !(priceCents.value >= 0))
 const place = ref('carried')
 const WEIGHTS = ['0', '1/4', '1/2', '1', '2', '3', '4']
 const matches = computed(() => {
@@ -138,7 +137,7 @@ const matches = computed(() => {
     .slice(0, 8)
 })
 const pickedEntry = computed(() => (picked.value ? rules.entry('gear', picked.value) : null))
-const canAddNow = computed(() => (free.value ? !!name.value.trim() : !!picked.value))
+const canAddNow = computed(() => (free.value ? !!name.value.trim() : !!picked.value) && !priceBad.value)
 
 async function add() {
   const item = free.value ? { name: name.value.trim(), weight: weight.value } : { item: picked.value }
@@ -149,7 +148,7 @@ async function add() {
   if (!free.value && pickedEntry.value?.weapon?.reloads && spare) item.reloads = spare
   // The form stays filled if the server refuses, e.g. as too heavy.
   const command = buying.value && props.canBuy
-    ? { command: 'buy_item', item, ...(priceCents() !== undefined ? { price: priceCents() } : {}) }
+    ? { command: 'buy_item', item, ...(priceCents.value !== null ? { price: priceCents.value } : {}) }
     : { command: 'add_item', item }
   if (!(await props.send(command))) return
   price.value = ''
@@ -408,14 +407,22 @@ function pick(id) {
             v-model="price"
             inputmode="decimal"
             class="w-28"
+            :aria-invalid="priceBad"
             data-test="price"
           >
         </XField>
+        <XStatus
+          v-if="priceBad"
+          tone="warn"
+          :text="t('money.invalid')"
+          data-test="price-invalid"
+        />
         <span
           v-if="buying && !free"
           class="text-sm text-dim"
           data-test="catalog-price"
-        >{{ catalogPrice }}</span>
+        >{{ catalogPrice }}<template v-if="pickedEntry?.weapon?.reloads && Number(reloads) > 0">
+          · {{ t('money.reloadShare', { percent: rules.constant('reload_cost_percent') }) }}</template></span>
       </div>
     </fieldset>
   </div>

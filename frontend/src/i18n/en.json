@@ -140,10 +140,13 @@
     "reason": "Reason",
     "buy": "Buy",
     "sell": "Sell instead of give",
-    "price": "Price in $ (empty: catalog)",
-    "catalog": "Catalog price {price}",
+    "price": "Total price in $ (empty: catalog)",
+    "catalog": "Catalog price {price} each",
     "noPrice": "no catalog price, please name one",
-    "buyReload": "Buy a reload"
+    "buyReload": "Buy a reload",
+    "reloadShare": "reloads {percent}% of the weapon each",
+    "purchaseReloads": "Bought: {item} × {count} with reloads × {reloads}",
+    "invalid": "not a valid amount"
   },
   "join": {
     "title": "Invitation",

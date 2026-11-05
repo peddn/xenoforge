@@ -121,6 +121,39 @@ export function moneyText(cents, locale) {
   }).format(cents / 100)
 }
 
+/**
+ * A sum of money as typed, in cents: "1.234,50" in German, "1,234.50" in
+ * English, and "12.5" or "12,5" either way; "$", spaces and "−" are fine.
+ * Null when empty, NaN when it is no sum.
+ */
+export function parseMoney(text, locale) {
+  let s = String(text ?? '')
+    .replace(/[\s$]/g, '')
+    .replace(/\u2212/g, '-')
+  if (!s) return null
+  const sign = s[0] === '-' ? -1 : 1
+  if (s[0] === '-' || s[0] === '+') s = s.slice(1)
+  const decimal = String(locale).startsWith('de') ? ',' : '.'
+  const group = decimal === ',' ? '.' : ','
+  let whole = s
+  let fraction = ''
+  const at = s.lastIndexOf(decimal)
+  if (at >= 0) {
+    whole = s.slice(0, at)
+    fraction = s.slice(at + 1)
+  } else {
+    // Only the other mark: with one or two digits after it, the decimals
+    // as typed in the other language; otherwise thousands.
+    const parts = s.split(group)
+    if (parts.length === 2 && /^\d{1,2}$/.test(parts[1])) [whole, fraction] = parts
+  }
+  const grouped = new RegExp(`^(\\d*|\\d{1,3}(\\${group}\\d{3})+)$`)
+  if (!grouped.test(whole) || !/^\d{0,2}$/.test(fraction) || !(whole || fraction)) return NaN
+  const cents = Number(whole.replaceAll(group, '') || 0) * 100 + Number(fraction.padEnd(2, '0'))
+  if (!Number.isSafeInteger(cents)) return NaN
+  return cents === 0 ? 0 : sign * cents
+}
+
 /** The balance: the sum of the bookings, in cents. */
 export function balance(ledger) {
   return (ledger ?? []).reduce((sum, b) => sum + b.amount, 0)
@@ -132,5 +165,6 @@ export function bookingReason(reason, t, rules) {
   if (reason.kind === 'note') return reason.text
   if (reason.kind === 'reloads') return t('money.reloads', { item: rules.name(reason.item), count: reason.count })
   const item = reason.item ? rules.name(reason.item) : (reason.name ?? '')
+  if (reason.reloads) return t('money.purchaseReloads', { item, count: reason.count, reloads: reason.reloads })
   return t('money.purchase', { item, count: reason.count })
 }
