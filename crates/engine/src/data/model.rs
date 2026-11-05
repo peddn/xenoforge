@@ -56,6 +56,211 @@ pub struct Career {
     pub looks: Vec<Id>,
     pub items: Vec<Id>,
     pub agendas: Vec<Id>,
+    /// Starting gear: four lines of "A or B"; two items from two different
+    /// lines (F-60) [p. 33].
+    pub gear: Vec<[StartItem; 2]>,
+}
+
+/// A starting item: one, `count` of them, or `dice` D6 of them [p. 39–55].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct StartItem {
+    pub item: Id,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dice: Option<u8>,
+}
+
+/// A piece of gear from chapter 6, or an item the careers list without
+/// stats (F-64) [p. 39–55, 118–147].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Item {
+    pub id: Id,
+    pub page: Page,
+    pub category: ItemCategory,
+    /// How much it encumbers; none: it cannot be carried (F-63) [p. 34, 118].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<Weight>,
+    /// Typical price; none where it varies or is not given [p. 118].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost: Option<Price>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weapon: Option<WeaponStats>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub armor: Option<ArmorStats>,
+    /// Air or power it holds when full [p. 34].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supply: Option<ItemSupply>,
+    /// Skill levels of its own, e.g. a mainframe or the AutoDoc.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub skills: BTreeMap<Id, u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vehicle: Option<VehicleStats>,
+    /// Modifiers. Those of a suit count while it is worn; those of other
+    /// items are offered in the roll dialog while carried (F-59).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub effects: Vec<Effect>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ItemCategory {
+    Pistol,
+    Rifle,
+    HeavyWeapon,
+    CloseCombat,
+    VehicleWeapon,
+    Armor,
+    Mainframe,
+    DataStorage,
+    Diagnostics,
+    Vision,
+    Tool,
+    Medical,
+    Pharmaceutical,
+    Food,
+    Vehicle,
+    /// Items of the career lists without stats in chapter 6 (F-64).
+    Other,
+}
+
+/// Weight as printed [p. 34].
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
+pub enum Weight {
+    /// Tiny: listed, but does not encumber.
+    #[serde(rename = "0")]
+    Tiny,
+    #[serde(rename = "1/4")]
+    Quarter,
+    #[serde(rename = "1/2")]
+    Half,
+    #[serde(rename = "1")]
+    One,
+    #[serde(rename = "2")]
+    Two,
+    #[serde(rename = "3")]
+    Three,
+    #[serde(rename = "4")]
+    Four,
+}
+
+impl Weight {
+    /// In quarters of a regular item.
+    pub fn quarters(self) -> u32 {
+        match self {
+            Self::Tiny => 0,
+            Self::Quarter => 1,
+            Self::Half => 2,
+            Self::One => 4,
+            Self::Two => 8,
+            Self::Three => 12,
+            Self::Four => 16,
+        }
+    }
+}
+
+/// A price in cents, or a range where the book gives one [p. 118].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Price {
+    pub cents: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub up_to_cents: Option<u64>,
+}
+
+/// Columns of the weapon tables [p. 118].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct WeaponStats {
+    /// CLOSE COMBAT or RANGED COMBAT.
+    pub skill: Id,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub bonus: i8,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub damage: Option<u8>,
+    /// Blast Power of the explosion it causes [p. 108].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub blast: Option<u8>,
+    /// Stuns; the value modifies the STAMINA roll against it [p. 125, 127].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stun: Option<i8>,
+    /// Sets the target on fire with this Intensity [p. 108].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fire: Option<u8>,
+    pub range: Range,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub features: Vec<WeaponFeature>,
+    /// Comes with two spare reloads at the start (F-61) [p. 33].
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub reloads: bool,
+}
+
+fn is_zero(value: &i8) -> bool {
+    *value == 0
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Range {
+    Engaged,
+    Short,
+    Medium,
+    Long,
+    Extreme,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum WeaponFeature {
+    ArmorPiercing,
+    ArmorDoubled,
+    FullAuto,
+    SingleShot,
+}
+
+/// A suit or armor; one is worn at a time [p. 98, 128].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ArmorStats {
+    pub rating: u8,
+    /// Protects in a vacuum (F-18) [p. 107, 128].
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub vacuum: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ItemSupply {
+    pub kind: SupplyKind,
+    pub max: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SupplyKind {
+    Air,
+    Power,
+}
+
+/// The vehicle table [p. 140].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct VehicleStats {
+    /// Without the driver [p. 114].
+    pub passengers: u8,
+    pub maneuverability: i8,
+    pub speed: u8,
+    pub hull: u8,
+    pub armor: u8,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub aerial: bool,
+    /// Standard armament, items with weapon stats.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub weapons: Vec<Id>,
 }
 
 /// Starting cash: `dice` D6 times `times` dollars.

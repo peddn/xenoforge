@@ -11,7 +11,8 @@
       "names": ["Marcus Mullaney", "Nik Elson", "Vic Pasengrau", "Kimi Diem", "Tara Zanelli", "Chrissy Lopez"],
       "looks": ["crew_cut", "arm_tattoo", "scar", "cold_eyes", "cocky_grin", "personalized_body_armor"],
       "items": ["bullet_that_you_survived", "lost_friend_s_dog_tags", "trophy_from_a_defeated_enemy"],
-      "agendas": ["hero", "cover_up", "fear"]
+      "agendas": ["hero", "cover_up", "fear"],
+      "gear": [[{ "item": "armat_m41a_pulse_rifle" }, { "item": "m56a2_smart_gun" }], [{ "item": "m314_motion_tracker" }, { "item": "g2_electroshock_grenade", "count": 2 }], [{ "item": "irc_mk35_pressure_suit" }, { "item": "m3_personnel_armor" }], [{ "item": "signal_flare" }, { "item": "deck_of_cards" }]]
     },
     {
       "id": "colonial_marshal",
@@ -23,7 +24,8 @@
       "names": ["Jack Kitani", "Barrell Klein", "Ivan Mankov", "Akira Kano", "Angela Harris", "Lee-Ann Jenkins"],
       "looks": ["chewing_a_toothpick", "cigarette_in_mouth", "impressive_mustache", "worn_cap", "scar_across_face", "graying_hair", "crew_cut", "inquisitive_gaze", "old_leather_jacket"],
       "items": ["photo_of_a_loved_one", "dented_flask_with_an_inscrip", "news_clipping_of_an_unsolved"],
-      "agendas": ["partner", "badge", "past"]
+      "agendas": ["partner", "badge", "past"],
+      "gear": [[{ "item": "magnum_357_revolver" }, { "item": "armat_model_37a2_pump_action" }], [{ "item": "binoculars" }, { "item": "hi_beam_flashlight" }], [{ "item": "personal_medkit" }, { "item": "stun_baton" }], [{ "item": "neversleep_pills", "dice": 1 }, { "item": "hand_radio" }]]
     },
     {
       "id": "company_agent",
@@ -35,7 +37,8 @@
       "names": ["Conrad Schmidt", "Alexander Balconi", "Ryan Middlebrook", "Michiko Nogumi", "Sheridan Lamara", "Mercedes Prince"],
       "looks": ["icy_glare", "disarming_smile", "expensive_rolex", "unique_signet_ring", "tanned", "elaborate_hairstyle", "emotionless_stare", "monogrammed_silk_tie"],
       "items": ["letter_of_corporate_authoriz", "divorce_papers", "employee_of_the_year_award"],
-      "agendas": ["power", "withheld", "blackmail"]
+      "agendas": ["power", "withheld", "blackmail"],
+      "gear": [[{ "item": "leather_briefcase" }, { "item": "chrome_briefcase" }], [{ "item": "gold_plated_pen" }, { "item": "rolex_watch" }], [{ "item": "data_transmitter_cards" }, { "item": "m4a3_service_pistol" }], [{ "item": "neversleep_pills", "dice": 1 }, { "item": "naproleve", "dice": 1 }]]
     },
     {
       "id": "kid",
@@ -47,7 +50,8 @@
       "names": ["Chip Harrington", "Hugo Turner", "Jakey Myers", "Meggie Wu", "Maisie Kelly", "Becca David"],
       "looks": ["grubby_and_unkempt", "trendy_light_up_sneakers", "torn_denim_jeans", "band_t_shirt", "cargo_shorts", "ponytail", "bored_expression", "baseball_cap"],
       "items": ["lunchbox_covered_in_stickers", "favorite_doll_or_action_figu", "bracelet_made_by_older_sibli"],
-      "agendas": ["trust", "alone", "fun"]
+      "agendas": ["trust", "alone", "fun"],
+      "gear": [[{ "item": "fishing_line" }, { "item": "laser_pointer" }], [{ "item": "magnet" }, { "item": "radio_controlled_car" }], [{ "item": "yo_yo" }, { "item": "electronic_handheld_game" }], [{ "item": "personal_locator_beacon" }, { "item": "coloring_pens" }]]
     },
     {
       "id": "medic",
@@ -59,7 +63,8 @@
       "names": ["Cho Hadfield", "Ken Ibana", "Sullivan Ward", "Ana Kasnavik", "Juno Blanchard", "Katie Aberly"],
       "looks": ["sympathetic_smile", "short_tidy_hair", "warm_caring_eyes", "dark_bags_under_eyes", "fidgeting_hands", "calm_and_gentle_voice", "cold_unsympathetic_stare", "spectacles", "white_coat"],
       "items": ["framed_medical_certificate", "letter_from_son_or_daughter", "last_psych_evaluation_all_cl"],
-      "agendas": ["painkiller", "reports", "oath"]
+      "agendas": ["painkiller", "reports", "oath"],
+      "gear": [[{ "item": "surgical_kit" }, { "item": "irc_mk50_compression_suit" }], [{ "item": "naproleve", "dice": 1 }, { "item": "neversleep_pills", "dice": 1 }], [{ "item": "personal_medkit" }, { "item": "x_drugs", "dice": 1 }], [{ "item": "samani_e_series_watch" }, { "item": "hand_radio" }]]
     },
     {
       "id": "officer",
@@ -71,7 +76,8 @@
       "names": ["Eugene Proctor", "Oliver Bryant", "Lloyd T. Darrington", "Wendy Stern", "Julia Kwang", "Camille Kirschner"],
       "looks": ["crew_cut_or_tied_back_hair", "serious_intense_expression", "spotless_uniform", "overworked_and_strung_out", "stiff_posture", "relaxed_and_soothing_voice", "jumpsuit_with_mission_patch", "impatiently_taps_a_foot"],
       "items": ["ship_s_cat", "letter_of_recommendation", "icc_commercial_flight_office"],
-      "agendas": ["promotion", "blame", "mistakes"]
+      "agendas": ["promotion", "blame", "mistakes"],
+      "gear": [[{ "item": "m4a3_service_pistol" }, { "item": "rexim_rxf_m5_eva_pistol" }], [{ "item": "samani_e_series_watch" }, { "item": "binoculars" }], [{ "item": "m314_motion_tracker" }, { "item": "irc_mk50_compression_suit" }], [{ "item": "seegson_p_dat" }, { "item": "iff_transponder" }]]
     },
     {
       "id": "pilot",
@@ -83,7 +89,8 @@
       "names": ["Casper Edmonton", "Sven Stackman", "Kiel Avari", "Fiona O'Neill", "Constance Navona", "Igraine Turner"],
       "looks": ["arrogant_walk", "steely_blue_eyes", "multi_pocket_flight_suit", "sunglasses", "previous_mission_patches", "deadpan_expression", "chews_gum", "skeptical_look"],
       "items": ["dashboard_dancer", "pilot_s_logbook", "pilot_shades"],
-      "agendas": ["limit", "stubborn", "loner"]
+      "agendas": ["limit", "stubborn", "loner"],
+      "gear": [[{ "item": "m4a3_service_pistol" }, { "item": "pr_put_uplink_terminal" }], [{ "item": "hand_radio" }, { "item": "signal_flare", "dice": 1 }], [{ "item": "maintenance_jack" }, { "item": "seegson_p_dat" }], [{ "item": "seegson_system_diagnostic_device" }, { "item": "irc_mk50_compression_suit" }]]
     },
     {
       "id": "roughneck",
@@ -95,7 +102,8 @@
       "names": ["Mac Masterton", "Kip Tranter", "Charlie Stead", "Sassy Diaz", "Kat Longridge", "Jayden Pace"],
       "looks": ["tattoos", "scar", "broken_nose", "mirthless_eyes", "smirking_face", "loud_laugh", "bruised_and_calloused_hands", "safety_goggles", "filthy_clomping_boots", "wild_hair"],
       "items": ["tool_belt", "photo_of_partner", "crucifix_or_other_religious"],
-      "agendas": ["thrills", "friends", "downtime"]
+      "agendas": ["thrills", "friends", "downtime"],
+      "gear": [[{ "item": "cutting_torch" }, { "item": "watatsumi_dv_303_bolt_gun" }], [{ "item": "hydr8tion", "dice": 1 }, { "item": "maintenance_jack" }], [{ "item": "hard_liquor" }, { "item": "irc_mk50_compression_suit" }], [{ "item": "hi_beam_flashlight" }, { "item": "seegson_c_series_tape_recorder" }]]
     },
     {
       "id": "scientist",
@@ -107,7 +115,8 @@
       "names": ["Viggo Kowalski", "Drew Lancaster", "Travis Torrence", "Elena Sanchez", "Louise Mallory", "Karima Yusef"],
       "looks": ["unkempt_appearance", "stained_lab_coat", "nervous_manner", "hands_in_pockets", "tidy_well_trimmed_hair", "thoughtful_gaze", "clears_throat_before_speakin", "bleary_overworked_eyes"],
       "items": ["albert_einstein_award", "unfinished_scientific_paper", "blackmail_letters"],
-      "agendas": ["stolen", "authority", "delegate"]
+      "agendas": ["stolen", "authority", "delegate"],
+      "gear": [[{ "item": "digital_video_camera" }, { "item": "hand_radio" }], [{ "item": "seegson_p_dat" }, { "item": "neuro_visor" }], [{ "item": "seegson_system_diagnostic_device" }, { "item": "personal_data_transmitter" }], [{ "item": "m314_motion_tracker" }, { "item": "personal_medkit" }]]
     }
   ]
 }

@@ -1,0 +1,779 @@
+{
+  "$schema": "../schema/gear.schema.json",
+  "entries": [
+    {
+      "id": "m4a3_service_pistol",
+      "page": 119,
+      "category": "pistol",
+      "weight": "1/2",
+      "cost": { "cents": 20000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 2, "damage": 1, "range": "medium", "reloads": true }
+    },
+    {
+      "id": "magnum_357_revolver",
+      "page": 119,
+      "category": "pistol",
+      "weight": "1",
+      "cost": { "cents": 30000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 1, "damage": 2, "range": "medium", "reloads": true }
+    },
+    {
+      "id": "rexim_rxf_m5_eva_pistol",
+      "page": 119,
+      "category": "pistol",
+      "weight": "1/2",
+      "cost": { "cents": 40000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 1, "damage": 1, "range": "medium", "features": ["armor_piercing"], "reloads": true }
+    },
+    {
+      "id": "watatsumi_dv_303_bolt_gun",
+      "page": 119,
+      "category": "pistol",
+      "weight": "1",
+      "cost": { "cents": 40000 },
+      "weapon": { "skill": "ranged_combat", "damage": 3, "range": "short", "features": ["armor_piercing", "single_shot"], "reloads": true },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["heavy_machinery"] }, "change": { "add": 2 }, "when": "watatsumi_dv_303_bolt_gun.when" }
+      ]
+    },
+    {
+      "id": "armat_m41a_pulse_rifle",
+      "page": 120,
+      "category": "rifle",
+      "weight": "1",
+      "cost": { "cents": 80000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 1, "damage": 2, "range": "long", "features": ["armor_piercing", "full_auto"], "reloads": true }
+    },
+    {
+      "id": "ak_4047_pulse_assault_rifle",
+      "page": 120,
+      "category": "rifle",
+      "weight": "1",
+      "cost": { "cents": 50000 },
+      "weapon": { "skill": "ranged_combat", "damage": 2, "range": "long", "features": ["full_auto"], "reloads": true }
+    },
+    {
+      "id": "m42a_scope_rifle",
+      "page": 120,
+      "category": "rifle",
+      "weight": "1",
+      "cost": { "cents": 100000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 2, "damage": 2, "range": "extreme", "features": ["armor_piercing"], "reloads": true }
+    },
+    {
+      "id": "armat_model_37a2_pump_action",
+      "page": 120,
+      "category": "rifle",
+      "weight": "1",
+      "cost": { "cents": 50000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 2, "damage": 3, "range": "short", "features": ["armor_doubled"], "reloads": true }
+    },
+    {
+      "id": "spacesub_asso_400_harpoon_grappling_gun",
+      "page": 120,
+      "category": "rifle",
+      "weight": "1",
+      "cost": { "cents": 30000 },
+      "weapon": { "skill": "ranged_combat", "damage": 1, "range": "medium", "features": ["armor_doubled", "single_shot"], "reloads": true }
+    },
+    {
+      "id": "armat_xm99a_phased_plasma_pulse_rifle",
+      "page": 120,
+      "category": "rifle",
+      "weight": "2",
+      "cost": { "cents": 2000000 },
+      "weapon": { "skill": "ranged_combat", "damage": 4, "range": "extreme", "features": ["armor_piercing"] },
+      "supply": { "kind": "power", "max": 5 }
+    },
+    {
+      "id": "armat_u1_grenade_launcher",
+      "page": 124,
+      "category": "heavy_weapon",
+      "weight": "1/2",
+      "cost": { "cents": 60000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 1, "blast": 9, "range": "long" }
+    },
+    {
+      "id": "armat_m41ae2_heavy_pulse_rifle",
+      "page": 124,
+      "category": "heavy_weapon",
+      "weight": "2",
+      "cost": { "cents": 150000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 1, "damage": 3, "range": "extreme", "features": ["armor_piercing", "full_auto"], "reloads": true }
+    },
+    {
+      "id": "m56a2_smart_gun",
+      "page": 124,
+      "category": "heavy_weapon",
+      "weight": "3",
+      "cost": { "cents": 600000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 3, "damage": 3, "range": "long", "features": ["armor_piercing", "full_auto"], "reloads": true }
+    },
+    {
+      "id": "m240_incinerator_unit",
+      "page": 124,
+      "category": "heavy_weapon",
+      "weight": "1",
+      "cost": { "cents": 50000 },
+      "weapon": { "skill": "ranged_combat", "damage": 2, "fire": 9, "range": "medium", "reloads": true }
+    },
+    {
+      "id": "ua_571_c_sentry_gun",
+      "page": 124,
+      "category": "heavy_weapon",
+      "cost": { "cents": 1200000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 2, "damage": 4, "range": "extreme", "features": ["armor_piercing", "full_auto"] },
+      "skills": { "ranged_combat": 8 }
+    },
+    {
+      "id": "g2_electroshock_grenade",
+      "page": 124,
+      "category": "heavy_weapon",
+      "weight": "1/2",
+      "cost": { "cents": 40000 },
+      "weapon": { "skill": "ranged_combat", "stun": -2, "range": "medium" }
+    },
+    {
+      "id": "unarmed_attack",
+      "page": 126,
+      "category": "close_combat",
+      "weapon": { "skill": "close_combat", "damage": 1, "range": "engaged", "features": ["armor_doubled"] }
+    },
+    {
+      "id": "blunt_instrument",
+      "page": 126,
+      "category": "close_combat",
+      "weight": "1",
+      "weapon": { "skill": "close_combat", "bonus": 1, "damage": 1, "range": "engaged" }
+    },
+    {
+      "id": "knife",
+      "page": 126,
+      "category": "close_combat",
+      "weight": "1/2",
+      "cost": { "cents": 5000 },
+      "weapon": { "skill": "close_combat", "damage": 2, "range": "engaged" }
+    },
+    {
+      "id": "stun_baton",
+      "page": 126,
+      "category": "close_combat",
+      "weight": "1/2",
+      "cost": { "cents": 8000 },
+      "weapon": { "skill": "close_combat", "bonus": 1, "damage": 1, "stun": 0, "range": "engaged" },
+      "supply": { "kind": "power", "max": 5 }
+    },
+    {
+      "id": "cutting_torch",
+      "page": 126,
+      "category": "close_combat",
+      "weight": "1",
+      "cost": { "cents": 30000 },
+      "weapon": { "skill": "close_combat", "damage": 3, "range": "engaged", "features": ["armor_piercing"] },
+      "supply": { "kind": "power", "max": 5 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["heavy_machinery"] }, "change": { "add": 2 }, "when": "cutting_torch.when" }
+      ]
+    },
+    {
+      "id": "gatling_gun_20mm",
+      "page": 147,
+      "category": "vehicle_weapon",
+      "cost": { "cents": 750000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 3, "damage": 3, "range": "long", "features": ["armor_piercing", "full_auto"] }
+    },
+    {
+      "id": "gatling_gun_25mm",
+      "page": 147,
+      "category": "vehicle_weapon",
+      "cost": { "cents": 900000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 3, "damage": 3, "range": "extreme", "features": ["armor_piercing", "full_auto"] }
+    },
+    {
+      "id": "phased_plasma_pulse_cannon_turret",
+      "page": 147,
+      "category": "vehicle_weapon",
+      "cost": { "cents": 5400000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 1, "damage": 6, "range": "extreme", "features": ["armor_piercing"] }
+    },
+    {
+      "id": "multi_directional_flame_unit",
+      "page": 147,
+      "category": "vehicle_weapon",
+      "cost": { "cents": 420000 },
+      "weapon": { "skill": "ranged_combat", "damage": 4, "fire": 9, "range": "medium" }
+    },
+    {
+      "id": "mk16_banshee_70_rocket_launcher",
+      "page": 147,
+      "category": "vehicle_weapon",
+      "cost": { "cents": 4800000 },
+      "weapon": { "skill": "ranged_combat", "damage": 3, "blast": 12, "range": "long", "features": ["full_auto"] }
+    },
+    {
+      "id": "agm_220c_hellhound_ii_missile_launcher",
+      "page": 147,
+      "category": "vehicle_weapon",
+      "cost": { "cents": 7600000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 2, "damage": 7, "range": "extreme", "features": ["armor_piercing"] }
+    },
+    {
+      "id": "aim_90e_headlock_missile_launcher",
+      "page": 147,
+      "category": "vehicle_weapon",
+      "cost": { "cents": 6400000 },
+      "weapon": { "skill": "ranged_combat", "bonus": 3, "damage": 5, "range": "extreme", "features": ["armor_piercing"] }
+    },
+    {
+      "id": "m3_personnel_armor",
+      "page": 127,
+      "category": "armor",
+      "weight": "1",
+      "cost": { "cents": 120000 },
+      "armor": { "rating": 6 }
+    },
+    {
+      "id": "irc_mk50_compression_suit",
+      "page": 127,
+      "category": "armor",
+      "weight": "1",
+      "cost": { "cents": 1500000 },
+      "armor": { "rating": 2, "vacuum": true },
+      "supply": { "kind": "air", "max": 5 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "based_on": ["agility"] }, "change": { "add": -1 } }
+      ]
+    },
+    {
+      "id": "irc_mk35_pressure_suit",
+      "page": 127,
+      "category": "armor",
+      "weight": "2",
+      "cost": { "cents": 200000 },
+      "armor": { "rating": 5, "vacuum": true },
+      "supply": { "kind": "air", "max": 4 }
+    },
+    {
+      "id": "eco_all_world_survival_suit",
+      "page": 127,
+      "category": "armor",
+      "weight": "2",
+      "cost": { "cents": 3000000 },
+      "armor": { "rating": 4, "vacuum": true },
+      "supply": { "kind": "air", "max": 6 }
+    },
+    {
+      "id": "weyland_yutani_apesuit",
+      "page": 127,
+      "category": "armor",
+      "weight": "1",
+      "cost": { "cents": 500000 },
+      "armor": { "rating": 3 },
+      "supply": { "kind": "air", "max": 4 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["survival"] }, "change": { "add": 3 } }
+      ]
+    },
+    {
+      "id": "p5000_power_loader",
+      "page": 127,
+      "category": "armor",
+      "cost": { "cents": 5000000 },
+      "weapon": { "skill": "close_combat", "damage": 3, "range": "engaged" },
+      "armor": { "rating": 3 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["heavy_machinery", "close_combat"] }, "change": { "add": 3 } }
+      ]
+    },
+    {
+      "id": "apollo",
+      "page": 130,
+      "category": "mainframe",
+      "cost": { "cents": 200000000 },
+      "skills": { "comtech": 5, "piloting": 4, "observation": 5 }
+    },
+    {
+      "id": "muthur_6000",
+      "page": 130,
+      "category": "mainframe",
+      "cost": { "cents": 250000000 },
+      "skills": { "comtech": 5, "piloting": 5, "observation": 5 }
+    },
+    {
+      "id": "muthur_6500",
+      "page": 130,
+      "category": "mainframe",
+      "cost": { "cents": 350000000 },
+      "skills": { "comtech": 6, "piloting": 5, "observation": 6 }
+    },
+    {
+      "id": "muthur_7000",
+      "page": 130,
+      "category": "mainframe",
+      "cost": { "cents": 500000000 },
+      "skills": { "comtech": 7, "piloting": 6, "observation": 7 }
+    },
+    {
+      "id": "muthur_9000",
+      "page": 130,
+      "category": "mainframe",
+      "cost": { "cents": 5000000000 },
+      "skills": { "comtech": 10, "piloting": 8, "observation": 10, "ranged_combat": 9 }
+    },
+    {
+      "id": "long_data_disc",
+      "page": 131,
+      "category": "data_storage",
+      "weight": "0",
+      "cost": { "cents": 3000 }
+    },
+    {
+      "id": "magnetic_tape",
+      "page": 131,
+      "category": "data_storage",
+      "weight": "0",
+      "cost": { "cents": 500 }
+    },
+    {
+      "id": "computer_terminal",
+      "page": 131,
+      "category": "diagnostics"
+    },
+    {
+      "id": "pr_put_uplink_terminal",
+      "page": 131,
+      "category": "diagnostics",
+      "weight": "1",
+      "cost": { "cents": 900000 }
+    },
+    {
+      "id": "seegson_c_series_tape_recorder",
+      "page": 131,
+      "category": "diagnostics",
+      "weight": "1/2",
+      "cost": { "cents": 5000, "up_to_cents": 10000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["manipulation"] }, "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "samani_e_series_watch",
+      "page": 131,
+      "category": "diagnostics",
+      "weight": "0",
+      "cost": { "cents": 5000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["survival"] }, "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "personal_data_transmitter",
+      "page": 131,
+      "category": "diagnostics",
+      "weight": "0",
+      "cost": { "cents": 10000 }
+    },
+    {
+      "id": "iff_transponder",
+      "page": 131,
+      "category": "diagnostics",
+      "weight": "0",
+      "cost": { "cents": 25000 }
+    },
+    {
+      "id": "data_transmitter_cards",
+      "page": 131,
+      "category": "diagnostics",
+      "weight": "0",
+      "cost": { "cents": 5000 }
+    },
+    {
+      "id": "seegson_p_dat",
+      "page": 131,
+      "category": "diagnostics",
+      "weight": "1/2",
+      "cost": { "cents": 50000 }
+    },
+    {
+      "id": "seegson_system_diagnostic_device",
+      "page": 131,
+      "category": "diagnostics",
+      "weight": "1",
+      "cost": { "cents": 30000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["comtech"] }, "change": { "add": 2 }, "when": "seegson_system_diagnostic_device.when" }
+      ]
+    },
+    {
+      "id": "holotab",
+      "page": 131,
+      "category": "diagnostics",
+      "cost": { "cents": 10000000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["command", "observation"] }, "change": { "add": 2 } }
+      ]
+    },
+    {
+      "id": "modular_computing_device",
+      "page": 131,
+      "category": "diagnostics",
+      "cost": { "cents": 800000 }
+    },
+    {
+      "id": "optical_scope",
+      "page": 133,
+      "category": "vision",
+      "weight": "0",
+      "cost": { "cents": 6000 }
+    },
+    {
+      "id": "hi_beam_flashlight",
+      "page": 133,
+      "category": "vision",
+      "weight": "1/2",
+      "cost": { "cents": 4500 }
+    },
+    {
+      "id": "binoculars",
+      "page": 133,
+      "category": "vision",
+      "weight": "1/2",
+      "cost": { "cents": 10000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["observation"] }, "change": { "add": 2 }, "when": "binoculars.when" }
+      ]
+    },
+    {
+      "id": "m314_motion_tracker",
+      "page": 133,
+      "category": "vision",
+      "weight": "1",
+      "cost": { "cents": 120000 },
+      "supply": { "kind": "power", "max": 5 }
+    },
+    {
+      "id": "m316_motion_tracker",
+      "page": 133,
+      "category": "vision",
+      "weight": "0",
+      "cost": { "cents": 300000 },
+      "supply": { "kind": "power", "max": 3 }
+    },
+    {
+      "id": "head_mounted_sight",
+      "page": 133,
+      "category": "vision",
+      "weight": "1/2",
+      "cost": { "cents": 20000 }
+    },
+    {
+      "id": "neuro_visor",
+      "page": 133,
+      "category": "vision",
+      "weight": "1",
+      "cost": { "cents": 1000000 }
+    },
+    {
+      "id": "pups_mapping_device",
+      "page": 133,
+      "category": "vision",
+      "weight": "1",
+      "cost": { "cents": 5000000 }
+    },
+    {
+      "id": "seegson_microview_2000se",
+      "page": 133,
+      "category": "vision",
+      "cost": { "cents": 2500000 }
+    },
+    {
+      "id": "maintenance_jack",
+      "page": 135,
+      "category": "tool",
+      "weight": "1",
+      "cost": { "cents": 15000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["heavy_machinery"] }, "change": { "add": 1 }, "when": "maintenance_jack.when" }
+      ]
+    },
+    {
+      "id": "electronic_tools",
+      "page": 135,
+      "category": "tool",
+      "weight": "1/2",
+      "cost": { "cents": 25000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["comtech"] }, "change": { "add": 1 } }
+      ]
+    },
+    {
+      "id": "personal_medkit",
+      "page": 135,
+      "category": "medical",
+      "weight": "1/4",
+      "cost": { "cents": 5000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["medical_aid"] }, "change": { "add": 2 } }
+      ]
+    },
+    {
+      "id": "surgical_kit",
+      "page": 135,
+      "category": "medical",
+      "weight": "1/2",
+      "cost": { "cents": 2500, "up_to_cents": 20000 },
+      "effects": [
+        { "kind": "modifier", "applies_to": { "skills": ["medical_aid"] }, "change": { "add": 1 }, "when": "surgical_kit.when" }
+      ]
+    },
+    {
+      "id": "pauling_medpod",
+      "page": 135,
+      "category": "medical",
+      "cost": { "cents": 200000000 },
+      "skills": { "medical_aid": 10 }
+    },
+    {
+      "id": "autodoc",
+      "page": 135,
+      "category": "medical",
+      "cost": { "cents": 50000000 },
+      "skills": { "medical_aid": 6 }
+    },
+    {
+      "id": "neversleep_pills",
+      "page": 136,
+      "category": "pharmaceutical",
+      "weight": "0",
+      "cost": { "cents": 200 }
+    },
+    {
+      "id": "hydr8tion",
+      "page": 136,
+      "category": "pharmaceutical",
+      "weight": "0",
+      "cost": { "cents": 500 }
+    },
+    {
+      "id": "naproleve",
+      "page": 136,
+      "category": "pharmaceutical",
+      "weight": "0",
+      "cost": { "cents": 2000 }
+    },
+    {
+      "id": "recreational_drugs",
+      "page": 136,
+      "category": "pharmaceutical",
+      "weight": "0",
+      "cost": { "cents": 500, "up_to_cents": 6000000 }
+    },
+    {
+      "id": "x_drugs",
+      "page": 136,
+      "category": "pharmaceutical",
+      "weight": "0"
+    },
+    {
+      "id": "prefab_meal",
+      "page": 137,
+      "category": "food",
+      "weight": "1/4",
+      "cost": { "cents": 1000 }
+    },
+    {
+      "id": "water_bottle",
+      "page": 137,
+      "category": "food",
+      "weight": "1/4",
+      "cost": { "cents": 200, "up_to_cents": 10000 }
+    },
+    {
+      "id": "bug_juice_protein_drink",
+      "page": 137,
+      "category": "food",
+      "weight": "1/4",
+      "cost": { "cents": 500 }
+    },
+    {
+      "id": "carbonated_beverage",
+      "page": 137,
+      "category": "food",
+      "weight": "1/4",
+      "cost": { "cents": 200 }
+    },
+    {
+      "id": "candy_bar",
+      "page": 137,
+      "category": "food",
+      "weight": "1/4",
+      "cost": { "cents": 200, "up_to_cents": 500 }
+    },
+    {
+      "id": "coffee",
+      "page": 137,
+      "category": "food",
+      "weight": "0",
+      "cost": { "cents": 0, "up_to_cents": 150 }
+    },
+    {
+      "id": "beer",
+      "page": 137,
+      "category": "food",
+      "weight": "1/4",
+      "cost": { "cents": 400 }
+    },
+    {
+      "id": "hard_liquor",
+      "page": 137,
+      "category": "food",
+      "weight": "1",
+      "cost": { "cents": 1000, "up_to_cents": 50000 }
+    },
+    {
+      "id": "colony_specialty_meal",
+      "page": 137,
+      "category": "food",
+      "weight": "1/4",
+      "cost": { "cents": 2000, "up_to_cents": 30000 }
+    },
+    {
+      "id": "daihotai_tractor",
+      "page": 140,
+      "category": "vehicle",
+      "cost": { "cents": 1700000 },
+      "vehicle": { "passengers": 4, "maneuverability": 0, "speed": 2, "hull": 6, "armor": 4 }
+    },
+    {
+      "id": "weyland_nr9_atv",
+      "page": 140,
+      "category": "vehicle",
+      "cost": { "cents": 300000 },
+      "vehicle": { "passengers": 1, "maneuverability": 2, "speed": 2, "hull": 2, "armor": 2 }
+    },
+    {
+      "id": "m577_apc",
+      "page": 140,
+      "category": "vehicle",
+      "cost": { "cents": 50000000 },
+      "vehicle": { "passengers": 13, "maneuverability": 1, "speed": 3, "hull": 8, "armor": 8, "weapons": ["phased_plasma_pulse_cannon_turret", "gatling_gun_20mm"] }
+    },
+    {
+      "id": "aerodyne_gyrocar",
+      "page": 140,
+      "category": "vehicle",
+      "cost": { "cents": 4000000 },
+      "vehicle": { "passengers": 5, "maneuverability": 3, "speed": 3, "hull": 4, "armor": 3, "aerial": true }
+    },
+    {
+      "id": "ud4l_cheyenne_dropship",
+      "page": 140,
+      "category": "vehicle",
+      "cost": { "cents": 310000000 },
+      "vehicle": { "passengers": 15, "maneuverability": 2, "speed": 4, "hull": 10, "armor": 7, "aerial": true, "weapons": ["gatling_gun_25mm", "mk16_banshee_70_rocket_launcher", "agm_220c_hellhound_ii_missile_launcher", "aim_90e_headlock_missile_launcher"] }
+    },
+    {
+      "id": "wy37b_cargo_lifter",
+      "page": 140,
+      "category": "vehicle",
+      "cost": { "cents": 80000000 },
+      "vehicle": { "passengers": 3, "maneuverability": -1, "speed": 3, "hull": 12, "armor": 4, "aerial": true }
+    },
+    {
+      "id": "signal_flare",
+      "page": 39,
+      "category": "other",
+      "weight": "1/4"
+    },
+    {
+      "id": "deck_of_cards",
+      "page": 39,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "hand_radio",
+      "page": 41,
+      "category": "other",
+      "weight": "1/2"
+    },
+    {
+      "id": "leather_briefcase",
+      "page": 43,
+      "category": "other",
+      "weight": "1"
+    },
+    {
+      "id": "chrome_briefcase",
+      "page": 43,
+      "category": "other",
+      "weight": "1"
+    },
+    {
+      "id": "gold_plated_pen",
+      "page": 43,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "rolex_watch",
+      "page": 43,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "fishing_line",
+      "page": 45,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "laser_pointer",
+      "page": 45,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "magnet",
+      "page": 45,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "radio_controlled_car",
+      "page": 45,
+      "category": "other",
+      "weight": "1"
+    },
+    {
+      "id": "yo_yo",
+      "page": 45,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "electronic_handheld_game",
+      "page": 45,
+      "category": "other",
+      "weight": "1/4"
+    },
+    {
+      "id": "personal_locator_beacon",
+      "page": 45,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "coloring_pens",
+      "page": 45,
+      "category": "other",
+      "weight": "0"
+    },
+    {
+      "id": "digital_video_camera",
+      "page": 55,
+      "category": "other",
+      "weight": "1/2"
+    }
+  ]
+}

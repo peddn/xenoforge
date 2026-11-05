@@ -30,13 +30,14 @@ Der Eintrag `$schema` ist Pflicht und muss auf das eigene Schema zeigen. Editore
 | --- | --- | --- |
 | `constants.json` | Einzelne Regelwerte, die die Engine braucht: höchstens drei Helfer, sechs Würfel beim Vorratswurf, ein Push, Panikeffekt ab 7, vier Schichten pro Tag | `value` |
 | `attributes.json` | Attribute | – |
-| `careers.json` | Karrieren | `key_attribute`, `key_skills` (drei), `talents` (die drei Karrieretalente), `cash` (`dice` W6 mal `times` Dollar), `names` (Namensvorschläge wie im Buch), `looks`, `items`, `agendas` (Vorschläge für Aussehen, Signature Item und Agenda; Texte unter `<karriere>.look.<id>`, `.item.<id>`, `.agenda.<id>`, A-11) |
+| `careers.json` | Karrieren | `key_attribute`, `key_skills` (drei), `talents` (die drei Karrieretalente), `cash` (`dice` W6 mal `times` Dollar), `names` (Namensvorschläge wie im Buch), `looks`, `items`, `agendas` (Vorschläge für Aussehen, Signature Item und Agenda; Texte unter `<karriere>.look.<id>`, `.item.<id>`, `.agenda.<id>`, A-11), `gear` (vier Zeilen „A oder B“ mit `item` aus `gear.json` und wahlweise `count` oder `dice` W6, F-60) |
 | `skills.json` | Fertigkeiten | `attribute` |
 | `actions.json` | Aktionen, auf die Effekte verweisen | `kind`: `slow`, `fast`, `turn` (dauert einen Turn oder länger, außerhalb der Runden), `space_sensor`, `space_pilot`, `space_gunner`, `space_engineer`; `target`, wenn die Aktion auf einen anderen Charakter zielt (Pull Rank) |
 | `panic.json` | Paniktabelle und Panikeffekte außerhalb der Tabelle (Overkill) | `roll` (fehlt außerhalb der Tabelle), `cancels_action` (10+), `trauma_check` (13+), `on_apply`, `effects`, `lasts` |
 | `traumas.json` | Dauerhafte Traumata | `d6`, `effects`, `ruling` |
 | `critical-injuries.json` | Kritische Verletzungen | `d66`, `fatal`, `instant_death`, `healing`, `on_apply`, `effects` |
 | `conditions.json` | Zustände wie Freezing | `effects`, `ends` |
+| `gear.json` | Ausrüstung aus Kapitel 6 und Karrieregegenstände ohne Werte (F-64) | `category`; `weight` als `"0"`, `"1/4"`, `"1/2"`, `"1"` bis `"4"`, fehlt bei nicht Tragbarem (F-63); `cost` in Cent mit `up_to_cents` für Spannen; `weapon` (`skill`, `bonus`, `damage`, `blast`, `stun`, `fire`, `range`, `features`, `reloads` nach F-61), `armor` (`rating`, `vacuum`), `supply` (`air` oder `power` mit `max`), `skills` (eigene Fertigkeitsstufen), `vehicle`, `effects` (nur Modifikatoren: bei Anzügen wirken sie getragen, sonst werden sie im Würfeldialog angeboten, F-59) |
 | `talents.json` | Talente | `career` (fehlt bei allgemeinen Talenten), `effects`; `parameter` (`vehicle` oder `weapon`) und `repeatable`, wenn das Talent etwas Eigenes benennt und mehrfach genommen werden kann; `later` (`gear`, `combat`, `time`, `space_combat`), solange der Teil der App fehlt, der das Talent wirken lässt. Ein Talent hat entweder `effects` oder `later` |
 | `ship-systems.json` | Kernkomponenten, Module, sonstige Systeme | `category`: `core`, `module`, `other`; `effects` |
 | `ship-damage.json` | Komponentenschäden | `table`: `minor`, `major`; `roll`, `system`, `repair`, `ruling`, `on_apply`, `effects` |

@@ -439,6 +439,9 @@ impl<'a> Checker<'a> {
         for career in &rules.careers {
             self.career(career);
         }
+        for item in &rules.gear {
+            self.item(item);
+        }
         for talent in &rules.talents {
             let at = format!("talents/{}", talent.id);
             if let Some(career) = &talent.career {
@@ -597,6 +600,53 @@ impl<'a> Checker<'a> {
             for id in ids {
                 self.require_key(&at, &format!("{}.{kind}.{id}", career.id));
             }
+        }
+        // Four lines of "A or B" [p. 39–55].
+        if career.gear.len() != 4 {
+            self.problem(&at, "a career has four lines of starting gear");
+        }
+        for start in career.gear.iter().flatten() {
+            match rules.gear.iter().find(|i| i.id == start.item) {
+                Some(item) if item.weight.is_some() => {}
+                Some(_) => self.problem(&at, format!("\"{}\" cannot be carried", start.item)),
+                None => self.problem(&at, format!("unknown item \"{}\"", start.item)),
+            }
+            if start.count.is_some() && start.dice.is_some() {
+                self.problem(&at, format!("\"{}\": count or dice, not both", start.item));
+            }
+        }
+    }
+
+    /// An item: weapons roll CLOSE or RANGED COMBAT, own skill levels and
+    /// vehicle weapons exist, and effects are modifiers only (F-59).
+    fn item(&mut self, item: &crate::data::model::Item) {
+        let rules = &self.data.rules;
+        let at = format!("gear/{}", item.id);
+        if let Some(weapon) = &item.weapon {
+            if !matches!(weapon.skill.as_str(), "close_combat" | "ranged_combat") {
+                self.problem(&at, "a weapon uses CLOSE COMBAT or RANGED COMBAT");
+            }
+            if weapon.reloads && item.supply.is_some() {
+                self.problem(&at, "a weapon with a power supply takes no reloads (F-61)");
+            }
+        }
+        for skill in item.skills.keys() {
+            self.reference(&at, "skill", skill);
+        }
+        if let Some(vehicle) = &item.vehicle {
+            for id in &vehicle.weapons {
+                let armed = rules.gear.iter().any(|i| i.id == *id && i.weapon.is_some());
+                if !armed {
+                    self.problem(&at, format!("\"{id}\" is no weapon"));
+                }
+            }
+        }
+        if item
+            .effects
+            .iter()
+            .any(|e| !matches!(e, Effect::Modifier { .. }))
+        {
+            self.problem(&at, "items have modifiers only");
         }
     }
 
