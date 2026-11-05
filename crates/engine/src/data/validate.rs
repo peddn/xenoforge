@@ -5,8 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use super::effects::{
-    Blocked, Change, Effect, Lasts, ModTarget, Modified, Op, ReplaceWith, Replaceable, RollSpec,
-    TriggerEvent,
+    ActorStat, Blocked, Change, Effect, Lasts, ModTarget, Modified, Op, ReplaceWith, Replaceable,
+    RollSpec, TriggerEvent,
 };
 use super::model::{DamageTable, RollRange, Ruling, RulingSwitch};
 use super::{Data, Entry, LANGUAGES, Page};
@@ -28,12 +28,17 @@ pub const REQUIRED_CONSTANTS: &[&str] = &[
     "creation_key_skill_max",
     "creation_other_skill_max",
     "creation_skill_points",
+    "carry_factor",
+    "carry_max_factor",
     "gear_bonus_max",
     "help_max",
     "panic_effect_from",
     "shifts_per_day",
+    "start_gear_items",
+    "start_reloads",
     "story_points_max",
     "supply_dice_max",
+    "supply_per_item",
 ];
 
 /// Names of the engine functions that `special` operations may call.
@@ -268,17 +273,27 @@ impl<'a> Checker<'a> {
                         self.problem(at, "a situation applies to skill rolls only");
                     }
                 }
-                let ship_only = applies_to.skills.is_empty()
+                // Ship stats scale; of a character's values only the
+                // carrying capacity, and it only multiplies (Pack Mule).
+                let carry = applies_to.stats.contains(&ActorStat::CarryCapacity);
+                let scalable = applies_to.skills.is_empty()
                     && applies_to.based_on.is_empty()
                     && applies_to.rolls.is_empty()
-                    && applies_to.stats.is_empty();
+                    && applies_to
+                        .stats
+                        .iter()
+                        .all(|s| *s == ActorStat::CarryCapacity);
                 match change {
                     Change::Add(0) => self.problem(at, "adding 0 changes nothing"),
                     Change::Multiply(n) | Change::Divide(n) if *n < 2 => {
                         self.problem(at, "factor must be at least 2")
                     }
-                    Change::Multiply(_) | Change::Divide(_) if !ship_only => {
-                        self.problem(at, "only ship stats can be multiplied or divided")
+                    Change::Multiply(_) | Change::Divide(_) if !scalable => self.problem(
+                        at,
+                        "only ship stats and carrying capacity can be multiplied or divided",
+                    ),
+                    Change::Add(_) | Change::Divide(_) if carry => {
+                        self.problem(at, "carrying capacity is only multiplied")
                     }
                     _ => {}
                 }
@@ -647,6 +662,18 @@ impl<'a> Checker<'a> {
             .any(|e| !matches!(e, Effect::Modifier { .. }))
         {
             self.problem(&at, "items have modifiers only");
+        }
+        // A suit's modifiers count by themselves while worn; a situation
+        // to tick would never be offered.
+        let situational = item
+            .effects
+            .iter()
+            .any(|e| matches!(e, Effect::Modifier { when: Some(_), .. }));
+        if item.armor.is_some() && situational {
+            self.problem(&at, "a suit's modifiers need no situation");
+        }
+        if item.single_use && item.effects.is_empty() {
+            self.problem(&at, "single use needs a bonus to use up (F-68)");
         }
     }
 

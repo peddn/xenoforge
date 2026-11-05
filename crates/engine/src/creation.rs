@@ -9,9 +9,11 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::data::model::StartItem;
 use crate::data::{Id, Page};
 use crate::dice::Dice;
 use crate::engine::Engine;
+use crate::inventory::{NewItem, give};
 use crate::state::Actor;
 
 /// A character being created. Attributes are the 14 points before an
@@ -34,7 +36,27 @@ pub struct Draft {
     pub name: String,
     pub appearance: String,
     pub agenda: String,
+    /// Two starting items from two different lines of the career (F-60).
+    pub gear: Vec<GearChoice>,
     pub signature_item: String,
+}
+
+/// A starting item chosen: a line of the career's list and its first or
+/// second item (F-60) [p. 39–55].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GearChoice {
+    /// From 0.
+    pub line: u8,
+    /// 0 for the first item of the line, 1 for the second.
+    pub option: u8,
+}
+
+/// A quantity of starting gear rolled when the character is finished,
+/// e.g. D6 doses (F-60).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GearRoll {
+    pub item: Id,
+    pub dice: Vec<u8>,
 }
 
 /// The step of the book's order a problem belongs to [p. 27].
@@ -48,6 +70,7 @@ pub enum CreationStep {
     Name,
     Appearance,
     Agenda,
+    Gear,
     SignatureItem,
 }
 
@@ -223,6 +246,24 @@ impl Engine {
         if empty(&draft.agenda) {
             out.push(problem(S::Agenda, "agenda_missing", 31));
         }
+
+        // Two starting items from two different lines (F-60) [p. 39].
+        let wanted = self.constant("start_gear_items");
+        let count = i16::try_from(draft.gear.len()).unwrap_or(i16::MAX);
+        if count != wanted {
+            out.push(problem(S::Gear, "gear_count", 39).value(count, wanted));
+        }
+        let lines = career.map_or(0, |c| i16::try_from(c.gear.len()).unwrap_or(i16::MAX));
+        for (i, choice) in draft.gear.iter().enumerate() {
+            let line = i16::from(choice.line) + 1;
+            let exists = career.is_none_or(|c| self.start_item(c, *choice).is_some());
+            if !exists {
+                out.push(problem(S::Gear, "gear_unknown", 39).value(line, lines));
+            }
+            if draft.gear[..i].iter().any(|c| c.line == choice.line) {
+                out.push(problem(S::Gear, "gear_line", 39).value(line, lines));
+            }
+        }
         if !draft.android && empty(&draft.signature_item) {
             out.push(problem(S::SignatureItem, "signature_item_missing", 33));
         }
@@ -262,7 +303,82 @@ impl Engine {
             }
         }
         actor.health = self.full_health(&actor);
+        // Starting gear; quantities in dice come when finishing.
+        for item in self.chosen_gear(draft) {
+            if item.dice.is_none() {
+                self.give_start_item(&mut actor, item, item.count.map_or(1, u16::from));
+            }
+        }
         actor
+    }
+
+    fn start_item<'c>(
+        &self,
+        career: &'c crate::data::model::Career,
+        choice: GearChoice,
+    ) -> Option<&'c StartItem> {
+        career
+            .gear
+            .get(usize::from(choice.line))?
+            .get(usize::from(choice.option))
+    }
+
+    /// The starting items a draft chooses, those that exist.
+    fn chosen_gear<'s>(&'s self, draft: &Draft) -> Vec<&'s StartItem> {
+        let Some(career) = draft
+            .career
+            .as_deref()
+            .and_then(|c| self.rules().careers.iter().find(|e| e.id == c))
+        else {
+            return Vec::new();
+        };
+        draft
+            .gear
+            .iter()
+            .filter_map(|choice| self.start_item(career, *choice))
+            .collect()
+    }
+
+    /// Adds a starting item, carried, a firearm with its reloads (F-61).
+    fn give_start_item(&self, actor: &mut Actor, start: &StartItem, count: u16) {
+        let reloads = self
+            .item(&start.item)
+            .and_then(|i| i.weapon.as_ref())
+            .is_some_and(|w| w.reloads);
+        let new = NewItem {
+            item: Some(start.item.clone()),
+            count: Some(count.max(1)),
+            reloads: if reloads {
+                self.constant_u8("start_reloads")
+            } else {
+                0
+            },
+            ..NewItem::default()
+        };
+        // The data check makes sure starting items can be carried.
+        let _ = give(self, actor, &new);
+    }
+
+    /// Rolls the quantities in dice of the starting gear and adds those
+    /// items, e.g. D6 doses (F-60) [p. 39–55].
+    pub fn roll_start_gear(
+        &self,
+        actor: &mut Actor,
+        draft: &Draft,
+        dice: &mut dyn Dice,
+    ) -> Vec<GearRoll> {
+        let mut out = Vec::new();
+        for item in self.chosen_gear(draft) {
+            let Some(n) = item.dice else { continue };
+            let faces: Vec<u8> = (0..n).map(|_| dice.d6()).collect();
+            let count: u16 = faces.iter().map(|f| u16::from(*f)).sum();
+            self.give_start_item(actor, item, count);
+            out.push(GearRoll {
+                item: item.item.clone(),
+                dice: faces,
+            });
+        }
+        out
     }
 
     /// Rolls the starting cash of a career [p. 39–55].

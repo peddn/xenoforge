@@ -37,6 +37,11 @@
           "description": "Full Health, normally STRENGTH [p. 30].",
           "type": "string",
           "const": "health_max"
+        },
+        {
+          "description": "How much a character carries without being encumbered [p. 34, 79].",
+          "type": "string",
+          "const": "carry_capacity"
         }
       ]
     },
@@ -663,6 +668,10 @@
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0
+        },
+        "single_use": {
+          "description": "Used up once its bonus counted in a roll, e.g. the Personal Medkit\n(F-68) [p. 136].",
+          "type": "boolean"
         },
         "skills": {
           "description": "Skill levels of its own, e.g. a mainframe or the AutoDoc.",

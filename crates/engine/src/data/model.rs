@@ -102,6 +102,10 @@ pub struct Item {
     /// items are offered in the roll dialog while carried (F-59).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub effects: Vec<Effect>,
+    /// Used up once its bonus counted in a roll, e.g. the Personal Medkit
+    /// (F-68) [p. 136].
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub single_use: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

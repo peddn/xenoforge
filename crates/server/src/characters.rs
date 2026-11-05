@@ -15,9 +15,11 @@ use axum::routing::{get, post, put};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, Sqlite, Transaction};
-use xenoforge_engine::creation::{Cash, CreationProblem, Draft};
+use xenoforge_engine::Command;
+use xenoforge_engine::creation::{Cash, CreationProblem, Draft, GearRoll};
 use xenoforge_engine::data::Id;
-use xenoforge_engine::state::{Actor, ActorKind, Mode};
+use xenoforge_engine::inventory::{Destination, Encumbrance, NewItem};
+use xenoforge_engine::state::{Actor, ActorKind, GameState, Mode};
 
 use crate::auth::{Role, User};
 use crate::error::{ApiError, ApiResult};
@@ -65,6 +67,9 @@ pub struct CharacterData {
     /// Starting cash as rolled when finishing [p. 39–55].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_cash: Option<Cash>,
+    /// Quantities of starting gear rolled when finishing (F-60).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub start_gear: Vec<GearRoll>,
     /// Offered in its team for a player to choose (A-12).
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub offered: bool,
@@ -80,14 +85,19 @@ pub struct Character {
     /// What keeps a draft from being finished, from the engine.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub problems: Vec<CreationProblem>,
+    /// How much the character carries, from the engine [p. 34].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub encumbrance: Option<Encumbrance>,
 }
 
 impl Character {
-    /// With the engine's problems if it is a draft.
+    /// With what the engine says about it: the problems of a draft, the
+    /// encumbrance.
     fn checked(mut self, state: &AppState) -> Self {
         if let (Status::Draft, Some(draft)) = (self.data.status, &self.data.draft) {
             self.problems = state.engine.check_creation(draft);
         }
+        self.encumbrance = Some(state.engine.encumbrance(&self.data.actor));
         self
     }
 }
@@ -115,6 +125,7 @@ pub fn routes() -> Router<AppState> {
         .route("/{id}", get(read).put(update).delete(remove))
         .route("/{id}/finish", post(finish))
         .route("/{id}/relations", put(relations))
+        .route("/{id}/items", post(items))
 }
 
 pub fn from_row(row: &sqlx::sqlite::SqliteRow) -> ApiResult<Character> {
@@ -126,6 +137,7 @@ pub fn from_row(row: &sqlx::sqlite::SqliteRow) -> ApiResult<Character> {
         name: row.get("name"),
         data: serde_json::from_str(&data)?,
         problems: Vec::new(),
+        encumbrance: None,
     })
 }
 
@@ -203,6 +215,10 @@ pub fn check_actor(state: &AppState, actor: &Actor) -> ApiResult<()> {
             return Err(unknown("talent", id));
         }
     }
+    for item in &actor.items {
+        check_texts(&[item.name.as_deref().unwrap_or_default()])?;
+    }
+    state.engine.check_items(actor)?;
     Ok(())
 }
 
@@ -262,6 +278,7 @@ async fn create(
         name,
         data,
         problems: Vec::new(),
+        encumbrance: None,
     };
     Ok(Json(character.checked(&state)))
 }
@@ -364,7 +381,79 @@ async fn update(
     let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;
     tx.commit().await?;
-    Ok(Json(character))
+    Ok(Json(character.checked(&state)))
+}
+
+/// An item command for a character outside a team; in a team the same
+/// commands go to the team.
+#[derive(Deserialize)]
+#[serde(tag = "command", rename_all = "snake_case")]
+enum ItemCommand {
+    AddItem {
+        item: NewItem,
+    },
+    MoveItem {
+        uid: u32,
+        to: Destination,
+        #[serde(default)]
+        count: Option<u16>,
+    },
+}
+
+/// Gear of a free character outside a team, set up by its game master
+/// (A-09): the engine's item commands on the character alone, so the same
+/// rules hold as in play [p. 33, 34].
+async fn items(
+    State(state): State<AppState>,
+    user: User,
+    Path(id): Path<i64>,
+    Json(body): Json<ItemCommand>,
+) -> ApiResult<Json<Character>> {
+    let _guard = state.lock.lock().await;
+    let mut character = owned(&state, &user, id).await?;
+    let free = character.data.status == Status::Free && user.role == Role::Gm;
+    if !free || character.team_id.is_some() {
+        return Err(ApiError::forbidden(
+            "outside a team only free characters of a game master get items (A-09)",
+        ));
+    }
+    let key = character.id.to_string();
+    let command = match body {
+        ItemCommand::AddItem { item } => {
+            check_texts(&[item.name.as_deref().unwrap_or_default()])?;
+            Command::AddItem {
+                actor: key.clone(),
+                item,
+            }
+        }
+        ItemCommand::MoveItem {
+            to: Destination::Character(_),
+            ..
+        } => {
+            return Err(ApiError::bad_request("items are handed over in a team"));
+        }
+        ItemCommand::MoveItem { uid, to, count } => Command::MoveItem {
+            actor: key.clone(),
+            uid,
+            to,
+            count,
+        },
+    };
+    let mut game = GameState::new(Mode::Campaign);
+    game.actors
+        .insert(key.clone(), character.data.actor.clone());
+    {
+        // Item commands throw no dice; the server's dice anyway.
+        let mut dice = state.dice.lock().unwrap_or_else(PoisonError::into_inner);
+        state.engine.apply(&mut game, command, &mut **dice)?;
+    }
+    if let Some(actor) = game.actors.remove(&key) {
+        character.data.actor = actor;
+    }
+    let mut tx = begin_write(&state.pool).await?;
+    save(&mut tx, &character).await?;
+    tx.commit().await?;
+    Ok(Json(character.checked(&state)))
 }
 
 #[derive(Deserialize)]
@@ -407,7 +496,7 @@ async fn relations(
     let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;
     tx.commit().await?;
-    Ok(Json(character))
+    Ok(Json(character.checked(&state)))
 }
 
 async fn check_relations(
@@ -448,9 +537,9 @@ async fn check_relations(
     Ok(())
 }
 
-/// Finishes a draft without problems: the actor with full Health, the
-/// sheet texts and the starting cash rolled with the server's dice
-/// [p. 27–39].
+/// Finishes a draft without problems: the actor with full Health and its
+/// starting gear, the sheet texts, and starting cash and quantities of
+/// gear rolled with the server's dice (F-60) [p. 27–39].
 async fn finish(
     State(state): State<AppState>,
     user: User,
@@ -466,10 +555,16 @@ async fn finish(
         return Err(ApiError::bad_request("the draft is not complete yet"));
     }
     let career = draft.career.clone().unwrap_or_default();
-    let start_cash = {
+    let mut actor = state.engine.creation_actor(&draft);
+    let (start_cash, start_gear) = {
         // The dice hold no state worth protecting (see game.rs).
         let mut dice = state.dice.lock().unwrap_or_else(PoisonError::into_inner);
-        state.engine.roll_cash(&career, &mut **dice)
+        (
+            state.engine.roll_cash(&career, &mut **dice),
+            state
+                .engine
+                .roll_start_gear(&mut actor, &draft, &mut **dice),
+        )
     };
     character.name = check_name(&draft.name)?;
     character.data = CharacterData {
@@ -482,14 +577,15 @@ async fn finish(
             signature_item: draft.signature_item.trim().to_owned(),
             ..Sheet::default()
         },
-        actor: state.engine.creation_actor(&draft),
+        actor,
         start_cash,
+        start_gear,
         offered: false,
     };
     let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;
     tx.commit().await?;
-    Ok(Json(character))
+    Ok(Json(character.checked(&state)))
 }
 
 async fn remove(

@@ -134,6 +134,8 @@ struct CharacterInTeam {
     broken: Option<bool>,
     /// Full Health [p. 30], for the same people.
     health_max: Option<u8>,
+    /// What the character carries [p. 34], for the same people.
+    encumbrance: Option<xenoforge_engine::inventory::Encumbrance>,
     /// Hints working on the character: (source, text key).
     hints: Vec<(String, String)>,
 }
@@ -231,6 +233,7 @@ async fn view(
                 .then(|| team.agendas.get(&character.id).cloned().unwrap_or_default()),
             broken: sees.then(|| character.data.actor.broken()),
             health_max: sees.then(|| state.engine.full_health(&character.data.actor)),
+            encumbrance: sees.then(|| state.engine.encumbrance(&character.data.actor)),
             hints,
         });
     }

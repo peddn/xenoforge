@@ -444,7 +444,7 @@ async fn roll_modifications_follow_a08() {
     let preview = format!("/api/teams/{team}/preview");
     let skill = |modifiers: Value| json!({ "actor": actor, "kind": { "skill": { "skill": "observation" } }, "modifiers": modifiers, "helpers": 1 });
 
-    let ok = player
+    let ok = gm
         .ok(
             "POST",
             &preview,
@@ -469,6 +469,11 @@ async fn roll_modifications_follow_a08() {
         ),
         (
             "player",
+            skill(json!([{ "source": "gear", "value": 2 }])),
+            StatusCode::FORBIDDEN,
+        ),
+        (
+            "gm",
             skill(json!([{ "source": "gear", "value": 4 }])),
             StatusCode::BAD_REQUEST,
         ),
@@ -731,13 +736,14 @@ fn nat() -> Value {
         "name": "Nat",
         "appearance": "Wild hair",
         "agenda": "Never let your friends down.",
+        "gear": [{ "line": 0, "option": 0 }, { "line": 1, "option": 0 }],
         "signature_item": "Tool belt"
     })
 }
 
 /// The wizard: a draft is checked by the engine, cannot join a team and
-/// becomes playable with the starting cash rolled on finishing (A-09, plan
-/// 5.2). Free set-up is for game master accounts.
+/// becomes playable with the starting cash and gear rolled on finishing
+/// (A-09, F-60, plan 5.2). Free set-up is for game master accounts.
 #[tokio::test]
 async fn creation_wizard() {
     let server = server("wizard").await;
@@ -825,7 +831,7 @@ async fn creation_wizard() {
             Some(json!({ "data": { "draft": nat() } })),
         )
         .await;
-    server.dice(&[4]);
+    server.dice(&[4, 3]);
     let done = player
         .ok("POST", &format!("/api/characters/{id}/finish"), None)
         .await;
@@ -834,6 +840,19 @@ async fn creation_wizard() {
     assert_eq!(
         done["data"]["start_cash"],
         json!({ "dice": [4], "amount": 400 })
+    );
+    // A cutting torch and D6 doses of Hydr8tion, rolled now (F-60).
+    assert_eq!(
+        done["data"]["start_gear"],
+        json!([{ "item": "hydr8tion", "dice": [3] }])
+    );
+    let items = &done["data"]["actor"]["items"];
+    assert_eq!(items[0]["item"], "cutting_torch");
+    assert_eq!(items[1]["item"], "hydr8tion");
+    assert_eq!(items[1]["count"], 3);
+    assert_eq!(
+        done["encumbrance"],
+        json!({ "carried": 4, "normal": 40, "max": 80 })
     );
     assert_eq!(done["data"]["sheet"]["career"], "roughneck");
     assert_eq!(done["data"]["actor"]["health"], 5);
@@ -854,6 +873,186 @@ async fn creation_wizard() {
             &format!("/api/join/{token}"),
             Some(json!({ "character": id })),
         )
+        .await;
+}
+
+/// Gear in play: the game master gives items, players move their own and
+/// choose them for a roll (F-59); the team shows the encumbrance [p. 34].
+#[tokio::test]
+async fn gear_in_play() {
+    let server = server("gear").await;
+    let (mut gm, mut player, team, character) = table(&server).await;
+    let actor = character.to_string();
+    let add = |item: Value| json!({ "command": "add_item", "actor": actor, "item": item });
+    let (status, _) = player
+        .command(team, add(json!({ "item": "binoculars" })))
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "new items come from the GM");
+    let (status, _) = gm.command(team, add(json!({ "item": "autodoc" }))).await;
+    assert_eq!(
+        status,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "cannot be carried"
+    );
+    gm.command(team, add(json!({ "item": "binoculars" }))).await;
+    gm.command(
+        team,
+        add(json!({ "name": "Tagebuch", "weight": "1/4", "place": "stowed" })),
+    )
+    .await;
+
+    let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let me = &view["characters"][0];
+    assert_eq!(me["actor"]["items"][1]["name"], "Tagebuch");
+    assert_eq!(
+        me["encumbrance"],
+        json!({ "carried": 2, "normal": 24, "max": 48 })
+    );
+
+    let observe =
+        json!({ "actor": actor, "kind": { "skill": { "skill": "observation" } }, "items": [0] });
+    let preview = player
+        .ok(
+            "POST",
+            &format!("/api/teams/{team}/preview"),
+            Some(observe.clone()),
+        )
+        .await;
+    assert_eq!(preview["items"][0]["uid"], 0);
+    assert_eq!(preview["items"][0]["when"], "binoculars.when");
+    assert_eq!(preview["base_dice"], 4 + 2 + 2);
+    let (status, _) = player
+        .command(
+            team,
+            json!({ "command": "move_item", "actor": actor, "uid": 0, "to": "stowed" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _) = player
+        .command(team, json!({ "command": "roll", "request": observe }))
+        .await;
+    assert_eq!(
+        status,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "stowed is not at hand"
+    );
+
+    let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut other = Client::new(&server);
+    other.register("Burke", "player").await;
+    other
+        .ok(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": null })),
+        )
+        .await;
+    let (status, _) = other
+        .command(
+            team,
+            json!({ "command": "move_item", "actor": actor, "uid": 0, "to": "dropped" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "not Burke's character");
+}
+
+/// Outside a team only free characters of a game master get items, through
+/// the engine's rules (A-09); corrections are checked the same way.
+#[tokio::test]
+async fn gear_outside_a_team() {
+    let server = server("gear-free").await;
+    let (mut gm, mut player, team, character) = table(&server).await;
+    let free = gm
+        .ok(
+            "POST",
+            "/api/characters",
+            Some(json!({ "free": true, "name": "Ripley" })),
+        )
+        .await["id"]
+        .as_i64()
+        .unwrap();
+    let path = format!("/api/characters/{free}/items");
+    let (status, _) = gm
+        .call(
+            "POST",
+            &path,
+            Some(json!({ "command": "add_item", "item": { "item": "knife" } })),
+        )
+        .await;
+    assert_eq!(
+        status,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "STRENGTH 0 carries nothing"
+    );
+    gm.ok(
+        "PUT",
+        &format!("/api/characters/{free}"),
+        Some(json!({ "name": "Ripley", "data": { "actor": { "attributes": { "strength": 4 } } } })),
+    )
+    .await;
+    let added = gm
+        .ok(
+            "POST",
+            &path,
+            Some(json!({ "command": "add_item", "item": { "item": "irc_mk35_pressure_suit", "place": "worn" } })),
+        )
+        .await;
+    assert_eq!(added["data"]["actor"]["items"][0]["place"], "worn");
+    assert_eq!(added["data"]["actor"]["items"][0]["supply"], 4);
+    assert_eq!(added["encumbrance"]["carried"], 8);
+    let moved = gm
+        .ok(
+            "POST",
+            &path,
+            Some(json!({ "command": "move_item", "uid": 0, "to": "stowed" })),
+        )
+        .await;
+    assert_eq!(moved["encumbrance"]["carried"], 0);
+    for body in [
+        json!({ "command": "move_item", "uid": 0, "to": { "character": "1" } }),
+        json!({ "command": "add_item", "item": { "name": "Kiste" } }),
+        json!({ "command": "roll" }),
+    ] {
+        let (status, _) = gm.call("POST", &path, Some(body.clone())).await;
+        assert!(status.is_client_error(), "{body}");
+    }
+
+    let own = player.character("Gina", json!({})).await;
+    let (status, _) = player
+        .call(
+            "POST",
+            &format!("/api/characters/{own}/items"),
+            Some(json!({ "command": "add_item", "item": { "item": "knife" } })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, _) = gm
+        .call(
+            "POST",
+            &format!("/api/characters/{character}/items"),
+            Some(json!({ "command": "add_item", "item": { "item": "knife" } })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "not the GM's character");
+
+    // A correction with items the engine would not allow is refused.
+    let correction = format!("/api/teams/{team}/characters/{character}");
+    for items in [
+        json!([{ "uid": 0, "item": "autodoc", "count": 1 }]),
+        json!([{ "uid": 0, "item": "knife", "count": 1 }, { "uid": 0, "item": "knife", "count": 1 }]),
+        json!([{ "uid": 0, "item": "knife", "count": 1, "place": "worn" }]),
+    ] {
+        let actor = json!({ "attributes": { "strength": 3 }, "items": items, "next_item": 1 });
+        let (status, _) = gm
+            .call("PUT", &correction, Some(json!({ "actor": actor })))
+            .await;
+        assert!(status.is_client_error(), "{items}");
+    }
+    let actor = json!({ "attributes": { "strength": 3 }, "health": 3, "items": [{ "uid": 0, "item": "knife", "count": 1 }], "next_item": 1 });
+    gm.ok("PUT", &correction, Some(json!({ "actor": actor })))
         .await;
 }
 

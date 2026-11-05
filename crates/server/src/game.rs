@@ -221,7 +221,8 @@ fn decider(pending: &Pending) -> Option<&str> {
 }
 
 /// Who may give which command: players act for their own characters and
-/// answer their own decisions; everything else is the game master's.
+/// answer their own decisions, and move, drop or hand over their own
+/// items; everything else is the game master's, new items too.
 fn check_permission(
     team: &Team,
     command: &Command,
@@ -240,7 +241,9 @@ fn check_permission(
             // Unknown decisions are reported by the engine.
             None => true,
         },
-        Command::UseSignatureItem { actor } | Command::PerformAction { actor, .. } => owns(actor),
+        Command::UseSignatureItem { actor }
+        | Command::PerformAction { actor, .. }
+        | Command::MoveItem { actor, .. } => owns(actor),
         _ => false,
     };
     if allowed {
@@ -251,9 +254,9 @@ fn check_permission(
 }
 
 /// What a roll may bring along (A-08): a difficulty from the table on
-/// p. 63 and a gear bonus up to `gear_bonus_max`, each at most once. The
-/// difficulty is the game master's; players roll skill, attribute and death
-/// rolls only.
+/// p. 63 and a free gear bonus up to `gear_bonus_max`, each at most once.
+/// Both are the game master's: players choose their items instead (F-59).
+/// Players roll skill, attribute and death rolls only.
 fn check_roll(engine: &Engine, request: &RollRequest, is_gm: bool) -> ApiResult<()> {
     let player_kind = matches!(
         request.kind,
@@ -268,6 +271,11 @@ fn check_roll(engine: &Engine, request: &RollRequest, is_gm: bool) -> ApiResult<
     for modification in &request.modifiers {
         let value = i16::from(modification.value);
         if modification.source == "gear" {
+            if !is_gm {
+                return Err(ApiError::forbidden(
+                    "players choose their items; a free gear bonus is the game master's (F-59)",
+                ));
+            }
             if gear || !(0..=engine.constant("gear_bonus_max")).contains(&value) {
                 return Err(ApiError::bad_request(
                     "one gear bonus from 0 to gear_bonus_max (A-08)",

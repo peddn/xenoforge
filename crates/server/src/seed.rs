@@ -69,7 +69,7 @@ pub async fn seed(app: Router, pool: &SqlitePool) -> Result<Vec<String>> {
     // each with an Agenda per Act; Ann and Cid join to choose.
     let scenario = team(&mut gm, "Testlauf Szenario", "cinematic").await?;
     let id = &scenario.id;
-    for (name, career, actor, agendas) in prepared() {
+    for (name, career, actor, agendas, items) in prepared() {
         let created = gm
             .ok(
                 "POST",
@@ -86,6 +86,14 @@ pub async fn seed(app: Router, pool: &SqlitePool) -> Result<Vec<String>> {
             ),
         )
         .await?;
+        for item in items {
+            gm.ok(
+                "POST",
+                &format!("/api/characters/{created}/items"),
+                Some(json!({ "command": "add_item", "item": item })),
+            )
+            .await?;
+        }
         gm.ok(
             "POST",
             &format!("/api/teams/{id}/characters"),
@@ -193,6 +201,8 @@ fn nat() -> Value {
         "name": "Nat",
         "appearance": "Kurze rote Haare, Ölflecken an den Händen",
         "agenda": "Niemanden aus der Crew zurücklassen.",
+        // A cutting torch and a compression suit, as in the book [p. 33].
+        "gear": [{ "line": 0, "option": 0 }, { "line": 2, "option": 1 }],
         "signature_item": "Zerkratzte Thermoskanne"
     })
 }
@@ -207,13 +217,23 @@ fn varga() -> Value {
         "name": "Ilse Varga",
         "appearance": "Schmale Brille, ruhige Stimme",
         "agenda": "Eine Probe von etwas Fremdem sichern, was es auch kostet.",
+        // A hand radio and a Personal Medkit.
+        "gear": [{ "line": 0, "option": 1 }, { "line": 3, "option": 1 }],
         "signature_item": "Abgegriffenes Notizbuch"
     })
 }
 
-/// Prepared characters of the game master: name, career, values, an
-/// Agenda per Act.
-fn prepared() -> Vec<(&'static str, &'static str, Value, [&'static str; 3])> {
+/// A prepared character of the game master: name, career, values, an
+/// Agenda per Act and the gear the scenario gives [p. 33].
+type Prepared = (
+    &'static str,
+    &'static str,
+    Value,
+    [&'static str; 3],
+    Vec<Value>,
+);
+
+fn prepared() -> Vec<Prepared> {
     vec![
         (
             "Kim Hale",
@@ -229,6 +249,11 @@ fn prepared() -> Vec<(&'static str, &'static str, Value, [&'static str; 3])> {
                 "Finde heraus, wer den Notruf abgesetzt hat.",
                 "Rette dich, notfalls allein.",
             ],
+            vec![
+                json!({ "item": "m4a3_service_pistol", "reloads": 2 }),
+                json!({ "item": "irc_mk50_compression_suit", "place": "worn" }),
+                json!({ "item": "signal_flare", "count": 3 }),
+            ],
         ),
         (
             "Rosa Ortega",
@@ -243,6 +268,11 @@ fn prepared() -> Vec<(&'static str, &'static str, Value, [&'static str; 3])> {
                 "Halte alle am Leben.",
                 "Untersuche die Verletzten der Station genauer.",
                 "Bring die Gewebeprobe hier raus.",
+            ],
+            vec![
+                json!({ "item": "personal_medkit", "count": 2 }),
+                json!({ "item": "surgical_kit" }),
+                json!({ "name": "Gewebeprobe im Kühlbehälter", "weight": "1/2", "place": "stowed" }),
             ],
         ),
         (
@@ -260,6 +290,10 @@ fn prepared() -> Vec<(&'static str, &'static str, Value, [&'static str; 3])> {
                 "Sichere die Daten der Forschungsabteilung.",
                 "Sorge dafür, dass niemand die Daten löscht.",
                 "Die Daten haben Vorrang vor der Crew.",
+            ],
+            vec![
+                json!({ "item": "m4a3_service_pistol", "reloads": 2 }),
+                json!({ "item": "seegson_p_dat" }),
             ],
         ),
     ]

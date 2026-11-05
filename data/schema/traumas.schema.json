@@ -37,6 +37,11 @@
           "description": "Full Health, normally STRENGTH [p. 30].",
           "type": "string",
           "const": "health_max"
+        },
+        {
+          "description": "How much a character carries without being encumbered [p. 34, 79].",
+          "type": "string",
+          "const": "carry_capacity"
         }
       ]
     },

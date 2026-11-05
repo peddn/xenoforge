@@ -10,6 +10,7 @@ pub mod creation;
 pub mod data;
 pub mod dice;
 pub mod engine;
+pub mod inventory;
 pub mod panic;
 pub mod roll;
 pub mod state;

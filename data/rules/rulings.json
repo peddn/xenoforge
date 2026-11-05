@@ -66,6 +66,10 @@
     { "id": "F-63", "pages": [118, 127, 136], "options": ["not_carried"], "default": "not_carried" },
     { "id": "F-64", "pages": [39, 55], "options": ["rule_of_thumb"], "default": "rule_of_thumb" },
     { "id": "F-65", "pages": [131, 132], "options": ["text"], "default": "text" },
-    { "id": "F-66", "pages": [127], "options": ["skill_rolls"], "default": "skill_rolls" }
+    { "id": "F-66", "pages": [127], "options": ["skill_rolls"], "default": "skill_rolls" },
+    { "id": "F-67", "pages": [126, 136], "options": ["close_combat"], "default": "close_combat" },
+    { "id": "F-68", "pages": [136], "options": ["used_up"], "default": "used_up" },
+    { "id": "F-69", "pages": [34], "options": ["every_four"], "default": "every_four" },
+    { "id": "F-70", "pages": [33, 124], "options": ["weightless"], "default": "weightless" }
   ]
 }

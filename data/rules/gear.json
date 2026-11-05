@@ -353,7 +353,7 @@
       "weight": "1/2",
       "cost": { "cents": 5000, "up_to_cents": 10000 },
       "effects": [
-        { "kind": "modifier", "applies_to": { "skills": ["manipulation"] }, "change": { "add": 1 } }
+        { "kind": "modifier", "applies_to": { "skills": ["manipulation"] }, "change": { "add": 1 }, "when": "seegson_c_series_tape_recorder.when" }
       ]
     },
     {
@@ -363,7 +363,7 @@
       "weight": "0",
       "cost": { "cents": 5000 },
       "effects": [
-        { "kind": "modifier", "applies_to": { "skills": ["survival"] }, "change": { "add": 1 } }
+        { "kind": "modifier", "applies_to": { "skills": ["survival"] }, "change": { "add": 1 }, "when": "samani_e_series_watch.when" }
       ]
     },
     {
@@ -514,7 +514,8 @@
       "cost": { "cents": 5000 },
       "effects": [
         { "kind": "modifier", "applies_to": { "skills": ["medical_aid"] }, "change": { "add": 2 } }
-      ]
+      ],
+      "single_use": true
     },
     {
       "id": "surgical_kit",
@@ -522,6 +523,7 @@
       "category": "medical",
       "weight": "1/2",
       "cost": { "cents": 2500, "up_to_cents": 20000 },
+      "weapon": { "skill": "close_combat", "damage": 2, "range": "engaged" },
       "effects": [
         { "kind": "modifier", "applies_to": { "skills": ["medical_aid"] }, "change": { "add": 1 }, "when": "surgical_kit.when" }
       ]
