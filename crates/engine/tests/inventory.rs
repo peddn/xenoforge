@@ -5,6 +5,7 @@
 mod common;
 
 use common::*;
+use xenoforge_engine::data::model::Weight;
 use xenoforge_engine::inventory::{Destination, Encumbrance, NewItem};
 use xenoforge_engine::roll::RollRequest;
 use xenoforge_engine::state::{Mode, Place, Supply};
@@ -133,7 +134,7 @@ fn what_can_be_carried() {
         &[],
     );
     assert!(matches!(refused, Err(RuleError::NotAllowed(_))), "9 > 8");
-    assert_eq!(t.actor("nat").items.len(), 2, "nothing changed");
+    assert_eq!(t.actor("nat").items[0].count, 2, "nothing changed");
 
     for item in [
         catalog("autodoc"),
@@ -142,7 +143,7 @@ fn what_can_be_carried() {
             ..NewItem::default()
         },
         NewItem {
-            weight: Some(xenoforge_engine::data::model::Weight::Half),
+            weight: Some(Weight::Half),
             ..NewItem::default()
         },
         NewItem {
@@ -168,11 +169,11 @@ fn what_can_be_carried() {
         "nat",
         NewItem {
             name: Some(" Notizbuch ".into()),
-            weight: Some(xenoforge_engine::data::model::Weight::Quarter),
+            weight: Some(Weight::Quarter),
             ..NewItem::default()
         },
     );
-    let notes = &t.actor("nat").items[2];
+    let notes = &t.actor("nat").items[1];
     assert_eq!(
         (notes.uid, notes.name.as_deref(), notes.item.as_deref()),
         (uid, Some("Notizbuch"), None)
@@ -438,32 +439,18 @@ fn splitting_a_stack() {
 /// (F-71).
 #[test]
 fn the_same_item_counts_once() {
+    // Two cutting torches stay single, each with its own power.
     let mut t = table();
-    let kits = give(
-        &mut t,
-        "nat",
-        NewItem {
-            count: Some(2),
-            ..catalog("personal_medkit")
-        },
-    );
-    let events = t.run(
-        Command::MoveItem {
-            actor: "nat".into(),
-            uid: kits,
-            to: Destination::Carried,
-            count: Some(1),
-        },
-        &[],
-    );
-    assert!(has(&events, |e| matches!(e, Event::ItemMoved { .. })));
+    let first = give(&mut t, "nat", catalog("cutting_torch"));
+    let second = give(&mut t, "nat", catalog("cutting_torch"));
+    assert_ne!(first, second);
     let preview = t
         .engine
-        .preview(&t.state, RollRequest::skill("nat", "medical_aid"))
+        .preview(&t.state, RollRequest::skill("nat", "heavy_machinery"))
         .unwrap();
     assert_eq!(preview.items.len(), 1);
-    let mut request = RollRequest::skill("nat", "medical_aid");
-    request.items = vec![0, 1];
+    let mut request = RollRequest::skill("nat", "heavy_machinery");
+    request.items = vec![first, second];
     assert!(t.try_run(Command::Roll { request }, &[]).is_err());
 }
 
@@ -560,6 +547,135 @@ fn too_much_can_still_be_dropped() {
         .attributes
         .insert("strength".into(), 2);
     assert!(move_item(&mut t, stowed, Destination::Carried).is_err());
-    move_item(&mut t, gun, Destination::Stowed).unwrap();
+    t.run(
+        Command::MoveItem {
+            actor: "nat".into(),
+            uid: gun,
+            to: Destination::Stowed,
+            count: Some(1),
+        },
+        &[],
+    );
     assert_eq!(load(&t, "nat").carried, 24);
+}
+
+/// One stack per kind of item and place: what is given, handed over or
+/// put back joins a stack of the same item; reloads add up (F-61). Items
+/// with a supply of their own stay single, a worn suit too [p. 34, 98].
+#[test]
+fn the_same_items_stack() {
+    let mut t = table();
+    let kit = give(&mut t, "nat", catalog("personal_medkit"));
+    let events = t.run(
+        Command::AddItem {
+            actor: "nat".into(),
+            item: NewItem {
+                count: Some(5),
+                ..catalog("personal_medkit")
+            },
+        },
+        &[],
+    );
+    assert!(has(&events, |e| matches!(
+        e,
+        Event::ItemAdded { uid, count: 5, .. } if *uid == kit
+    )));
+    let stacks: Vec<_> = t
+        .actor("nat")
+        .items
+        .iter()
+        .map(|p| (p.uid, p.count, p.place))
+        .collect();
+    assert_eq!(stacks, [(kit, 6, Place::Carried)]);
+
+    // Part stowed, then put back: one stack again.
+    t.run(
+        Command::MoveItem {
+            actor: "nat".into(),
+            uid: kit,
+            to: Destination::Stowed,
+            count: Some(2),
+        },
+        &[],
+    );
+    assert_eq!(t.actor("nat").items.len(), 2);
+    let stowed = t.actor("nat").items[1].uid;
+    move_item(&mut t, stowed, Destination::Carried).unwrap();
+    assert_eq!(t.actor("nat").items[0].count, 6);
+    assert_eq!(t.actor("nat").items.len(), 1);
+    assert!(
+        move_item(&mut t, kit, Destination::Carried).is_err(),
+        "there already"
+    );
+
+    // Handed over: joins the other's stack, with the reloads.
+    give(
+        &mut t,
+        "ilse",
+        NewItem {
+            reloads: 1,
+            ..catalog("m4a3_service_pistol")
+        },
+    );
+    let pistol = give(
+        &mut t,
+        "nat",
+        NewItem {
+            reloads: 2,
+            ..catalog("m4a3_service_pistol")
+        },
+    );
+    move_item(&mut t, pistol, Destination::Character("ilse".into())).unwrap();
+    let theirs = &t.actor("ilse").items;
+    assert_eq!(
+        (theirs.len(), theirs[0].count, theirs[0].reloads),
+        (1, 2, 3)
+    );
+
+    // Free items stack by name and weight.
+    for weight in [Weight::Half, Weight::Half, Weight::One] {
+        give(
+            &mut t,
+            "nat",
+            NewItem {
+                name: Some("Kiste".into()),
+                weight: Some(weight),
+                ..NewItem::default()
+            },
+        );
+    }
+    let boxes: Vec<_> = t
+        .actor("nat")
+        .items
+        .iter()
+        .filter(|p| p.name.is_some())
+        .map(|p| p.count)
+        .collect();
+    assert_eq!(boxes, [2, 1]);
+
+    // A suit taken off joins the same suits carried.
+    let m3 = give(&mut t, "nat", catalog("m3_personnel_armor"));
+    give(
+        &mut t,
+        "nat",
+        NewItem {
+            place: Place::Worn,
+            ..catalog("m3_personnel_armor")
+        },
+    );
+    give(&mut t, "nat", catalog("irc_mk50_compression_suit"));
+    let mk50 = t.actor("nat").items.last().unwrap().uid;
+    move_item(&mut t, mk50, Destination::Worn).unwrap();
+    let suits: Vec<_> = t
+        .actor("nat")
+        .items
+        .iter()
+        .filter(|p| {
+            p.item
+                .as_deref()
+                .is_some_and(|i| i.contains("armor") || i.contains("suit"))
+        })
+        .map(|p| (p.uid, p.count, p.place))
+        .collect();
+    assert_eq!(suits, [(m3, 2, Place::Carried), (mk50, 1, Place::Worn)]);
 }

@@ -1072,7 +1072,10 @@ async fn gear_outside_a_team() {
     let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
     let me = &view["characters"][0]["actor"];
     assert_eq!(me["health"], 2);
-    assert_eq!(me["items"].as_array().unwrap().len(), 3);
+    assert_eq!(
+        me["items"],
+        json!([{ "uid": 0, "item": "m56a2_smart_gun", "count": 3, "place": "carried" }])
+    );
     assert_eq!(me["next_item"], 3);
     let weaker = json!({ "attributes": { "strength": 2, "wits": 4 }, "health": 2 });
     let (status, _) = gm
