@@ -6,7 +6,7 @@
 //! writes everything back in one transaction. Each value is stored in one
 //! place only.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::PoisonError;
 
 use axum::extract::{Path, State};
@@ -37,17 +37,33 @@ pub struct Team {
     pub name: String,
     pub invite_token: String,
     pub state: GameState,
+    /// Agendas per Act by character id, in Cinematic play (A-13).
+    pub agendas: BTreeMap<i64, Vec<String>>,
 }
 
 fn team_from_row(row: &sqlx::sqlite::SqliteRow) -> ApiResult<Team> {
     let state: String = row.get("state");
+    let agendas: String = row.get("agendas");
     Ok(Team {
         id: row.get("id"),
         gm_id: row.get("gm_id"),
         name: row.get("name"),
         invite_token: row.get("invite_token"),
         state: serde_json::from_str(&state)?,
+        agendas: serde_json::from_str(&agendas)?,
     })
+}
+
+impl Team {
+    /// The Agenda of the current Act, if the game master set one.
+    pub fn agenda_now(&self, character: i64) -> Option<String> {
+        let act = usize::from(self.state.acts_ended);
+        self.agendas
+            .get(&character)
+            .and_then(|list| list.get(act))
+            .filter(|text| !text.is_empty())
+            .cloned()
+    }
 }
 
 pub async fn load_team(pool: &SqlitePool, id: i64) -> ApiResult<Team> {
@@ -57,6 +73,16 @@ pub async fn load_team(pool: &SqlitePool, id: i64) -> ApiResult<Team> {
         .await?
         .ok_or_else(|| ApiError::not_found("team"))?;
     team_from_row(&row)
+}
+
+/// Writes the team's Agendas per Act (A-13).
+pub async fn save_agendas(tx: &mut Transaction<'_, Sqlite>, team: &Team) -> ApiResult<()> {
+    sqlx::query("UPDATE teams SET agendas = ? WHERE id = ?")
+        .bind(serde_json::to_string(&team.agendas)?)
+        .bind(team.id)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
 }
 
 async fn load_team_tx(tx: &mut Transaction<'_, Sqlite>, id: i64) -> ApiResult<Team> {
@@ -112,14 +138,16 @@ pub async fn access(pool: &SqlitePool, team: &Team, user: &User) -> ApiResult<bo
 }
 
 /// The engine state: the team document plus the actors of its characters.
-/// Story Points belong to the player, so each actor names its owner.
+/// Story Points belong to the player, so each actor names its owner. The
+/// game master's own characters have no player and so no Story Points
+/// (A-13).
 pub fn assemble(team: &Team, characters: &[Character]) -> GameState {
     let mut game = team.state.clone();
     game.actors = characters
         .iter()
         .map(|c| {
             let mut actor = c.data.actor.clone();
-            actor.player = Some(c.owner_id.to_string());
+            actor.player = (c.owner_id != team.gm_id).then(|| c.owner_id.to_string());
             (c.id.to_string(), actor)
         })
         .collect();
@@ -306,6 +334,20 @@ async fn command(
         .map(|c| (c.id.to_string(), c.owner_id))
         .collect();
     check_permission(&team, &body.command, &user, is_gm, &owners)?;
+    // Story Points go to players of the team (F-53).
+    if let Command::SetStoryPoints { player, .. } = &body.command {
+        let member = sqlx::query("SELECT 1 FROM members WHERE team_id = ? AND user_id = ?")
+            .bind(id)
+            .bind(player)
+            .fetch_optional(&mut *tx)
+            .await?
+            .is_some();
+        if !member {
+            return Err(ApiError::bad_request(
+                "Story Points go to players of the team",
+            ));
+        }
+    }
 
     let mut game = assemble(&team, &characters);
     let events = {

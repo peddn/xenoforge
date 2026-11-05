@@ -35,7 +35,10 @@ function what(event) {
 
 function describe(entry) {
   const e = entry.entry
-  if (e.type !== 'engine') return { text: t(`log.${e.type}`, { name: e.name ?? '' }) }
+  if (e.type !== 'engine') {
+    const key = e.type === 'character_offered' && !e.offered ? 'character_unoffered' : e.type
+    return { text: t(`log.${key}`, { ...e, by: entry.by ?? '', name: e.name ?? '' }) }
+  }
   const ev = e.event
   const actor = name(ev.actor ?? rollActors.value[ev.roll])
   switch (ev.event) {
@@ -83,6 +86,12 @@ function describe(entry) {
       return { text: `${actor}: ${rules.text(ev.text)}` }
     case 'talent_used':
       return { text: t('log.talent_used', { actor, talent: rules.name(ev.talent) }) }
+    case 'story_point_awarded':
+      return { text: t('log.story_point_awarded', { player: team.personNames[ev.player] ?? `#${ev.player}` }) }
+    case 'story_points_changed':
+      return { text: t('log.story_points_changed', { player: team.personNames[ev.player] ?? `#${ev.player}`, from: ev.from, to: ev.to }) }
+    case 'act_ended':
+      return { text: ev.act ? t('log.act_ended_n', { act: ev.act }) : t('log.act_ended') }
     case 'action_performed':
       return { text: t('log.action_performed', { actor, action: rules.name(ev.action) }) }
     case 'trauma_check':

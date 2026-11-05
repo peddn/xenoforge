@@ -45,6 +45,43 @@ pub enum Entry {
         character: i64,
         name: String,
     },
+    /// A player joined without a character, to choose one in the team
+    /// (A-12).
+    MemberJoined {
+        name: String,
+    },
+    /// The game master offers a character to choose, or takes the offer
+    /// back.
+    CharacterOffered {
+        character: i64,
+        name: String,
+        offered: bool,
+    },
+    /// A player chose an offered character and owns it now.
+    CharacterClaimed {
+        character: i64,
+        name: String,
+    },
+    /// The game master gave a character to someone, or took it over.
+    CharacterHandedOver {
+        character: i64,
+        name: String,
+        to: String,
+    },
+    /// The game master changed the Agendas of a character; what they say
+    /// stays hidden (A-13).
+    AgendaChanged {
+        character: i64,
+        name: String,
+    },
+    /// A player without a character left the team.
+    MemberLeft {
+        name: String,
+    },
+    /// The game master took a player without a character out of the team.
+    MemberRemoved {
+        name: String,
+    },
     /// The game master changed values by hand.
     Corrected {
         character: i64,
@@ -107,6 +144,11 @@ fn visibility(entry: &Entry) -> &'static str {
     match entry {
         Entry::Engine {
             event: Event::Hint { gm_only: true, .. },
+        } => "gm",
+        // Each player sees their own Story Points only; an award is
+        // announced to all (p. 216).
+        Entry::Engine {
+            event: Event::StoryPointsChanged { .. },
         } => "gm",
         _ => "all",
     }
@@ -246,7 +288,10 @@ async fn events(
         .flat_map(|stored| {
             let leaves = matches!(
                 stored.entry,
-                Entry::CharacterRemoved { .. } | Entry::CharacterLeft { .. }
+                Entry::CharacterRemoved { .. }
+                    | Entry::CharacterLeft { .. }
+                    | Entry::MemberLeft { .. }
+                    | Entry::MemberRemoved { .. }
             );
             stream::iter(std::iter::once(Some(stored)).chain(leaves.then_some(None)))
         })

@@ -24,6 +24,8 @@ pub struct Draft {
     pub attributes: BTreeMap<Id, u8>,
     /// The two attributes an android raises by 3 (F-50).
     pub android_bonus: Vec<Id>,
+    /// The android poses as human (A-14) [p. 29].
+    pub android_covert: bool,
     pub skills: BTreeMap<Id, u8>,
     pub talent: Option<Id>,
     /// What the talent names, e.g. the vehicle of Like the Back of Your
@@ -234,6 +236,7 @@ impl Engine {
     pub fn creation_actor(&self, draft: &Draft) -> Actor {
         let mut actor = Actor::pc();
         actor.android = draft.android;
+        actor.covert = draft.android && draft.android_covert;
         let bonus = u8::try_from(self.constant("android_attribute_bonus")).unwrap_or(0);
         for attribute in &self.rules().attributes {
             let mut value = draft.attributes.get(&attribute.id).copied().unwrap_or(0);

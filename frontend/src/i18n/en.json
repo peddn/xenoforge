@@ -65,15 +65,20 @@
     "startCash": "Starting cash",
     "cashRolled": "${amount} (rolled: {dice})",
     "edit": "Edit texts and agenda",
-    "deleteConfirm": "Delete {name} for good?"
+    "deleteConfirm": "Delete {name} for good?",
+    "editTexts": "Edit texts",
+    "covert": "Covert: poses as human",
+    "covertShort": "covert",
+    "open": "open"
   },
   "join": {
     "title": "Invitation",
     "invited": "{gm} invites you to the team {team}.",
     "character": "With which character?",
-    "noFree": "You have no finished free character. Create one first or finish your draft:",
+    "noFree": "You have no finished free character. Join without one and choose one the game master offers in the team, or create one first:",
     "join": "Join",
-    "decline": "Decline"
+    "decline": "Decline",
+    "none": "Without a character – choose one in the team"
   },
   "crew": {
     "character": "Character",
@@ -83,7 +88,9 @@
     "hidden": "Only the game master sees the values.",
     "storyPoints": "Story Points",
     "sheet": "Sheet",
-    "actions": "Actions"
+    "actions": "Actions",
+    "offered": "To choose",
+    "claim": "Play"
   },
   "roll": {
     "roll": "Roll",
@@ -155,8 +162,11 @@
     "undo": "Undo",
     "correct": "Correct",
     "actionsTitle": "Actions: {name}",
-    "confirmEndAct": "Really end the Act?",
-    "confirmEndSession": "Really end the session? Panic of 13 or more leads to the trauma roll."
+    "confirmEndSession": "Really end the session? Panic of 13 or more leads to the trauma roll.",
+    "endActTitle": "End Act {act}",
+    "agendaQuestion": "Who furthered their Agenda in this Act, despite risk or sacrifice? Each player gets a Story Point for it, at most three. The log gives no reason (p. 216).",
+    "revealAndroid": "Reveal android",
+    "revealAndroidConfirm": "Reveal {name} as an android? Humans nearby gain stress."
   },
   "cold": {
     "above_freezing": "above freezing",
@@ -185,7 +195,11 @@
     "back": "Back to the overview",
     "removeConfirm": "Really take {name} out of the team?",
     "leave": "Leave the team",
-    "leaveConfirm": "Leave the team with {name}?"
+    "leaveConfirm": "Leave the team with {name}?",
+    "act": "Act {act}",
+    "waiting": "Without a character:",
+    "scenarioOver": "Scenario over",
+    "removeMemberConfirm": "Take {name} out of the team?"
   },
   "outcome": {
     "success": "Success",
@@ -232,7 +246,19 @@
     "act_ended": "Act ended: signature item and talents usable once per Act are available again.",
     "session_ended": "Session ended: signature item and talents usable once per session are available again.",
     "character_left": "{name} leaves the team",
-    "note": "“{note}”"
+    "note": "“{note}”",
+    "member_joined": "{name} joins the team",
+    "character_offered": "{name} can be chosen",
+    "character_unoffered": "{name} can no longer be chosen",
+    "character_claimed": "{by} now plays {name}",
+    "character_handed_over": "{name} goes to {to}",
+    "agenda_changed": "Agendas of {name} changed",
+    "story_points_changed": "{player}: Story Points {from} → {to}",
+    "act_ended_n": "Act {act} ended: signature item and talents usable once per Act are available again.",
+    "story_point_awarded": "{player} gets a Story Point",
+    "member_left": "{name} leaves the team",
+    "member_removed": "{name} is no longer in the team",
+    "android_revealed": "{actor} is an android"
   },
   "about": {
     "title": "About Xenoforge",
@@ -308,5 +334,16 @@
     },
     "keyAttribute": "Key attribute",
     "keySkills": "Key skills"
+  },
+  "cast": {
+    "offer": "Offer to choose",
+    "withdraw": "Withdraw offer",
+    "to": "To",
+    "gm": "{name} (game master, as NPC)",
+    "handOver": "Hand over",
+    "agendaAct": "Agenda Act {act}",
+    "saveAgendas": "Save Agendas",
+    "storyPoints": "Story Points of {name}",
+    "setStoryPoints": "Set"
   }
 }

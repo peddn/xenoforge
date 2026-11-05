@@ -24,7 +24,7 @@ onMounted(async () => {
   try {
     info.value = await get(`/join/${route.params.token}`)
     await characters.load()
-    chosen.value = free.value[0]?.id ?? null
+    chosen.value = free.value[0]?.id ?? 'none'
   } catch (e) {
     error.value = e.message
   }
@@ -32,7 +32,9 @@ onMounted(async () => {
 
 async function join() {
   try {
-    const result = await post(`/join/${route.params.token}`, { character: chosen.value })
+    // Without a character of one's own, to choose one in the team (A-12).
+    const character = chosen.value === 'none' ? null : chosen.value
+    const result = await post(`/join/${route.params.token}`, { character })
     router.push(`/teams/${result.team}`)
   } catch (e) {
     error.value = e.message
@@ -44,11 +46,11 @@ async function join() {
   <XPanel :title="t('join.title')">
     <template v-if="info">
       <p>{{ t('join.invited', { team: info.team, gm: info.gm }) }} · {{ t(`mode.${info.mode}`) }}</p>
-      <XField
-        v-if="free.length"
-        :label="t('join.character')"
-      >
-        <select v-model="chosen">
+      <XField :label="t('join.character')">
+        <select
+          v-model="chosen"
+          data-test="join-character"
+        >
           <option
             v-for="character in free"
             :key="character.id"
@@ -56,10 +58,13 @@ async function join() {
           >
             {{ character.name }}
           </option>
+          <option value="none">
+            {{ t('join.none') }}
+          </option>
         </select>
       </XField>
       <p
-        v-else
+        v-if="!free.length"
         class="text-dim"
       >
         {{ t('join.noFree') }} <RouterLink to="/">

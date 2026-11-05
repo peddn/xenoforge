@@ -29,6 +29,14 @@ const note = ref('')
 const error = ref('')
 
 const own = computed(() => props.character.owner_id === auth.user?.id)
+// Buddy and rival: the owner chooses in Campaign, the scenario (so the game
+// master) sets them in Cinematic play [p. 31].
+const setsRelations = computed(() => (team.view.mode === 'cinematic' ? team.view.is_gm : own.value))
+// In Cinematic play the Agenda is the current Act's (A-13), not the sheet's.
+const sheet = computed(() => {
+  const base = props.character.sheet ?? {}
+  return team.view.mode === 'cinematic' ? { ...base, agenda: props.character.agenda ?? '' } : base
+})
 const others = computed(() => team.view.characters.filter((c) => c.id !== props.character.id))
 const buddy = ref(null)
 const rival = ref(null)
@@ -116,13 +124,13 @@ async function leave() {
         </li>
       </ul>
       <CharacterSheet
-        :sheet="character.sheet ?? {}"
+        :sheet="sheet"
         :actor="character.actor"
         :health-max="character.health_max"
         :names="team.characterNames"
       />
       <div
-        v-if="own && others.length"
+        v-if="setsRelations && others.length"
         class="flex flex-wrap items-end gap-2"
       >
         <XField :label="t('sheet.buddy')">
@@ -170,7 +178,7 @@ async function leave() {
         v-if="own"
         :to="`/characters/${character.id}`"
       >
-        {{ t('sheet.edit') }}
+        {{ t(team.view.mode === 'cinematic' ? 'sheet.editTexts' : 'sheet.edit') }}
       </RouterLink>
     </div>
     <template v-else>

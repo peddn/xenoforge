@@ -31,6 +31,10 @@ pub struct GameState {
     pub actors: BTreeMap<ActorId, Actor>,
     /// Story Points belong to the player, not the character [p. 61].
     pub story_points: BTreeMap<PlayerId, u8>,
+    /// Acts ended so far in Cinematic play; the current Act is the next
+    /// one [p. 216].
+    #[serde(default)]
+    pub acts_ended: u8,
     /// Decisions the engine waits for.
     pub pending: BTreeMap<PendingId, Pending>,
     pub next_pending: PendingId,
@@ -81,6 +85,10 @@ pub enum Supply {
 pub struct Actor {
     pub kind: ActorKind,
     pub android: bool,
+    /// An android that poses as human; others do not learn it until the
+    /// reveal (A-14) [p. 29, 103].
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub covert: bool,
     /// Player who controls the character, for Story Points.
     pub player: Option<PlayerId>,
     pub attributes: BTreeMap<Id, u8>,

@@ -560,7 +560,7 @@ fn the_long_haul_ignores_facehuggers_once_per_act() {
     );
     assert!(has(&ev, |e| matches!(e, Event::PanicRolled { .. })));
 
-    t.run(Command::EndAct, &[]);
+    t.run(Command::EndAct { agenda: vec![] }, &[]);
     let ev = t.roll(RollRequest::skill("r", "heavy_machinery"), &[2, 3, 3, 1]);
     assert_eq!(options(&ev), [Choice::IgnoreFacehuggers, Choice::Accept]);
 }

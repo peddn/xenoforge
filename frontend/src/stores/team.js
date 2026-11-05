@@ -107,10 +107,46 @@ export const useTeamStore = defineStore('team', () => {
     await refresh()
   }
 
+  // Choosing and handing over characters (A-12), Agendas per Act (A-13).
+  const characterPath = (id, what) => `/teams/${view.value.id}/characters/${id}/${what}`
+  const offer = (id, offered) => put(characterPath(id, 'offer'), { offered })
+  const claim = (id) => post(characterPath(id, 'claim'))
+  const handOver = (id, owner) => put(characterPath(id, 'owner'), { owner })
+  const setAgendas = (id, agendas) => put(characterPath(id, 'agendas'), { agendas })
+
   async function newInvite() {
     await post(`/teams/${view.value.id}/invite`)
     await refresh()
   }
 
-  return { view, log, connected, gone, characterNames, decisions, decidesMyself, open, close, refresh, command, preview, undo, correct, removeCharacter, newInvite }
+  // Names of the people in the team by id: members and the game master.
+  const personNames = computed(() =>
+    Object.fromEntries(
+      [view.value?.gm, ...(view.value?.members ?? [])].filter(Boolean).map((p) => [String(p.id), p.name]),
+    ),
+  )
+
+  return {
+    view,
+    log,
+    connected,
+    gone,
+    characterNames,
+    personNames,
+    decisions,
+    decidesMyself,
+    open,
+    close,
+    refresh,
+    command,
+    preview,
+    undo,
+    correct,
+    removeCharacter,
+    offer,
+    claim,
+    handOver,
+    setAgendas,
+    newInvite,
+  }
 })

@@ -114,7 +114,12 @@ async function remove() {
         <input v-model="character.data.sheet.signature_item">
       </XField>
     </div>
-    <XField :label="t('sheet.agenda')">
+    <!-- A prepared character from the game master gets its Agenda per Act in
+         the team (A-13). -->
+    <XField
+      v-if="character.data.status !== 'free' || free"
+      :label="t('sheet.agenda')"
+    >
       <textarea
         v-model="character.data.sheet.agenda"
         rows="2"

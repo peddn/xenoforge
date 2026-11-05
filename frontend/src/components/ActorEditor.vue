@@ -89,6 +89,19 @@ function toggleTalent(id, on) {
       >
       {{ t('sheet.android') }}
     </label>
+    <label
+      v-if="actor.android"
+      class="flex flex-wrap items-center gap-2"
+    >
+      <input
+        type="checkbox"
+        :disabled="disabled"
+        :checked="actor.covert"
+        data-test="covert"
+        @change="actor = { ...actor, covert: $event.target.checked }"
+      >
+      {{ t('sheet.covert') }}
+    </label>
   </div>
   <fieldset class="grid content-start gap-3 border border-line p-3">
     <legend class="text-sm text-dim uppercase">

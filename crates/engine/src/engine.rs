@@ -24,8 +24,8 @@ use crate::dice::{Dice, Die, throw};
 use crate::panic::{PanicCause, StopReason};
 use crate::roll::{Outcome, RollRequest};
 use crate::state::{
-    ActiveSource, Actor, ActorId, Ending, GameState, Mode, Origin, Pending, PendingId, PlayerId,
-    Supply,
+    ActiveSource, Actor, ActorId, ActorKind, Ending, GameState, Mode, Origin, Pending, PendingId,
+    PlayerId, Supply,
 };
 
 /// The rule engine. It owns the rule data and holds no game state.
@@ -76,8 +76,19 @@ pub enum Command {
     },
     /// Stress −1 once per Act or session [p. 104].
     UseSignatureItem { actor: ActorId },
-    /// End of an Act in Cinematic play.
-    EndAct,
+    /// End of an Act in Cinematic play. The characters named furthered
+    /// their Personal Agenda: each one's player gets a Story Point
+    /// [p. 31, 216].
+    EndAct {
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        agenda: Vec<ActorId>,
+    },
+    /// Sets a player's Story Points, e.g. those brought from the last
+    /// scenario (F-53) [p. 61, 383].
+    SetStoryPoints { player: PlayerId, points: u8 },
+    /// A covert android is revealed: humans nearby gain stress; the game
+    /// master picks them (A-14) [p. 103].
+    RevealAndroid { actor: ActorId },
     /// End of a game session: resets uses, trauma checks [p. 104].
     EndSession,
 }
@@ -246,11 +257,30 @@ pub enum Event {
         dice: Vec<Die>,
         trauma: Option<Id>,
     },
-    /// An Act ended: uses per Act are free again [p. 76, 104].
-    ActEnded,
+    /// An Act ended: uses per Act are free again [p. 76, 104]. `act` is
+    /// the Act that ended, counted from 1.
+    ActEnded {
+        #[serde(default)]
+        act: u8,
+    },
+    /// A player got a Story Point for furthering their Agenda; announced
+    /// without the reason [p. 216].
+    StoryPointAwarded {
+        player: PlayerId,
+    },
+    /// The game master set a player's Story Points [p. 61, 383].
+    StoryPointsChanged {
+        player: PlayerId,
+        from: u8,
+        to: u8,
+    },
     /// A game session ended: uses per session are free again, trauma
     /// checks follow [p. 76, 77, 104].
     SessionEnded,
+    /// A covert android was revealed (A-14) [p. 103].
+    AndroidRevealed {
+        actor: ActorId,
+    },
     SignatureItemUsed {
         actor: ActorId,
     },
@@ -548,7 +578,7 @@ impl Engine {
             .unwrap_or_else(|| panic!("constant \"{id}\" is missing in constants.json"))
     }
 
-    pub(crate) fn constant_u8(&self, id: &str) -> u8 {
+    pub fn constant_u8(&self, id: &str) -> u8 {
         u8::try_from(self.constant(id)).unwrap_or(0)
     }
 
@@ -693,14 +723,25 @@ impl<'a> Ctx<'a> {
                 self.perform_action(&actor, action)
             }
             Command::UseSignatureItem { actor } => self.use_signature_item(&actor),
-            Command::EndAct => {
-                if self.state.mode != Mode::Cinematic {
-                    return Err(RuleError::NotAllowed(
-                        "Acts exist only in Cinematic play".into(),
-                    ));
+            Command::RevealAndroid { actor } => self.reveal_android(&actor),
+            Command::EndAct { agenda } => self.end_act(&agenda),
+            Command::SetStoryPoints { player, points } => {
+                self.cinematic("Story Points")?;
+                let max = self.engine.constant_u8("story_points_max");
+                if points > max {
+                    return Err(RuleError::NotAllowed(format!(
+                        "a player has at most {max} Story Points"
+                    )));
                 }
-                self.emit(Event::ActEnded);
-                self.reset_uses(false);
+                let from = self.state.story_points.get(&player).copied().unwrap_or(0);
+                self.state.story_points.insert(player.clone(), points);
+                if from != points {
+                    self.emit(Event::StoryPointsChanged {
+                        player,
+                        from,
+                        to: points,
+                    });
+                }
                 Ok(())
             }
             Command::EndSession => self.end_session(),
@@ -1410,6 +1451,87 @@ impl<'a> Ctx<'a> {
                 !(session || period == Some(UsePeriod::ActOrSession))
             });
         }
+    }
+
+    /// A covert android becomes open. A person nearby revealed as an
+    /// android gives stress [p. 103]; who was near is the game master's
+    /// choice among the human player characters (F-39).
+    fn reveal_android(&mut self, actor: &str) -> Result<()> {
+        let a = self.actor_mut(actor)?;
+        if !(a.android && a.covert) {
+            return Err(RuleError::NotAllowed(format!(
+                "\"{actor}\" is no covert android"
+            )));
+        }
+        a.covert = false;
+        self.emit(Event::AndroidRevealed {
+            actor: actor.to_owned(),
+        });
+        let delta = i8::try_from(self.engine.constant("android_reveal_stress")).unwrap_or(0);
+        self.ask_targets(
+            actor,
+            "android_reveal_stress",
+            Who::FriendlyPcsShortRange,
+            vec![Op::Stress {
+                delta,
+                who: Who::Bearer,
+            }],
+        )
+    }
+
+    /// Story Points and Acts exist only in Cinematic play (F-06).
+    fn cinematic(&self, what: &str) -> Result<()> {
+        if self.state.mode == Mode::Cinematic {
+            Ok(())
+        } else {
+            Err(RuleError::NotAllowed(format!(
+                "{what} exist only in Cinematic play"
+            )))
+        }
+    }
+
+    /// End of an Act: a Story Point for each player whose character
+    /// furthered their Agenda, once per player, at most `story_points_max`
+    /// [p. 61, 216]; uses per Act are free again. A scenario has
+    /// `cinematic_acts` Acts; after the last one it is over (A-13).
+    fn end_act(&mut self, agenda: &[ActorId]) -> Result<()> {
+        self.cinematic("Acts")?;
+        let acts = self.engine.constant_u8("cinematic_acts");
+        if self.state.acts_ended >= acts {
+            return Err(RuleError::NotAllowed(format!(
+                "the scenario's {acts} Acts are over"
+            )));
+        }
+        let mut players: Vec<PlayerId> = Vec::new();
+        for id in agenda {
+            let actor = self.actor(id)?;
+            if actor.kind != ActorKind::Pc {
+                return Err(RuleError::NotAllowed(format!(
+                    "\"{id}\" is no player character and has no Agenda"
+                )));
+            }
+            let player = actor
+                .player
+                .clone()
+                .ok_or_else(|| RuleError::NotAllowed(format!("\"{id}\" has no player")))?;
+            if !players.contains(&player) {
+                players.push(player);
+            }
+        }
+        self.state.acts_ended = self.state.acts_ended.saturating_add(1);
+        self.emit(Event::ActEnded {
+            act: self.state.acts_ended,
+        });
+        let max = self.engine.constant_u8("story_points_max");
+        for player in players {
+            let points = self.state.story_points.entry(player.clone()).or_insert(0);
+            if *points < max {
+                *points += 1;
+                self.emit(Event::StoryPointAwarded { player });
+            }
+        }
+        self.reset_uses(false);
+        Ok(())
     }
 
     /// End of a game session: trauma checks [p. 104; F-01, F-26, F-27,

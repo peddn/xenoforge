@@ -130,15 +130,19 @@ impl<'s> Client<'s> {
     }
 }
 
-/// Game master with a team, player with a character in it.
+/// Game master with a Cinematic team, player with a character in it.
 async fn table(server: &Server) -> (Client<'_>, Client<'_>, i64, i64) {
+    table_in(server, "cinematic").await
+}
+
+async fn table_in<'s>(server: &'s Server, mode: &str) -> (Client<'s>, Client<'s>, i64, i64) {
     let mut gm = Client::new(server);
     gm.register("Mother", "gm").await;
     let team = gm
         .ok(
             "POST",
             "/api/teams",
-            Some(json!({ "name": "Hope's Last Day", "mode": "cinematic" })),
+            Some(json!({ "name": "Hope's Last Day", "mode": mode })),
         )
         .await["id"]
         .as_i64()
@@ -875,7 +879,7 @@ async fn creation_wizard() {
 #[tokio::test]
 async fn buddy_and_rival() {
     let server = server("buddy").await;
-    let (mut gm, mut player, team, charlize) = table(&server).await;
+    let (mut gm, mut player, team, charlize) = table_in(&server, "campaign").await;
     let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
         .as_str()
         .unwrap()
@@ -984,4 +988,317 @@ async fn talent_action_with_target() {
             .iter()
             .any(|e| e["event"] == "stress_changed" && e["to"] == 1)
     );
+}
+
+/// Choosing prepared characters and handing them over (A-12), Agendas per
+/// Act and Story Points (A-13) [p. 26, 32, 216].
+#[tokio::test]
+async fn choosing_and_handing_over() {
+    let server = server("cast").await;
+    let mut gm = Client::new(&server);
+    let gm_id = gm.register("Mother", "gm").await;
+    let team = gm
+        .ok(
+            "POST",
+            "/api/teams",
+            Some(json!({ "name": "Hope's Last Day", "mode": "cinematic" })),
+        )
+        .await["id"]
+        .as_i64()
+        .unwrap();
+    let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut prepared = Vec::new();
+    for (name, android) in [("Nat", false), ("Ripley", true)] {
+        // Ripley is a covert android (A-14).
+        let id = gm
+            .ok(
+                "POST",
+                "/api/characters",
+                Some(json!({ "free": true, "name": name })),
+            )
+            .await["id"]
+            .as_i64()
+            .unwrap();
+        gm.ok(
+            "PUT",
+            &format!("/api/characters/{id}"),
+            Some(json!({ "name": name, "data": { "actor": { "android": android, "covert": android, "attributes": { "strength": 3 } }, "sheet": { "notes": "secret" } } })),
+        )
+        .await;
+        gm.ok(
+            "POST",
+            &format!("/api/teams/{team}/characters"),
+            Some(json!({ "character": id })),
+        )
+        .await;
+        prepared.push(id);
+    }
+    let (nat, ripley) = (prepared[0], prepared[1]);
+    let path = |c: i64, what: &str| format!("/api/teams/{team}/characters/{c}/{what}");
+    let find = |view: &Value, id: i64| {
+        view["characters"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["id"] == id)
+            .unwrap()
+            .clone()
+    };
+
+    // Players join without a character of their own.
+    let mut ann = Client::new(&server);
+    let ann_id = ann.register("Ann", "player").await;
+    let mut bob = Client::new(&server);
+    let bob_id = bob.register("Bob", "player").await;
+    for player in [&mut ann, &mut bob] {
+        player
+            .ok(
+                "POST",
+                &format!("/api/join/{token}"),
+                Some(json!({ "character": null })),
+            )
+            .await;
+    }
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(find(&view, nat)["actor"].is_null(), "not on offer yet");
+    assert_eq!(view["act"], 1);
+
+    let (status, _) = bob
+        .call("PUT", &path(nat, "offer"), Some(json!({ "offered": true })))
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    gm.ok("PUT", &path(nat, "offer"), Some(json!({ "offered": true })))
+        .await;
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let offered = find(&view, nat);
+    assert_eq!(offered["offered"], true);
+    assert!(
+        offered["actor"].is_object(),
+        "offered characters can be read"
+    );
+
+    // First come, first served.
+    let (status, _) = gm.call("POST", &path(nat, "claim"), None).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let entries = ann.ok("POST", &path(nat, "claim"), None).await;
+    assert_eq!(entries[0]["entry"]["type"], "character_claimed");
+    let (status, _) = bob.call("POST", &path(nat, "claim"), None).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+
+    // An offered covert android passes as human; notes stay hidden. Who
+    // already plays a character takes no second one.
+    gm.ok(
+        "PUT",
+        &path(ripley, "offer"),
+        Some(json!({ "offered": true })),
+    )
+    .await;
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let offered = find(&view, ripley);
+    assert_eq!(offered["actor"]["android"], false);
+    assert_eq!(offered["sheet"]["notes"], "");
+    let (status, _) = ann.call("POST", &path(ripley, "claim"), None).await;
+    assert_eq!(status, StatusCode::CONFLICT, "one character per player");
+
+    // Only the game master reveals the android; then everyone knows.
+    let reveal = json!({ "command": "reveal_android", "actor": ripley.to_string() });
+    let (status, _) = ann.command(team, reveal.clone()).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, entries) = gm.command(team, reveal).await;
+    assert_eq!(status, StatusCode::OK, "{entries}");
+    assert_eq!(events_of(&entries)[0]["event"], "android_revealed");
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(find(&view, ripley)["actor"]["android"], true);
+    // Ann is the only human nearby to choose; the game master skips it.
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let pending = view["pending"][0]["id"].clone();
+    gm.command(
+        team,
+        json!({ "command": "decide", "pending": pending, "choice": { "targets": [] } }),
+    )
+    .await;
+
+    // In Cinematic play the scenario sets buddy and rival [p. 31].
+    let relations = format!("/api/characters/{nat}/relations");
+    let (status, _) = ann
+        .call(
+            "PUT",
+            &relations,
+            Some(json!({ "buddy": ripley, "rival": null })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    gm.ok(
+        "PUT",
+        &relations,
+        Some(json!({ "buddy": ripley, "rival": null })),
+    )
+    .await;
+
+    // Agendas per Act: the owner sees the current one only.
+    gm.ok(
+        "PUT",
+        &path(nat, "agendas"),
+        Some(json!({ "agendas": ["Survive.", "Save the girl.", " "] })),
+    )
+    .await;
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let mine = find(&view, nat);
+    assert_eq!(mine["owner_id"], ann_id);
+    assert_eq!(mine["agenda"], "Survive.");
+    assert!(mine["agendas"].is_null());
+    let view = bob.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(find(&view, nat)["agenda"].is_null());
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(
+        find(&view, nat)["agendas"],
+        json!(["Survive.", "Save the girl."])
+    );
+
+    // End of the Act: a Story Point for Ann, the next Agenda.
+    let (status, entries) = gm
+        .command(
+            team,
+            json!({ "command": "end_act", "agenda": [nat.to_string()] }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{entries}");
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(view["act"], 2);
+    assert_eq!(view["story_points"][ann_id.to_string()], 1);
+    assert_eq!(find(&view, nat)["agenda"], "Save the girl.");
+
+    // Story Points go to players of the team.
+    let (status, _) = gm
+        .command(
+            team,
+            json!({ "command": "set_story_points", "player": gm_id.to_string(), "points": 2 }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+
+    // Hand over and take over (Cinematic only).
+    let (status, _) = gm
+        .call("PUT", &path(ripley, "owner"), Some(json!({ "owner": 999 })))
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "only to members");
+    gm.ok(
+        "PUT",
+        &path(ripley, "owner"),
+        Some(json!({ "owner": bob_id })),
+    )
+    .await;
+    let (status, _) = gm
+        .call(
+            "PUT",
+            &path(ripley, "owner"),
+            Some(json!({ "owner": ann_id })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "not from player to player");
+    let entries = gm
+        .ok("PUT", &path(nat, "owner"), Some(json!({ "owner": gm_id })))
+        .await;
+    assert_eq!(entries[0]["entry"]["to"], "Mother");
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(find(&view, nat)["actor"].is_null(), "Nat is an NPC now");
+    assert!(find(&view, ripley)["actor"].is_null(), "Ripley is Bob's");
+
+    // Ann has no character now and leaves; Bob still plays one.
+    let (status, _) = gm
+        .call(
+            "DELETE",
+            &format!("/api/teams/{team}/members/{bob_id}"),
+            None,
+        )
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    let entries = ann
+        .ok(
+            "DELETE",
+            &format!("/api/teams/{team}/members/{ann_id}"),
+            None,
+        )
+        .await;
+    assert_eq!(entries[0]["entry"]["type"], "member_left");
+    let (status, _) = ann.call("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+/// In Campaign play the game master does not take characters from
+/// players, and there are no Agendas per Act [p. 31, 32]. Players may
+/// still join without a character.
+#[tokio::test]
+async fn campaign_has_no_takeover() {
+    let server = server("campaign-cast").await;
+    let mut gm = Client::new(&server);
+    let gm_id = gm.register("Mother", "gm").await;
+    let team = gm
+        .ok(
+            "POST",
+            "/api/teams",
+            Some(json!({ "name": "Sotillo", "mode": "campaign" })),
+        )
+        .await["id"]
+        .as_i64()
+        .unwrap();
+    let token = gm.ok("GET", &format!("/api/teams/{team}"), None).await["invite_token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut player = Client::new(&server);
+    player.register("Gina", "player").await;
+    let charlize = player
+        .character("Charlize", json!({ "attributes": { "strength": 3 } }))
+        .await;
+    player
+        .ok(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": charlize })),
+        )
+        .await;
+    let base = format!("/api/teams/{team}/characters/{charlize}");
+    let (status, _) = gm
+        .call(
+            "PUT",
+            &format!("{base}/owner"),
+            Some(json!({ "owner": gm_id })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, _) = gm
+        .call(
+            "PUT",
+            &format!("{base}/agendas"),
+            Some(json!({ "agendas": ["Get rich."] })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let (status, _) = gm
+        .call(
+            "PUT",
+            &format!("{base}/offer"),
+            Some(json!({ "offered": true })),
+        )
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT, "only the GM's own characters");
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(view["act"].is_null());
+
+    let mut newcomer = Client::new(&server);
+    newcomer.register("Hayes", "player").await;
+    newcomer
+        .ok(
+            "POST",
+            &format!("/api/join/{token}"),
+            Some(json!({ "character": null })),
+        )
+        .await;
+    newcomer
+        .ok("GET", &format!("/api/teams/{team}"), None)
+        .await;
 }

@@ -37,6 +37,7 @@ const STEPS = [
 const EMPTY = {
   career: null,
   android: false,
+  android_covert: false,
   attributes: {},
   android_bonus: [],
   skills: {},
@@ -243,6 +244,17 @@ async function finish() {
           data-test="android"
         >
         {{ t('wizard.android') }}
+      </label>
+      <label
+        v-if="draft.android"
+        class="flex flex-wrap items-center gap-2"
+      >
+        <input
+          v-model="draft.android_covert"
+          type="checkbox"
+          data-test="android-covert"
+        >
+        {{ t('sheet.covert') }}
       </label>
     </template>
 

@@ -65,15 +65,20 @@
     "startCash": "Startgeld",
     "cashRolled": "{amount} $ (gewürfelt: {dice})",
     "edit": "Texte und Agenda bearbeiten",
-    "deleteConfirm": "{name} endgültig löschen?"
+    "deleteConfirm": "{name} endgültig löschen?",
+    "editTexts": "Texte bearbeiten",
+    "covert": "Verdeckt: gibt sich als Mensch aus",
+    "covertShort": "verdeckt",
+    "open": "offen"
   },
   "join": {
     "title": "Einladung",
     "invited": "{gm} lädt dich in das Team {team} ein.",
     "character": "Mit welchem Charakter?",
-    "noFree": "Du hast keinen fertigen freien Charakter. Lege zuerst einen an oder stelle deinen Entwurf fertig:",
+    "noFree": "Du hast keinen fertigen freien Charakter. Tritt ohne bei und wähle im Team einen, den die Spielleitung anbietet, oder lege zuerst einen an:",
     "join": "Beitreten",
-    "decline": "Ablehnen"
+    "decline": "Ablehnen",
+    "none": "Ohne Charakter – im Team einen wählen"
   },
   "crew": {
     "character": "Charakter",
@@ -83,7 +88,9 @@
     "hidden": "Werte sieht nur die Spielleitung.",
     "storyPoints": "Story Points",
     "sheet": "Bogen",
-    "actions": "Aktionen"
+    "actions": "Aktionen",
+    "offered": "Zur Wahl",
+    "claim": "Spielen"
   },
   "roll": {
     "roll": "Würfeln",
@@ -155,8 +162,11 @@
     "undo": "Rückgängig",
     "correct": "Korrigieren",
     "actionsTitle": "Aktionen: {name}",
-    "confirmEndAct": "Akt wirklich beenden?",
-    "confirmEndSession": "Sitzung wirklich beenden? Nach Panik ab 13 folgt die Trauma-Probe."
+    "confirmEndSession": "Sitzung wirklich beenden? Nach Panik ab 13 folgt die Trauma-Probe.",
+    "endActTitle": "Akt {act} beenden",
+    "agendaQuestion": "Wer ist in diesem Akt seiner Agenda gefolgt, trotz Risiko oder Opfer? Jeder Spieler bekommt dafür einen Story Point, höchstens drei. Das Protokoll nennt keinen Grund (S. 216).",
+    "revealAndroid": "Android enthüllen",
+    "revealAndroidConfirm": "{name} als Android enthüllen? Menschen in der Nähe bekommen Stress."
   },
   "cold": {
     "above_freezing": "über null",
@@ -185,7 +195,11 @@
     "back": "Zur Übersicht",
     "removeConfirm": "{name} wirklich aus dem Team nehmen?",
     "leave": "Team verlassen",
-    "leaveConfirm": "Mit {name} das Team verlassen?"
+    "leaveConfirm": "Mit {name} das Team verlassen?",
+    "act": "Akt {act}",
+    "waiting": "Ohne Charakter:",
+    "scenarioOver": "Szenario beendet",
+    "removeMemberConfirm": "{name} aus dem Team nehmen?"
   },
   "outcome": {
     "success": "Erfolg",
@@ -232,7 +246,19 @@
     "act_ended": "Akt beendet: Signature Item und Talente mit Einsatz pro Akt sind wieder verfügbar.",
     "session_ended": "Sitzung beendet: Signature Item und Talente mit Einsatz pro Sitzung sind wieder verfügbar.",
     "character_left": "{name} verlässt das Team",
-    "note": "„{note}“"
+    "note": "„{note}“",
+    "member_joined": "{name} tritt dem Team bei",
+    "character_offered": "{name} steht zur Wahl",
+    "character_unoffered": "{name} steht nicht mehr zur Wahl",
+    "character_claimed": "{by} spielt jetzt {name}",
+    "character_handed_over": "{name} geht an {to}",
+    "agenda_changed": "Agenden von {name} geändert",
+    "story_points_changed": "{player}: Story Points {from} → {to}",
+    "act_ended_n": "Akt {act} beendet: Signature Item und Talente mit Einsatz pro Akt sind wieder verfügbar.",
+    "story_point_awarded": "{player} bekommt einen Story Point",
+    "member_left": "{name} verlässt das Team",
+    "member_removed": "{name} ist nicht mehr im Team",
+    "android_revealed": "{actor} ist ein Android"
   },
   "about": {
     "title": "Über Xenoforge",
@@ -308,5 +334,16 @@
     },
     "keyAttribute": "Schlüsselattribut",
     "keySkills": "Schlüsselfertigkeiten"
+  },
+  "cast": {
+    "offer": "Zur Wahl anbieten",
+    "withdraw": "Angebot zurückziehen",
+    "to": "An",
+    "gm": "{name} (Spielleitung, als NSC)",
+    "handOver": "Übergeben",
+    "agendaAct": "Agenda Akt {act}",
+    "saveAgendas": "Agenden speichern",
+    "storyPoints": "Story Points von {name}",
+    "setStoryPoints": "Setzen"
   }
 }

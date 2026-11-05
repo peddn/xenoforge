@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Row, Sqlite, Transaction};
 use xenoforge_engine::creation::{Cash, CreationProblem, Draft};
 use xenoforge_engine::data::Id;
-use xenoforge_engine::state::{Actor, ActorKind};
+use xenoforge_engine::state::{Actor, ActorKind, Mode};
 
 use crate::auth::{Role, User};
 use crate::error::{ApiError, ApiResult};
@@ -65,6 +65,9 @@ pub struct CharacterData {
     /// Starting cash as rolled when finishing [p. 39–55].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_cash: Option<Cash>,
+    /// Offered in its team for a player to choose (A-12).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub offered: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -136,7 +139,8 @@ pub async fn load(pool: &sqlx::SqlitePool, id: i64) -> ApiResult<Character> {
 }
 
 pub async fn save(tx: &mut Transaction<'_, Sqlite>, character: &Character) -> ApiResult<()> {
-    sqlx::query("UPDATE characters SET name = ?, team_id = ?, data = ? WHERE id = ?")
+    sqlx::query("UPDATE characters SET owner_id = ?, name = ?, team_id = ?, data = ? WHERE id = ?")
+        .bind(character.owner_id)
         .bind(&character.name)
         .bind(character.team_id)
         .bind(serde_json::to_string(&character.data)?)
@@ -159,9 +163,9 @@ fn check_name(name: &str) -> ApiResult<String> {
 }
 
 /// The longest sheet text, in characters.
-const TEXT_MAX: usize = 4000;
+pub const TEXT_MAX: usize = 4000;
 
-fn check_texts(texts: &[&str]) -> ApiResult<()> {
+pub fn check_texts(texts: &[&str]) -> ApiResult<()> {
     if texts.iter().any(|t| t.chars().count() > TEXT_MAX) {
         return Err(ApiError::bad_request(format!(
             "a text has at most {TEXT_MAX} characters"
@@ -345,6 +349,7 @@ async fn update(
         let was_full = actor.health == state.engine.full_health(actor);
         let health_untouched = new.health == actor.health;
         actor.android = new.android;
+        actor.covert = new.android && new.covert;
         actor.attributes = new.attributes;
         actor.skills = new.skills;
         actor.talents = new.talents;
@@ -369,8 +374,10 @@ struct Relations {
 }
 
 /// Buddy and rival: other player characters of the same team, not the
-/// same one; both are optional (F-52) [p. 31]. A route of their own, so
-/// saving texts never touches them.
+/// same one; both are optional (F-52) [p. 31]. In Campaign play the owner
+/// chooses them, in Cinematic play the scenario does, so the game master
+/// sets them [p. 31]. A route of their own, so saving texts never touches
+/// them.
 async fn relations(
     State(state): State<AppState>,
     user: User,
@@ -378,7 +385,22 @@ async fn relations(
     Json(body): Json<Relations>,
 ) -> ApiResult<Json<Character>> {
     let _guard = state.lock.lock().await;
-    let mut character = owned(&state, &user, id).await?;
+    let mut character = load(&state.pool, id).await?;
+    let team = match character.team_id {
+        Some(team) => Some(crate::game::load_team(&state.pool, team).await?),
+        None => None,
+    };
+    let chooses = match &team {
+        Some(team) if team.state.mode == Mode::Cinematic => team.gm_id == user.id,
+        _ => character.owner_id == user.id,
+    };
+    if !chooses {
+        return Err(if character.owner_id == user.id {
+            ApiError::forbidden("in Cinematic play the scenario sets buddy and rival (p. 31)")
+        } else {
+            ApiError::not_found("character")
+        });
+    }
     check_relations(&state, &character, body.buddy, body.rival).await?;
     character.data.sheet.buddy = body.buddy;
     character.data.sheet.rival = body.rival;
@@ -462,6 +484,7 @@ async fn finish(
         },
         actor: state.engine.creation_actor(&draft),
         start_cash,
+        offered: false,
     };
     let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;
