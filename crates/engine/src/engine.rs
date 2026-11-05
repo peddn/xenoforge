@@ -314,6 +314,10 @@ pub enum Event {
     ItemMoved {
         actor: ActorId,
         uid: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        item: Option<Id>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
         to: Destination,
         count: u16,
     },

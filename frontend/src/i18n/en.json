@@ -69,7 +69,54 @@
     "editTexts": "Edit texts",
     "covert": "Covert: poses as human",
     "covertShort": "covert",
-    "open": "open"
+    "open": "open",
+    "startGear": "Starting gear rolled",
+    "gearRolled": "{name} × {count} (rolled: {dice})"
+  },
+  "gear": {
+    "title": "Gear",
+    "load": "Load {carried} of {normal}, overloaded up to {max}",
+    "overloaded": "Overloaded",
+    "weight": "Weight {weight}",
+    "bonus": "Bonus {bonus}",
+    "damage": "Damage {damage}",
+    "range": {
+      "engaged": "engaged",
+      "short": "short",
+      "medium": "medium",
+      "long": "long",
+      "extreme": "extreme"
+    },
+    "armor": "Armor {rating}",
+    "reloads": "no reload | 1 reload | {n} reloads",
+    "supply": {
+      "air": "Air {left}/{max}",
+      "power": "Power {left}/{max}"
+    },
+    "place": {
+      "carried": "carried",
+      "worn": "worn",
+      "stowed": "stowed"
+    },
+    "to": {
+      "carried": "Carry",
+      "worn": "Put on",
+      "stowed": "Stow"
+    },
+    "toCharacter": "Give to {name}",
+    "moveTo": "Move …",
+    "count": "Count",
+    "drop": "Drop",
+    "dropConfirm": "Drop {name}? It will be gone.",
+    "add": "Give an item",
+    "fromCatalog": "From the catalog",
+    "free": "Free",
+    "search": "Search",
+    "name": "Name",
+    "weightLabel": "Weight",
+    "where": "Where",
+    "addGo": "Add",
+    "reloadsLabel": "Reloads"
   },
   "join": {
     "title": "Invitation",
@@ -102,9 +149,11 @@
     "gear": "Gear",
     "helpers": "Helpers",
     "preview": "{base} Base Dice, {stress} Stress Dice",
-    "difficultyByGm": "Difficulty is up to the game master, who then starts the roll for your character.",
+    "difficultyByGm": "The game master sets a difficulty or a bonus for improvised gear: they then make the roll for your character.",
     "talentActions": "Use a talent",
-    "target": "Target"
+    "target": "Target",
+    "items": "Items",
+    "weapon": "weapon"
   },
   "decision": {
     "title": "Decision",
@@ -258,7 +307,17 @@
     "story_point_awarded": "{player} gets a Story Point",
     "member_left": "{name} leaves the team",
     "member_removed": "{name} is no longer in the team",
-    "android_revealed": "{actor} is an android"
+    "android_revealed": "{actor} is an android",
+    "item_added": "{actor} gets {item} × {count}",
+    "item_moved": "{actor}: {item} × {count} – {to}",
+    "item_used_up": "{actor}: {item} used up",
+    "to": {
+      "carried": "carried",
+      "worn": "put on",
+      "stowed": "stowed",
+      "dropped": "dropped"
+    },
+    "toCharacter": "given to {name}"
   },
   "about": {
     "title": "About Xenoforge",
@@ -281,7 +340,7 @@
       "name": "Name and appearance",
       "agenda": "Agenda",
       "relations": "Buddy and rival",
-      "gear": "Signature item",
+      "gear": "Gear",
       "cash": "Starting cash",
       "finish": "Done"
     },
@@ -293,7 +352,7 @@
       "name": "A name and a few words on looks. The suggestions are from the book; you may write your own.",
       "agenda": "What your character is after. Only you and the game master see the agenda; you can change it later.",
       "relations": "Buddy and rival are other player characters. You pick them in the team once the others have joined; both are optional.",
-      "gear": "The career gear comes to the app with the gear catalog. The signature item is a small personal object.",
+      "gear": "Choose two items from two different lines of your career, one each. The signature item is a small personal keepsake.",
       "cash": "Starting cash of your career: {formula}. The server rolls it when you finish.",
       "finish": "Health equals STRENGTH, the stress level starts at 0. Finishing makes the draft playable; after that the values change in play only."
     },
@@ -330,10 +389,18 @@
       "name_missing": "The character needs a name.",
       "appearance_missing": "Describe the looks in a few words.",
       "agenda_missing": "Set a personal agenda.",
-      "signature_item_missing": "Pick a signature item."
+      "signature_item_missing": "Pick a signature item.",
+      "gear_count": "{value} of {limit} starting items chosen.",
+      "gear_line": "Line {value}: one item per line.",
+      "gear_unknown": "Line {value} has no such item."
     },
     "keyAttribute": "Key attribute",
-    "keySkills": "Key skills"
+    "keySkills": "Key skills",
+    "gearChosen": "Chosen: {chosen} of {of}",
+    "or": "or",
+    "gearDice": "{dice} × {name}",
+    "gearCount": "{count} × {name}",
+    "gearExtras": "Firearms come with two full reloads. Quantities in dice are rolled by the server when finishing. You have clothes anyway."
   },
   "cast": {
     "offer": "Offer to choose",

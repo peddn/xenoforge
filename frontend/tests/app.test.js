@@ -12,9 +12,10 @@ import CharacterActions from '@/components/CharacterActions.vue'
 import CrewList from '@/components/CrewList.vue'
 import CharacterSheet from '@/components/CharacterSheet.vue'
 import CreationWizard from '@/components/CreationWizard.vue'
+import GearPanel from '@/components/GearPanel.vue'
 import RollPanel from '@/components/RollPanel.vue'
 import SheetDialog from '@/components/SheetDialog.vue'
-import { cashFormula, choiceLabel, modsText, originLabel, problemText } from '@/labels'
+import { cashFormula, choiceLabel, modsText, originLabel, problemText, quarters, weightText } from '@/labels'
 import { guard, routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
@@ -72,27 +73,38 @@ describe('rolling', () => {
     vi.useFakeTimers()
     const { pinia, i18n } = setup()
     const calls = mockApi({
-      'POST /teams/5/preview': { base_dice: 6, stress_dice: 2, modifications: [], talents: ['stoic'], max_pushes: 1 },
+      'POST /teams/5/preview': {
+        base_dice: 6,
+        stress_dice: 2,
+        modifications: [],
+        talents: ['stoic'],
+        items: [{ uid: 0, item: 'binoculars', value: 2, when: 'binoculars.when' }],
+        max_pushes: 1,
+      },
       'POST /teams/5/commands': [],
     })
     useTeamStore().view = { id: 5, characters: [] }
     const wrapper = mount(RollPanel, {
-      props: { character: { id: 9, name: 'Charlize' } },
+      props: { character: { id: 9, name: 'Charlize', actor: { items: [{ uid: 0, item: 'binoculars', count: 1 }] } } },
       global: { plugins: [pinia, i18n] },
     })
     await vi.advanceTimersByTimeAsync(200)
     await flushPromises()
     expect(wrapper.get('[data-test="preview"]').text()).toContain('6 Grundwürfel, 2 Stresswürfel')
     expect(calls[0].body).toMatchObject({ actor: '9', kind: { skill: { skill: 'observation' } }, modifiers: [] })
-    // Players set no difficulty (A-08); the preview is asked for once.
+    // Players set no difficulty and no free gear bonus (A-08, F-59); they
+    // tick the items the server offers. The preview is asked for once.
     expect(wrapper.text()).not.toContain('Schwierigkeit:')
     expect(wrapper.text()).toContain('Spielleitung')
-    await wrapper.get('[data-test="gear"]').setValue(2)
+    expect(wrapper.find('[data-test="gear"]').exists()).toBe(false)
+    expect(wrapper.get('[data-test="items"]').text()).toContain('binoculars +2')
+    await wrapper.get('[data-test="roll-item-0"]').setValue(true)
     await vi.advanceTimersByTimeAsync(1000)
     await flushPromises()
     const previews = calls.filter((c) => c.path === '/teams/5/preview')
     expect(previews).toHaveLength(2)
-    expect(previews[1].body.modifiers).toEqual([{ source: 'gear', value: 2 }])
+    expect(previews[1].body.items).toEqual([0])
+    expect(previews[1].body.modifiers).toEqual([])
     await wrapper.get('[data-test="roll-go"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-test="note"]').setValue('Tür zum Labor')
@@ -514,6 +526,148 @@ describe('creation wizard', () => {
     const en = createAppI18n('en').global.t
     expect(cashFormula({ dice: 1, times: 1 }, en)).toBe('$D6')
     expect(en('sheet.cashRolled', { amount: 400, dice: '4' })).toBe('$400 (rolled: 4)')
+  })
+})
+
+describe('gear', () => {
+  it('chooses two starting items from two lines (F-60)', async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    const calls = mockApi({
+      'PUT /characters/7': (body) => ({
+        id: 7,
+        name: '',
+        data: { status: 'draft', draft: body.data.draft, sheet: {}, actor: {} },
+        problems: [],
+      }),
+    })
+    const wrapper = mount(CreationWizard, {
+      props: {
+        character: {
+          id: 7,
+          name: '',
+          data: { status: 'draft', draft: { career: 'officer' }, sheet: {}, actor: {} },
+          problems: [{ step: 'gear', code: 'gear_count', page: 39, value: 0, limit: 2 }],
+        },
+      },
+      global: { plugins: [pinia, i18n] },
+    })
+    const gear = wrapper.get('[data-test="start-gear"]')
+    expect(gear.text()).toContain('W6 × signal_flare')
+    expect(gear.text()).toContain('2 × deck_of_cards')
+    expect(wrapper.text()).toContain('0 von 2 Startgegenständen gewählt. (S. 39)')
+    await wrapper.get('[data-test="gear-0-0"]').trigger('click')
+    await wrapper.get('[data-test="gear-1-0"]').trigger('click')
+    expect(wrapper.get('[data-test="gear-2-0"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-test="gear-1-1"]').trigger('click')
+    expect(wrapper.get('[data-test="gear-1-1"]').attributes('aria-pressed')).toBe('true')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+    expect(calls.at(-1).body.data.draft.gear).toEqual([
+      { line: 0, option: 0 },
+      { line: 1, option: 1 },
+    ])
+    await wrapper.get('[data-test="gear-0-0"]').trigger('click')
+    expect(wrapper.get('[data-test="gear-2-0"]').attributes('disabled')).toBeUndefined()
+  })
+
+  const actor = {
+    attributes: { strength: 1 },
+    items: [
+      { uid: 0, item: 'm4a3_service_pistol', count: 1, place: 'carried', reloads: 2 },
+      { uid: 1, item: 'irc_mk50_compression_suit', count: 1, place: 'worn', supply: 4 },
+      { uid: 2, item: 'signal_flare', count: 3, place: 'stowed' },
+      { uid: 3, name: 'Tagebuch', weight: '1/4', count: 1 },
+    ],
+    next_item: 4,
+  }
+
+  it('shows items and the load from the server, and moves them', async () => {
+    const { pinia, i18n } = setup()
+    const wrapper = mount(GearPanel, {
+      props: {
+        actor,
+        encumbrance: { carried: 7, normal: 4, max: 8 },
+        canMove: true,
+        others: [{ id: 9, name: 'Charlize' }],
+      },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(wrapper.get('[data-test="encumbrance"]').text()).toBe('Traglast 1¾ von 1, überladen bis 2')
+    expect(wrapper.text()).toContain('Überladen')
+    const suit = wrapper.get('[data-test="item-1"]').text()
+    expect(suit).toContain('angezogen')
+    expect(suit).toContain('Luft 4/5')
+    expect(wrapper.get('[data-test="item-0"]').text()).toContain('Bonus +2, Schaden 1, mittel · 2 Magazine')
+    expect(wrapper.get('[data-test="item-3"]').text()).toContain('Tagebuch')
+    // Only a suit is put on.
+    const pistolTargets = wrapper.get('[data-test="move-0"]').findAll('option').map((o) => o.element.value)
+    expect(pistolTargets).toEqual(['', 'stowed', 'character:9'])
+    expect(wrapper.get('[data-test="move-2"]').findAll('option').map((o) => o.element.value)).not.toContain('worn')
+
+    await wrapper.get('[data-test="move-0"]').setValue('stowed')
+    await wrapper.get('[data-test="item-2"] input[type="number"]').setValue(2)
+    await wrapper.get('[data-test="move-2"]').setValue('character:9')
+    await wrapper.get('[data-test="drop-3"]').trigger('click')
+    await wrapper.get('[data-test="item-3"] [data-test="confirm"]').trigger('click')
+    expect(wrapper.emitted('command').map((e) => e[0])).toEqual([
+      { command: 'move_item', uid: 0, to: 'stowed' },
+      { command: 'move_item', uid: 2, to: { character: '9' }, count: 2 },
+      { command: 'move_item', uid: 3, to: 'dropped' },
+    ])
+  })
+
+  it('lets the game master add from the catalog or a free item', async () => {
+    const { pinia, i18n } = setup()
+    const wrapper = mount(GearPanel, {
+      props: { actor: { items: [] }, canAdd: true },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(wrapper.find('[data-test="move-0"]').exists()).toBe(false)
+    await wrapper.get('[data-test="gear-search"]').setValue('auto')
+    expect(wrapper.find('[data-test="pick-autodoc"]').exists()).toBe(false)
+    await wrapper.get('[data-test="gear-search"]').setValue('m4a3')
+    await wrapper.get('[data-test="pick-m4a3_service_pistol"]').trigger('click')
+    await wrapper.get('[data-test="add-go"]').trigger('click')
+    await wrapper.get('[data-test="add-free"]').setValue(true)
+    expect(wrapper.get('[data-test="add-go"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-test="free-name"]').setValue(' Kiste ')
+    await wrapper.get('[data-test="add-go"]').trigger('click')
+    expect(wrapper.emitted('command').map((e) => e[0])).toEqual([
+      { command: 'add_item', item: { item: 'm4a3_service_pistol' } },
+      { command: 'add_item', item: { name: 'Kiste', weight: '1' } },
+    ])
+  })
+
+  it('sends the item commands of the sheet to the team for the character', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/commands': [], 'GET /teams/5': { id: 5, characters: [] } })
+    useAuthStore().user = { id: 2, role: 'player' }
+    const character = { id: 3, name: 'Gorman', owner_id: 2, actor, sheet: {}, hints: [], encumbrance: { carried: 7, normal: 4, max: 8 } }
+    useTeamStore().view = { id: 5, mode: 'campaign', is_gm: false, characters: [character] }
+    const wrapper = mount(SheetDialog, { props: { character }, global: { plugins: [pinia, i18n] } })
+    expect(wrapper.find('[data-test="add-item"]').exists()).toBe(false)
+    await wrapper.get('[data-test="move-0"]').setValue('stowed')
+    await flushPromises()
+    expect(calls[0].body).toEqual({ command: { command: 'move_item', uid: 0, to: 'stowed', actor: '3' } })
+  })
+
+  it('names items in the log and weights as the book writes them', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = { id: 5, characters: [{ id: 3, name: 'Gorman' }, { id: 9, name: 'Charlize' }] }
+    const event = (ev) => ({ id: ev.uid + 1, batch: ev.uid + 1, by: 'Mother', at: 0, entry: { type: 'engine', event: ev } })
+    team.log = [
+      event({ event: 'item_added', actor: '3', uid: 0, item: 'knife', count: 1, place: 'carried' }),
+      event({ event: 'item_moved', actor: '3', uid: 1, name: 'Tagebuch', to: { character: '9' }, count: 1 }),
+      event({ event: 'item_used_up', actor: '9', uid: 2, item: 'personal_medkit' }),
+    ]
+    const text = mount(LogList, { global: { plugins: [pinia, i18n] } }).text()
+    expect(text).toContain('Gorman bekommt knife × 1')
+    expect(text).toContain('Gorman: Tagebuch × 1 – an Charlize gegeben')
+    expect(text).toContain('Charlize: personal_medkit verbraucht')
+    expect([0, 1, 2, 4, 14].map(quarters)).toEqual(['0', '¼', '½', '1', '3½'])
+    expect(weightText('1/4')).toBe('¼')
   })
 })
 

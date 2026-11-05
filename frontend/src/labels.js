@@ -71,3 +71,29 @@ export function cashFormula(cash, t) {
   const dice = `${cash.dice > 1 ? cash.dice : ''}${t('wizard.die')}`
   return t('wizard.cashFormula', { dice, times: cash.times > 1 ? ` × ${cash.times}` : '' })
 }
+
+const FRACTIONS = ['', '¼', '½', '¾']
+
+/** Quarters of a regular item as the book writes weights, e.g. 14 → "3½". */
+export function quarters(q) {
+  const whole = Math.floor(q / 4)
+  const part = FRACTIONS[q % 4]
+  if (!whole) return part || '0'
+  return `${whole}${part}`
+}
+
+/** A weight from the gear catalog, e.g. "1/2" → "½" [p. 34]. */
+export function weightText(weight) {
+  return { '1/4': '¼', '1/2': '½' }[weight] ?? weight ?? '–'
+}
+
+/** Name of an item: from the catalog, or the name of a free item. */
+export function itemName(possession, rules) {
+  return possession.item ? rules.name(possession.item) : (possession.name ?? '')
+}
+
+/** Where an item went, for the log, e.g. "worn" or {"character":"5"}. */
+export function destinationLabel(to, t, names) {
+  if (typeof to === 'string') return t(`log.to.${to}`)
+  return t('log.toCharacter', { name: names[to.character] ?? `#${to.character}` })
+}

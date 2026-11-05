@@ -6,18 +6,20 @@ import { useRoute, useRouter } from 'vue-router'
 import ActorEditor from '@/components/ActorEditor.vue'
 import CharacterSheet from '@/components/CharacterSheet.vue'
 import CreationWizard from '@/components/CreationWizard.vue'
+import GearPanel from '@/components/GearPanel.vue'
 import XButton from '@/ui/XButton.vue'
 import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import XPanel from '@/ui/XPanel.vue'
-import { get } from '@/api'
+import { get, post } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useCharactersStore } from '@/stores/characters'
 import { useRulesStore } from '@/stores/rules'
 
 // One's own character: a draft in the wizard, otherwise the sheet. Texts and
-// the agenda can always be edited (F-54). Values only on a free character of
-// a game master outside a team (A-09).
+// the agenda can always be edited (F-54). Values and gear only on a free
+// character of a game master outside a team (A-09); in a team the gear
+// changes through the team's commands.
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -44,6 +46,20 @@ async function save() {
   try {
     character.value = await store.save(character.value)
     message.value = t('common.saved')
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
+// Gear of a free character: the server applies the engine's item commands.
+// Only the items are taken over, so values not saved yet stay as they are.
+async function item(command) {
+  error.value = ''
+  try {
+    const saved = await post(`/characters/${character.value.id}/items`, command)
+    character.value.data.actor.items = saved.data.actor.items
+    character.value.data.actor.next_item = saved.data.actor.next_item
+    character.value.encumbrance = saved.encumbrance
   } catch (e) {
     error.value = e.message
   }
@@ -138,16 +154,26 @@ async function remove() {
     >
       {{ t('sheet.inTeam') }}
     </p>
-    <ActorEditor
-      v-if="free"
-      v-model="character.data.actor"
-      :disabled="!!character.team_id"
-    />
+    <template v-if="free">
+      <ActorEditor
+        v-model="character.data.actor"
+        :disabled="!!character.team_id"
+      />
+      <GearPanel
+        :actor="character.data.actor"
+        :encumbrance="character.encumbrance"
+        :can-move="!character.team_id"
+        :can-add="!character.team_id"
+        @command="item"
+      />
+    </template>
     <CharacterSheet
       v-else
       :sheet="character.data.sheet"
       :actor="character.data.actor"
       :start-cash="character.data.start_cash"
+      :start-gear="character.data.start_gear ?? []"
+      :encumbrance="character.encumbrance"
       :texts="false"
     />
     <div class="flex flex-wrap items-center gap-2">

@@ -38,7 +38,34 @@ export const rulesData = {
       looks: ['cap'],
       items: ['pen'],
       agendas: ['order'],
+      gear: [
+        [{ item: 'm4a3_service_pistol' }, { item: 'binoculars' }],
+        [{ item: 'signal_flare', dice: 1 }, { item: 'irc_mk50_compression_suit' }],
+        [{ item: 'knife' }, { item: 'deck_of_cards', count: 2 }],
+      ],
     },
+  ],
+  gear: [
+    {
+      id: 'm4a3_service_pistol',
+      page: 119,
+      category: 'pistol',
+      weight: '1/2',
+      weapon: { skill: 'ranged_combat', bonus: 2, damage: 1, range: 'medium', reloads: true },
+    },
+    { id: 'binoculars', page: 133, category: 'vision', weight: '1/2' },
+    {
+      id: 'irc_mk50_compression_suit',
+      page: 127,
+      category: 'armor',
+      weight: '1',
+      armor: { rating: 2, vacuum: true },
+      supply: { kind: 'air', max: 5 },
+    },
+    { id: 'signal_flare', page: 55, category: 'other', weight: '1/4' },
+    { id: 'knife', page: 126, category: 'close_combat', weight: '1/2', weapon: { skill: 'close_combat', damage: 2, range: 'engaged' } },
+    { id: 'deck_of_cards', page: 39, category: 'other', weight: '0' },
+    { id: 'autodoc', page: 135, category: 'medical' },
   ],
   talents: [
     { id: 'stoic', page: 79, effects: [] },
@@ -56,6 +83,8 @@ export const rulesData = {
     { id: 'creation_attribute_points', page: 28, value: 14 },
     { id: 'cinematic_acts', page: 216, value: 3 },
     { id: 'story_points_max', page: 61, value: 3 },
+    { id: 'start_gear_items', page: 39, value: 2 },
+    { id: 'gear_bonus_max', page: 128, value: 3 },
   ],
 }
 

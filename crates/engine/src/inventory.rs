@@ -450,6 +450,7 @@ impl Ctx<'_> {
                 to,
                 Destination::Carried | Destination::Stowed | Destination::Worn
             );
+        let (item, name) = (a.items[index].item.clone(), a.items[index].name.clone());
         let index = if split {
             let mut part = a.items[index].clone();
             a.items[index].count -= count;
@@ -504,6 +505,8 @@ impl Ctx<'_> {
         self.emit(Event::ItemMoved {
             actor: actor.to_owned(),
             uid,
+            item,
+            name,
             to,
             count,
         });

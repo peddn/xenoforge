@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import XDie from '@/ui/XDie.vue'
 import XStatus from '@/ui/XStatus.vue'
-import { choiceLabel, modsText, originLabel } from '@/labels'
+import { choiceLabel, destinationLabel, itemName, modsText, originLabel } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
@@ -94,6 +94,19 @@ function describe(entry) {
       return { text: ev.act ? t('log.act_ended_n', { act: ev.act }) : t('log.act_ended') }
     case 'action_performed':
       return { text: t('log.action_performed', { actor, action: rules.name(ev.action) }) }
+    case 'item_added':
+      return { text: t('log.item_added', { actor, item: itemName(ev, rules), count: ev.count }) }
+    case 'item_moved':
+      return {
+        text: t('log.item_moved', {
+          actor,
+          item: itemName(ev, rules),
+          count: ev.count,
+          to: destinationLabel(ev.to, t, team.characterNames),
+        }),
+      }
+    case 'item_used_up':
+      return { text: t('log.item_used_up', { actor, item: itemName(ev, rules) }) }
     case 'trauma_check':
       return { dice: ev.dice, text: ev.trauma ? t('log.trauma', { actor, trauma: rules.name(ev.trauma) }) : t('log.no_trauma', { actor }) }
     default:
