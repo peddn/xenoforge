@@ -708,6 +708,26 @@ async fn event_stream_replays_the_log() {
     }
     assert!(text.contains("id: 1"), "{text}");
 
+    // A booking stays hidden; the player only hears to load again (A-15).
+    let (status, _) = gm
+        .command(
+            team,
+            json!({ "command": "book", "actor": character.to_string(), "amount": 500, "note": "Lohn" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    while !text.contains("event: refresh") {
+        let frame = tokio::time::timeout(Duration::from_secs(2), body.frame())
+            .await
+            .expect("the signal arrives")
+            .unwrap()
+            .unwrap();
+        if let Some(data) = frame.data_ref() {
+            text.push_str(std::str::from_utf8(data).unwrap());
+        }
+    }
+    assert!(!text.contains("booked") && !text.contains("Lohn"), "{text}");
+
     // When a character leaves, the stream ends after telling so.
     gm.ok(
         "DELETE",
@@ -840,6 +860,11 @@ async fn creation_wizard() {
     assert_eq!(
         done["data"]["start_cash"],
         json!({ "dice": [4], "amount": 400 })
+    );
+    // The starting cash opens the account [p. 33].
+    assert_eq!(
+        done["data"]["actor"]["ledger"],
+        json!([{ "amount": 40000, "reason": { "kind": "start" } }])
     );
     // A cutting torch and D6 doses of Hydr8tion, rolled now (F-60).
     assert_eq!(
@@ -1240,6 +1265,62 @@ async fn talent_action_with_target() {
     );
 }
 
+/// Money: the game master books and sells; players see their own balance,
+/// not the bookings in the log (A-15, F-76).
+#[tokio::test]
+async fn money() {
+    let server = server("money").await;
+    let (mut gm, mut player, team, character) = table(&server).await;
+    let actor = character.to_string();
+    let book = json!({ "command": "book", "actor": actor, "amount": 50000, "note": "Prämie" });
+    let (status, _) = player.command(team, book.clone()).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, entries) = gm.command(team, book).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(events_of(&entries)[0]["balance"], 50000);
+    let buy =
+        json!({ "command": "buy_item", "actor": actor, "item": { "item": "m4a3_service_pistol" } });
+    let (status, _) = player.command(team, buy.clone()).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    gm.command(team, buy).await;
+    gm.command(
+        team,
+        json!({ "command": "buy_reloads", "actor": actor, "uid": 0, "count": 2 }),
+    )
+    .await;
+    let (status, _) = gm
+        .command(
+            team,
+            json!({ "command": "buy_item", "actor": actor, "item": { "item": "armat_m41a_pulse_rifle" } }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "$800 > $280");
+    let long = "x".repeat(201);
+    let (status, _) = gm
+        .command(
+            team,
+            json!({ "command": "book", "actor": actor, "amount": 100, "note": long }),
+        )
+        .await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "a reason as long as a note"
+    );
+
+    let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let me = &view["characters"][0]["actor"];
+    assert_eq!(me["ledger"].as_array().unwrap().len(), 3);
+    assert_eq!(me["items"][0]["reloads"], 2);
+    // Bookings in the log are the game master's (A-15).
+    let visible: Vec<String> =
+        sqlx::query_scalar("SELECT visible_to FROM events WHERE payload LIKE '%\"booked\"%'")
+            .fetch_all(&server.state.pool)
+            .await
+            .unwrap();
+    assert_eq!(visible, ["gm", "gm", "gm"]);
+}
+
 /// A correction from a form opened before something happened is refused,
 /// so it undoes nothing unseen; one from the current values goes through.
 #[tokio::test]
@@ -1290,6 +1371,33 @@ async fn outdated_corrections_are_refused() {
     assert_eq!(view["characters"][0]["actor"]["stress"], 3);
     assert_eq!(
         view["characters"][0]["actor"]["sources"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+
+    // Money changes through bookings only; one in between is no conflict.
+    let opened = view["characters"][0]["actor"].clone();
+    let (status, _) = gm
+        .command(
+            team,
+            json!({ "command": "book", "actor": actor, "amount": 100, "note": "Trinkgeld" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    let mut changed = opened.clone();
+    changed["stress"] = json!(2);
+    gm.ok(
+        "PUT",
+        &path,
+        Some(json!({ "actor": changed, "base": opened })),
+    )
+    .await;
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(view["characters"][0]["actor"]["stress"], 2);
+    assert_eq!(
+        view["characters"][0]["actor"]["ledger"]
             .as_array()
             .unwrap()
             .len(),

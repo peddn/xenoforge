@@ -11,6 +11,7 @@ pub mod data;
 pub mod dice;
 pub mod engine;
 pub mod inventory;
+pub mod money;
 pub mod panic;
 pub mod roll;
 pub mod state;

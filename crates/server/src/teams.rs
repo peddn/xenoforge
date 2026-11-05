@@ -215,6 +215,10 @@ async fn view(
                     actor.android = false;
                     actor.covert = false;
                 }
+                // Money only for the owner and the game master (A-15).
+                if !own {
+                    actor.ledger.clear();
+                }
                 actor
             }),
             sheet: sees.then(|| {

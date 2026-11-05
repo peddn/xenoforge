@@ -9,7 +9,7 @@ import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import XStatus from '@/ui/XStatus.vue'
 import { put } from '@/api'
-import { originLabel } from '@/labels'
+import { originLabel, parseMoney } from '@/labels'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
@@ -20,7 +20,7 @@ import { useTeamStore } from '@/stores/team'
 // rival among the other characters (F-52) and can leave the team with the
 // character.
 const props = defineProps({ character: { type: Object, required: true } })
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const rules = useRulesStore()
 const team = useTeamStore()
 
@@ -123,6 +123,24 @@ async function supplyRoll(supply) {
   }
 }
 
+// A booking by the game master: wages, a reward, an expense, a loan (F-76).
+const amount = ref('')
+const reason = ref('')
+const cents = computed(() => parseMoney(amount.value, locale.value))
+const amountBad = computed(() => cents.value !== null && !Number.isFinite(cents.value))
+const canBook = computed(() => !!cents.value && !amountBad.value && !!reason.value.trim())
+async function book() {
+  error.value = ''
+  if (!canBook.value) return
+  try {
+    await team.command({ command: 'book', actor: String(props.character.id), amount: cents.value, note: reason.value })
+    amount.value = ''
+    reason.value = ''
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 async function leave() {
   error.value = ''
   try {
@@ -178,6 +196,8 @@ async function leave() {
         :gear-add="team.view.is_gm"
         :gear-use="own || team.view.is_gm"
         :gear-refill="team.view.is_gm"
+        :gear-buy="team.view.is_gm"
+        :money="own || team.view.is_gm"
         :others="others"
         :send-item="item"
       />
@@ -276,6 +296,40 @@ async function leave() {
       >
         {{ t('gm.correct') }}
       </XButton>
+      <span
+        v-if="!editing"
+        class="flex flex-wrap items-end gap-2"
+        data-test="booking"
+      >
+        <XField :label="t('money.amount')">
+          <input
+            v-model="amount"
+            class="w-28"
+            :aria-invalid="amountBad"
+            data-test="booking-amount"
+          >
+        </XField>
+        <XField :label="t('money.reason')">
+          <input
+            v-model="reason"
+            maxlength="100"
+            data-test="booking-reason"
+          >
+        </XField>
+        <XButton
+          :disabled="!canBook"
+          data-test="booking-go"
+          @click="book"
+        >
+          {{ t('money.book') }}
+        </XButton>
+        <XStatus
+          v-if="amountBad"
+          tone="warn"
+          :text="t('money.invalid')"
+          data-test="booking-invalid"
+        />
+      </span>
       <span
         v-if="!editing && supplyRolls.length"
         class="flex flex-wrap items-center gap-2"

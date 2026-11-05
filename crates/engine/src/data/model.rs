@@ -150,6 +150,8 @@ pub enum ItemCategory {
     Pharmaceutical,
     Food,
     Vehicle,
+    /// Missiles for vehicle weapons, sold one by one [p. 147].
+    Ammunition,
     /// Items of the career lists without stats in chapter 6 (F-64).
     Other,
 }

@@ -23,7 +23,7 @@ use xenoforge_engine::state::{Actor, ActorKind, GameState, Mode, Supply};
 
 use crate::auth::{Role, User};
 use crate::error::{ApiError, ApiResult};
-use crate::{AppState, begin_write, now};
+use crate::{AppState, begin_write, game, now};
 
 /// How a character came about (A-09).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -163,7 +163,7 @@ pub async fn save(tx: &mut Transaction<'_, Sqlite>, character: &Character) -> Ap
 }
 
 /// The longest name, in characters.
-const NAME_MAX: usize = 60;
+pub const NAME_MAX: usize = 60;
 
 fn check_name(name: &str) -> ApiResult<String> {
     let name = name.trim();
@@ -428,13 +428,10 @@ async fn items(
     }
     let key = character.id.to_string();
     let command = match body {
-        ItemCommand::AddItem { item } => {
-            check_texts(&[item.name.as_deref().unwrap_or_default()])?;
-            Command::AddItem {
-                actor: key.clone(),
-                item,
-            }
-        }
+        ItemCommand::AddItem { item } => Command::AddItem {
+            actor: key.clone(),
+            item,
+        },
         ItemCommand::MoveItem {
             to: Destination::Character(_),
             ..
@@ -448,6 +445,7 @@ async fn items(
             count,
         },
     };
+    game::check_texts(&command)?;
     let mut game = GameState::new(Mode::Campaign);
     game.actors
         .insert(key.clone(), character.data.actor.clone());
@@ -575,6 +573,10 @@ async fn finish(
                 .roll_start_gear(&mut actor, &draft, &mut **dice),
         )
     };
+    // The starting cash is the first booking [p. 33].
+    if let Some(cash) = &start_cash {
+        xenoforge_engine::money::open_account(&mut actor, cash);
+    }
     character.name = check_name(&draft.name)?;
     character.data = CharacterData {
         status: Status::Finished,

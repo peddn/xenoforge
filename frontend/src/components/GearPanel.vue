@@ -6,7 +6,7 @@ import XButton from '@/ui/XButton.vue'
 import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import XStatus from '@/ui/XStatus.vue'
-import { itemName, quarters, weightText } from '@/labels'
+import { itemName, moneyText, parseMoney, quarters, weightText } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 
 // What a character has [p. 33–34]: the items and where they are, and the
@@ -25,12 +25,14 @@ const props = defineProps({
   canAdd: { type: Boolean, default: false },
   canUse: { type: Boolean, default: false },
   canRefill: { type: Boolean, default: false },
+  // The game master sells gear and reloads (F-76).
+  canBuy: { type: Boolean, default: false },
   // Other characters to hand items to: { id, name }.
   others: { type: Array, default: () => [] },
   // async (command) => true when the server took it.
   send: { type: Function, default: async () => false },
 })
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const rules = useRulesStore()
 
 const PLACES = ['worn', 'carried', 'stowed']
@@ -112,6 +114,18 @@ const name = ref('')
 const weight = ref('1')
 const count = ref(1)
 const reloads = ref(0)
+// Buying instead of giving. The price is for all of it, spare reloads
+// included; empty means the catalog's, which the server counts [p. 118, 124].
+const buying = ref(false)
+const price = ref('')
+const catalogPrice = computed(() => {
+  const cost = pickedEntry.value?.cost
+  if (!cost) return t('money.noPrice')
+  const range = cost.up_to_cents ? `–${moneyText(cost.up_to_cents, locale.value)}` : ''
+  return t('money.catalog', { price: `${moneyText(cost.cents, locale.value)}${range}` })
+})
+const priceCents = computed(() => parseMoney(price.value, locale.value))
+const priceBad = computed(() => buying.value && props.canBuy && priceCents.value !== null && !(priceCents.value >= 0))
 const place = ref('carried')
 const WEIGHTS = ['0', '1/4', '1/2', '1', '2', '3', '4']
 const matches = computed(() => {
@@ -123,7 +137,7 @@ const matches = computed(() => {
     .slice(0, 8)
 })
 const pickedEntry = computed(() => (picked.value ? rules.entry('gear', picked.value) : null))
-const canAddNow = computed(() => (free.value ? !!name.value.trim() : !!picked.value))
+const canAddNow = computed(() => (free.value ? !!name.value.trim() : !!picked.value) && !priceBad.value)
 
 async function add() {
   const item = free.value ? { name: name.value.trim(), weight: weight.value } : { item: picked.value }
@@ -133,7 +147,11 @@ async function add() {
   const spare = Math.max(0, Math.trunc(Number(reloads.value) || 0))
   if (!free.value && pickedEntry.value?.weapon?.reloads && spare) item.reloads = spare
   // The form stays filled if the server refuses, e.g. as too heavy.
-  if (!(await props.send({ command: 'add_item', item }))) return
+  const command = buying.value && props.canBuy
+    ? { command: 'buy_item', item, ...(priceCents.value !== null ? { price: priceCents.value } : {}) }
+    : { command: 'add_item', item }
+  if (!(await props.send(command))) return
+  price.value = ''
   picked.value = null
   search.value = ''
   name.value = ''
@@ -180,7 +198,7 @@ function pick(id) {
         </span>
         <span class="text-sm text-dim">{{ details(p) }}</span>
         <span
-          v-if="canMove || canUse || canRefill"
+          v-if="canMove || canUse || canRefill || canBuy"
           class="flex flex-wrap items-center gap-2"
         >
           <XButton
@@ -198,6 +216,14 @@ function pick(id) {
             @click="send({ command: 'refill_item', uid: p.uid })"
           >
             {{ t('gear.refill') }}
+          </XButton>
+          <XButton
+            v-if="canBuy && entry(p)?.weapon?.reloads"
+            size="small"
+            :data-test="`buy-reload-${p.uid}`"
+            @click="send({ command: 'buy_reloads', uid: p.uid, count: 1 })"
+          >
+            {{ t('money.buyReload') }}
           </XButton>
           <template v-if="canMove">
             <input
@@ -358,8 +384,45 @@ function pick(id) {
           data-test="add-go"
           @click="add"
         >
-          {{ t('gear.addGo') }}
+          {{ t(buying && canBuy ? 'money.buy' : 'gear.addGo') }}
         </XButton>
+      </div>
+      <div
+        v-if="canBuy"
+        class="flex flex-wrap items-end gap-2"
+      >
+        <label class="flex items-center gap-2">
+          <input
+            v-model="buying"
+            type="checkbox"
+            data-test="buying"
+          >
+          {{ t('money.sell') }}
+        </label>
+        <XField
+          v-if="buying"
+          :label="t('money.price')"
+        >
+          <input
+            v-model="price"
+            inputmode="decimal"
+            class="w-28"
+            :aria-invalid="priceBad"
+            data-test="price"
+          >
+        </XField>
+        <XStatus
+          v-if="priceBad"
+          tone="warn"
+          :text="t('money.invalid')"
+          data-test="price-invalid"
+        />
+        <span
+          v-if="buying && !free"
+          class="text-sm text-dim"
+          data-test="catalog-price"
+        >{{ catalogPrice }}<template v-if="pickedEntry?.weapon?.reloads && Number(reloads) > 0">
+          · {{ t('money.reloadShare', { percent: rules.constant('reload_cost_percent') }) }}</template></span>
       </div>
     </fieldset>
   </div>

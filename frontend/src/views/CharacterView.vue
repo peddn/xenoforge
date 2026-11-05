@@ -176,6 +176,7 @@ async function remove() {
       :start-cash="character.data.start_cash"
       :start-gear="character.data.start_gear ?? []"
       :encumbrance="character.encumbrance"
+      money
       :texts="false"
     />
     <div class="flex flex-wrap items-center gap-2">

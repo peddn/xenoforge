@@ -34,6 +34,7 @@ pub const REQUIRED_CONSTANTS: &[&str] = &[
     "help_max",
     "panic_effect_from",
     "shifts_per_day",
+    "reload_cost_percent",
     "start_gear_items",
     "start_reloads",
     "story_points_max",

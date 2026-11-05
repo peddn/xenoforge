@@ -775,6 +775,11 @@
           ]
         },
         {
+          "description": "Missiles for vehicle weapons, sold one by one [p. 147].",
+          "type": "string",
+          "const": "ammunition"
+        },
+        {
           "description": "Items of the career lists without stats in chapter 6 (F-64).",
           "type": "string",
           "const": "other"

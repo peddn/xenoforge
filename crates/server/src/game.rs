@@ -255,6 +255,24 @@ fn check_permission(
     }
 }
 
+/// Free text in a command: an item's name as long as a character's, the
+/// reason for a booking as long as a note.
+pub fn check_texts(command: &Command) -> ApiResult<()> {
+    let (text, max) = match command {
+        Command::AddItem { item, .. } | Command::BuyItem { item, .. } => {
+            (item.name.as_deref(), characters::NAME_MAX)
+        }
+        Command::Book { note, .. } => (Some(note.as_str()), log::NOTE_MAX),
+        _ => return Ok(()),
+    };
+    if text.is_some_and(|t| t.trim().chars().count() > max) {
+        return Err(ApiError::bad_request(format!(
+            "that text has at most {max} characters"
+        )));
+    }
+    Ok(())
+}
+
 /// What a roll may bring along (A-08): a difficulty from the table on
 /// p. 63 and a free gear bonus up to `gear_bonus_max`, each at most once.
 /// Both are the game master's: players choose their items instead (F-59).
@@ -333,6 +351,7 @@ async fn command(
     let team = load_team(&state.pool, id).await?;
     let is_gm = access(&state.pool, &team, &user).await?;
     let note = log::note(body.note)?;
+    check_texts(&body.command)?;
     if let Command::Roll { request } = &body.command {
         check_roll(&state.engine, request, is_gm)?;
     }
@@ -502,6 +521,8 @@ pub async fn correct(
     actor.items = character.data.actor.items.clone();
     actor.next_item = character.data.actor.next_item;
     actor.doses = character.data.actor.doses.clone();
+    // Money changes only through bookings (F-76).
+    actor.ledger = character.data.actor.ledger.clone();
     actor
         .supplies
         .retain(|s, _| matches!(s, Supply::Food | Supply::Water));
@@ -520,13 +541,15 @@ pub async fn correct(
     Ok(Json(stored))
 }
 
-/// The values a correction overwrites are the same; items and the count
-/// of doses are left out, since a correction keeps them anyway.
+/// The values a correction overwrites are the same; items, the count of
+/// doses and the bookings are left out, since a correction keeps them
+/// anyway.
 fn same_values(base: &Actor, now: &Actor) -> bool {
     let mut base = base.clone();
     base.items.clone_from(&now.items);
     base.next_item = now.next_item;
     base.doses.clone_from(&now.doses);
+    base.ledger.clone_from(&now.ledger);
     base == *now
 }
 

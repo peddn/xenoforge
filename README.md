@@ -2,7 +2,7 @@
 
 Begleit-App für das ALIEN-Rollenspiel (Free League, Grundregelwerk 1. Auflage). Spielleitung und Spieler verwalten Charaktere, würfeln per Klick, führen Kämpfe, bauen Schiffe, spielen Raumkämpfe und lassen die Spielzeit mitlaufen. Karte und Figuren bleiben auf dem Tisch.
 
-**Stand:** Phase 2, Spieltisch: Konten mit Rolle, Teams mit Einladungslink, Würfe per Klick mit Push und Entscheidungen, Werkzeuge der Spielleitung und ein gemeinsames Protokoll in Echtzeit; Charaktererschaffung mit Assistent, vorgefertigte Charaktere für Cinematic, Ausrüstung mit Traglast, Boni im Wurf, Benutzen von Medikamenten, Essen und Geräten. Die Regel-Engine (Phase 1) rechnet Würfe, Stress, Panik und Effekte. Als Nächstes: Geld und Kauf (2c.3).
+**Stand:** Phase 2, Spieltisch: Konten mit Rolle, Teams mit Einladungslink, Würfe per Klick mit Push und Entscheidungen, Werkzeuge der Spielleitung und ein gemeinsames Protokoll in Echtzeit; Charaktererschaffung mit Assistent, vorgefertigte Charaktere für Cinematic, Ausrüstung mit Traglast, Boni im Wurf, Benutzen von Medikamenten, Essen und Geräten, Geld mit Buchungen und Kauf. Die Regel-Engine (Phase 1) rechnet Würfe, Stress, Panik und Effekte. Als Nächstes: Testsitzung zum Abschluss von Phase 2, dann Kampf und Gegner (Phase 3).
 
 - [Projektplan](docs/PLAN.md)
 - [Regel-Spezifikation mit Seitenangaben](docs/rules/)

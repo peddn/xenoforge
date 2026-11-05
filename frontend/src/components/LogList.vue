@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import XDie from '@/ui/XDie.vue'
 import XStatus from '@/ui/XStatus.vue'
-import { choiceLabel, destinationLabel, itemName, modsText, originLabel } from '@/labels'
+import { bookingReason, choiceLabel, destinationLabel, itemName, modsText, moneyText, originLabel } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
@@ -125,6 +125,17 @@ function describe(entry) {
       const params = { actor, supply: t(`supply.${ev.supply}`), item: ev.item ? rules.name(ev.item) : '', from: ev.from, to: ev.to }
       return { dice: ev.dice, text: t(ev.item ? 'log.supply_rolled_item' : 'log.supply_rolled', params) }
     }
+    case 'booked':
+      return {
+        text: t('log.booked', {
+          actor,
+          amount: `${ev.booking.amount > 0 ? '+' : ''}${moneyText(ev.booking.amount, locale.value)}`,
+          reason: bookingReason(ev.booking.reason, t, rules),
+          balance: moneyText(ev.balance, locale.value),
+        }),
+      }
+    case 'reloads_added':
+      return { text: t('log.reloads_added', { actor, item: rules.name(ev.item), count: ev.count }) }
     case 'item_used_up':
       return { text: t('log.item_used_up', { actor, item: itemName(ev, rules) }) }
     case 'trauma_check':

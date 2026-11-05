@@ -38,6 +38,9 @@ let events = engine.apply(&mut state, Command::Roll { request }, &mut dice)?;
 | `move_item` | Gegenstand mitnehmen, anziehen (nur Anzüge, einer auf einmal), verstauen, ablegen oder einem anderen Charakter geben, wahlweise nur einen Teil des Stapels | 33–34, 98 |
 | `use_item` | Gegenstand zur Hand benutzen: Dosis, Essen, Getränk oder Gerät mit Energie | 34, 134–139 |
 | `refill_item` | Gerät aufladen oder Luft im Anzug auffüllen, voll oder auf einen Wert | F-75 |
+| `book` | Geld buchen: Lohn, Belohnung, Ausgabe, Kredit, in Cent mit Grund; nie unter null | F-76 |
+| `buy_item` | Gegenstand verkaufen: Katalogpreis je Stück (bei Spannen der untere Wert) und je Ersatzmagazin, oder ein eigener Gesamtpreis; dann wie `add_item` | 118, 124, F-76 |
+| `buy_reloads` | Magazine für eine Schusswaffe verkaufen, je etwa 5 % der Waffe oder ein eigener Gesamtpreis; höchstens 255 an einer Waffe | 124, F-61 |
 
 ## Ablauf einer Fertigkeitsprobe
 
@@ -63,6 +66,10 @@ Jeder Charakter hat eine Liste von Gegenständen (`Possession`) mit fester Numme
 - **Benutzen** (`use_item`, nur was dabei oder angezogen ist): Bei Medikamenten, Essen und Trinken ist eins vom Stapel weg, außer der Schnapsflasche (F-73). Dann laufen die Operationen aus `on_use` (Stress, Food oder Water, Sperren, Hinweise), und die Effekte werden zu Quellen mit Dauer (`used`), die sich addieren; Naproleve zählt die Dosen einer Schicht (F-74). Der Zähler beginnt mit jedem Schicht-Schritt neu.
 - **Energie und Luft** (F-75): Ein Gerät mit Energie verlangt nach jedem Benutzen einen Power-Wurf, ebenso nach einer Probe, in der es angekreuzt war (nicht bei abgebrochener Probe). Mit 0 gibt es keinen Bonus und kein Benutzen, bis `refill_item` es auflädt; wurde ein Gerät geleert, während seine Probe noch auf den Push wartete, entfällt der Wurf danach. Der Air-Wurf (`supply: air`) geht auf den angezogenen Anzug; Power am Charakter gibt es nicht. Am Charakter bleiben Food und Water. Androiden würfeln keine Vorräte, denn sie brauchen weder Luft noch Nahrung noch Wasser [S. 111].
 - **Broken** (Health 0): kein Benutzen und keine Talentaktion, nur kriechen und murmeln [S. 98].
+
+## Geld
+
+Jeder Charakter hat eine Buchungsliste in Cent (`ledger`); der Kontostand ist ihre Summe (`money::balance`). Die erste Buchung ist das gewürfelte Startgeld (`money::open_account`) [S. 33]. Buchungen, Käufe und Magazine ziehen nie unter null; einen Kredit bucht die Spielleitung als eigene Buchung (F-76). Abgelehnte Käufe buchen nichts. Preise kommen aus `gear.json` (`Engine::price`, `reload_price` mit `reload_cost_percent` aus `constants.json`) [S. 118, 124]. Nennt die Spielleitung einen Preis, gilt er für den ganzen Kauf: alle Stücke und die Ersatzmagazine einer Schusswaffe. Ohne Preis zählt die Engine Katalogpreis mal Anzahl plus Magazinpreis mal Magazine; der Kauf vermerkt die Magazine (`Reason::Purchase.reloads`). Beträge, die nicht in die Zahlen passen, lehnt sie ab.
 
 ## Talente als Aktion
 
