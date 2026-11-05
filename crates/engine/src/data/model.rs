@@ -106,6 +106,30 @@ pub struct Item {
     /// (F-68) [p. 136].
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub single_use: bool,
+    /// What using it does, e.g. a dose of Naproleve or a beer
+    /// [p. 136–139].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub on_use: Option<ItemUse>,
+}
+
+/// Using an item: one of the stack is gone, then its operations happen
+/// and its effects last a while.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ItemUse {
+    /// One-off: stress, Food or Water, blocks, notes.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ops: Vec<Op>,
+    /// Modifiers for a while; each says how long (F-74).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub effects: Vec<Effect>,
+    /// The effects only from this dose on within one Shift, e.g. 2 for
+    /// Naproleve [p. 137].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_dose: Option<u8>,
+    /// Stays after use, e.g. a bottle of liquor drunk by the glass (F-73).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub keep: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

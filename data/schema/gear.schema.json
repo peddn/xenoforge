@@ -180,6 +180,14 @@
         "deep_space"
       ]
     },
+    "Consumable": {
+      "description": "Consumables a character keeps themselves; air and power are in the\nsuit and the device (F-75) [p. 34].",
+      "type": "string",
+      "enum": [
+        "food",
+        "water"
+      ]
+    },
     "Effect": {
       "description": "A continuous effect (plan section 4.4).",
       "oneOf": [
@@ -663,6 +671,17 @@
         "id": {
           "type": "string"
         },
+        "on_use": {
+          "description": "What using it does, e.g. a dose of Naproleve or a beer\n[p. 136–139].",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ItemUse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "page": {
           "type": "integer",
           "format": "uint16",
@@ -780,6 +799,41 @@
         "kind",
         "max"
       ]
+    },
+    "ItemUse": {
+      "description": "Using an item: one of the stack is gone, then its operations happen\nand its effects last a while.",
+      "type": "object",
+      "properties": {
+        "effects": {
+          "description": "Modifiers for a while; each says how long (F-74).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Effect"
+          }
+        },
+        "from_dose": {
+          "description": "The effects only from this dose on within one Shift, e.g. 2 for\nNaproleve [p. 137].",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "keep": {
+          "description": "Stays after use, e.g. a bottle of liquor drunk by the glass (F-73).",
+          "type": "boolean"
+        },
+        "ops": {
+          "description": "One-off: stress, Food or Water, blocks, notes.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Op"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "Lasts": {
       "description": "How long an effect lasts.",
@@ -924,6 +978,45 @@
           "additionalProperties": false,
           "required": [
             "op",
+            "delta"
+          ]
+        },
+        {
+          "description": "Sets the STRESS LEVEL to zero, e.g. Naproleve [p. 137].",
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "clear_stress"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op"
+          ]
+        },
+        {
+          "description": "Changes the Food or Water Supply, e.g. a prefab meal [p. 137].",
+          "type": "object",
+          "properties": {
+            "delta": {
+              "type": "integer",
+              "format": "int8",
+              "maximum": 127,
+              "minimum": -128
+            },
+            "op": {
+              "type": "string",
+              "const": "supply"
+            },
+            "supply": {
+              "$ref": "#/$defs/Consumable"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "supply",
             "delta"
           ]
         },

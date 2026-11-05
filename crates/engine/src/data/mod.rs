@@ -59,7 +59,21 @@ macro_rules! effect_entry {
         }
     )*};
 }
-effect_entry!(Condition, Talent, ShipSystem, Item);
+effect_entry!(Condition, Talent, ShipSystem);
+
+impl Entry for Item {
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn pages(&self) -> Vec<Page> {
+        vec![self.page]
+    }
+    /// Its own effects and those of using it.
+    fn effects(&self) -> Vec<&Effect> {
+        let used = self.on_use.iter().flat_map(|u| &u.effects);
+        self.effects.iter().chain(used).collect()
+    }
+}
 
 /// Effects of an entry plus those of its ruling alternatives.
 fn with_alternatives<'a>(

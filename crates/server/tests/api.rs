@@ -957,6 +957,42 @@ async fn gear_in_play() {
         )
         .await;
     assert_eq!(status, StatusCode::FORBIDDEN, "not Burke's character");
+
+    // Using: the owner uses a drink; refilling is the game master's (F-75).
+    gm.command(team, add(json!({ "item": "beer" }))).await;
+    gm.command(team, add(json!({ "item": "m314_motion_tracker" })))
+        .await;
+    let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let items = view["characters"][0]["actor"]["items"]
+        .as_array()
+        .unwrap()
+        .clone();
+    let uid = |id: &str| items.iter().find(|p| p["item"] == id).unwrap()["uid"].clone();
+    let (status, entries) = player
+        .command(
+            team,
+            json!({ "command": "use_item", "actor": actor, "uid": uid("beer") }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        events_of(&entries)
+            .iter()
+            .any(|e| e["event"] == "item_used")
+    );
+    let (status, _) = other
+        .command(
+            team,
+            json!({ "command": "use_item", "actor": actor, "uid": uid("m314_motion_tracker") }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let refill =
+        json!({ "command": "refill_item", "actor": actor, "uid": uid("m314_motion_tracker") });
+    let (status, _) = player.command(team, refill.clone()).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, _) = gm.command(team, refill).await;
+    assert_eq!(status, StatusCode::OK);
 }
 
 /// Outside a team only free characters of a game master get items, through

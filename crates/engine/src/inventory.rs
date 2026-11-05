@@ -14,9 +14,9 @@ use serde::{Deserialize, Serialize};
 use crate::active::{Modification, RollMatch, matches_roll};
 use crate::data::Id;
 use crate::data::effects::{ActorStat, Change, Effect, Gear, Modified};
-use crate::data::model::{Item, Weight};
-use crate::engine::{Ctx, Engine, Event, Result, RuleError};
-use crate::state::{Actor, ActorId, Place, Possession, Supply};
+use crate::data::model::{Item, SupplyKind, Weight};
+use crate::engine::{Ctx, Engine, Event, OpFlags, Result, RuleError};
+use crate::state::{Actor, ActorId, Origin, Place, Possession, Supply};
 
 /// Encumbrance in quarters of a regular item [p. 34].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -157,8 +157,9 @@ impl Engine {
             return None;
         }
         let item = self.item(possession.item.as_deref()?)?;
-        // A suit helps only while worn, by itself.
-        if item.armor.is_some() {
+        // A suit helps only while worn, by itself; an empty device not at
+        // all (F-75).
+        if item.armor.is_some() || possession.supply == Some(0) {
             return None;
         }
         let mut value: i8 = 0;
@@ -256,6 +257,24 @@ impl Engine {
             return Err(RuleError::NotAllowed("one weapon per roll (F-59)".into()));
         }
         Ok(out)
+    }
+
+    /// The chosen items that run on power: each needs a Power Supply roll
+    /// after the roll (F-75) [p. 34].
+    pub(crate) fn powered(&self, actor: &Actor, uids: &[u32]) -> Vec<u32> {
+        actor
+            .items
+            .iter()
+            .filter(|p| uids.contains(&p.uid))
+            .filter(|p| {
+                p.item
+                    .as_deref()
+                    .and_then(|id| self.item(id))
+                    .and_then(|i| i.supply)
+                    .is_some_and(|s| s.kind == SupplyKind::Power)
+            })
+            .map(|p| p.uid)
+            .collect()
     }
 
     /// The chosen items that are used up by the roll (F-68).
@@ -430,6 +449,17 @@ fn settle(engine: &Engine, actor: &mut Actor, uid: u32) -> u32 {
     stack.uid
 }
 
+/// One of a stack is gone; the last one takes the stack with it.
+fn remove_one(actor: &mut Actor, uid: u32) {
+    if let Some(index) = actor.items.iter().position(|p| p.uid == uid) {
+        if actor.items[index].count > 1 {
+            actor.items[index].count -= 1;
+        } else {
+            actor.items.remove(index);
+        }
+    }
+}
+
 /// One suit at a time: the worn one is carried again [p. 98].
 fn take_off(engine: &Engine, actor: &mut Actor) {
     let worn: Vec<u32> = actor
@@ -447,6 +477,109 @@ fn take_off(engine: &Engine, actor: &mut Actor) {
 }
 
 impl Ctx<'_> {
+    /// Uses an item at hand [p. 34, 136–139]. A dose, meal or drink: one
+    /// of the stack is gone (a bottle of liquor stays, F-73), its
+    /// operations happen and its effects last a while, some only from the
+    /// second dose in a Shift (F-74). A device with power: its Power
+    /// Supply roll follows (F-75).
+    pub(crate) fn use_item(&mut self, actor: &str, uid: u32) -> Result<()> {
+        let engine = self.engine;
+        let a = self.actor_mut(actor)?;
+        let possession = a
+            .items
+            .iter()
+            .find(|p| p.uid == uid)
+            .cloned()
+            .ok_or_else(|| RuleError::NotAllowed(format!("no item {uid}")))?;
+        if possession.place == Place::Stowed {
+            return Err(RuleError::NotAllowed(format!(
+                "item {uid} is stowed, not at hand [p. 33]"
+            )));
+        }
+        let id = possession
+            .item
+            .clone()
+            .ok_or_else(|| RuleError::NotAllowed("a free item does nothing by itself".into()))?;
+        let item = engine
+            .item(&id)
+            .ok_or_else(|| RuleError::UnknownEntry(id.clone()))?;
+        if let Some(on_use) = &item.on_use {
+            let doses = a.doses.entry(id.clone()).or_default();
+            *doses = doses.saturating_add(1);
+            let dose = *doses;
+            if !on_use.keep {
+                remove_one(a, uid);
+            }
+            self.emit(Event::ItemUsed {
+                actor: actor.to_owned(),
+                uid,
+                item: id.clone(),
+            });
+            if !on_use.ops.is_empty() {
+                self.run_ops(actor, &id, &on_use.ops, OpFlags::default())?;
+            }
+            if on_use.from_dose.is_none_or(|from| dose >= from) {
+                for (index, effect) in on_use.effects.iter().enumerate() {
+                    let Some(ends) = effect.common().1.and_then(|l| engine.ending(l)) else {
+                        continue;
+                    };
+                    let origin = Origin::Used {
+                        item: id.clone(),
+                        index,
+                    };
+                    self.add_source(actor, origin, ends)?;
+                }
+            }
+            return Ok(());
+        }
+        let powered = item.supply.is_some_and(|s| s.kind == SupplyKind::Power);
+        if !powered {
+            return Err(RuleError::NotAllowed(format!(
+                "\"{id}\" is not used by itself; choose it for a roll"
+            )));
+        }
+        self.emit(Event::ItemUsed {
+            actor: actor.to_owned(),
+            uid,
+            item: id,
+        });
+        self.item_supply_roll(actor, uid)
+    }
+
+    /// Recharges a device or refills a suit's air, to full unless a value
+    /// is given (F-75).
+    pub(crate) fn refill_item(&mut self, actor: &str, uid: u32, supply: Option<u8>) -> Result<()> {
+        let engine = self.engine;
+        let p = self
+            .actor_mut(actor)?
+            .items
+            .iter_mut()
+            .find(|p| p.uid == uid)
+            .ok_or_else(|| RuleError::NotAllowed(format!("no item {uid}")))?;
+        let id = p.item.clone().unwrap_or_default();
+        let max = engine
+            .item(&id)
+            .and_then(|i| i.supply)
+            .map(|s| s.max)
+            .ok_or_else(|| RuleError::NotAllowed(format!("item {uid} holds no air or power")))?;
+        let to = supply.unwrap_or(max);
+        if to > max {
+            return Err(RuleError::NotAllowed(format!(
+                "item {uid} holds at most {max}"
+            )));
+        }
+        let from = p.supply.unwrap_or(max);
+        p.supply = Some(to);
+        self.emit(Event::ItemRefilled {
+            actor: actor.to_owned(),
+            uid,
+            item: id,
+            from,
+            to,
+        });
+        Ok(())
+    }
+
     /// One of the item is gone: a single-use item after its roll (F-68).
     pub(crate) fn use_up(&mut self, actor: &str, uid: u32) -> Result<()> {
         let a = self.actor_mut(actor)?;
@@ -454,11 +587,7 @@ impl Ctx<'_> {
             return Ok(());
         };
         let item = a.items[index].item.clone();
-        if a.items[index].count > 1 {
-            a.items[index].count -= 1;
-        } else {
-            a.items.remove(index);
-        }
+        remove_one(a, uid);
         self.emit(Event::ItemUsedUp {
             actor: actor.to_owned(),
             uid,

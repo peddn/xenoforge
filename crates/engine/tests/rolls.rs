@@ -428,12 +428,12 @@ fn attribute_roll() {
 /// rating; no panic (F-40) [p. 34].
 #[test]
 fn supply_roll() {
-    let mut t = Table::new(Mode::Campaign).with("a", pc().supply(Supply::Air, 8).stress(4));
+    let mut t = Table::new(Mode::Campaign).with("a", pc().supply(Supply::Food, 8).stress(4));
     let ev = t.roll(
         RollRequest::new(
             "a",
             RollKind::Supply {
-                supply: Supply::Air,
+                supply: Supply::Food,
             },
         ),
         &[1, 1, 2, 3, 4, 5],
@@ -445,35 +445,64 @@ fn supply_roll() {
     assert!(!has(&ev, |e| matches!(e, Event::PanicRolled { .. })));
 }
 
-/// Calm Breather: two dice fewer, at least one (F-09 default and
-/// alternative) [p. 78].
+/// Light Eater and Calm Breather: two dice fewer, at least one (F-09
+/// default and alternative) [p. 78]. Air is the worn suit's (F-75).
 #[test]
 fn calm_breather_and_ruling_f09() {
-    let air = |t: &mut Table, faces: &[u8]| {
-        t.roll(
-            RollRequest::new(
-                "a",
-                RollKind::Supply {
-                    supply: Supply::Air,
-                },
-            ),
-            faces,
-        )
+    let roll = |t: &mut Table, supply: Supply, faces: &[u8]| {
+        t.roll(RollRequest::new("a", RollKind::Supply { supply }), faces)
     };
-    let breather = pc().talent("calm_breather");
-    let mut t = Table::new(Mode::Campaign).with("a", breather.clone().supply(Supply::Air, 8));
-    air(&mut t, &[2, 3, 4, 5]); // min(8, 6) − 2 = 4
-    let mut t = Table::new(Mode::Campaign).with("a", breather.clone().supply(Supply::Air, 8));
+    let eater = pc().talent("light_eater");
+    let mut t = Table::new(Mode::Campaign).with("a", eater.clone().supply(Supply::Food, 8));
+    roll(&mut t, Supply::Food, &[2, 3, 4, 5]); // min(8, 6) − 2 = 4
+    let mut t = Table::new(Mode::Campaign).with("a", eater.clone().supply(Supply::Food, 8));
     t.state
         .rulings
         .insert("F-09".into(), "minus_then_cap".into());
-    air(&mut t, &[2, 3, 4, 5, 2, 3]); // min(6, 8 − 2) = 6
-    let mut t = Table::new(Mode::Campaign).with("a", breather.supply(Supply::Air, 2));
-    air(&mut t, &[2]); // at least one die
+    roll(&mut t, Supply::Food, &[2, 3, 4, 5, 2, 3]); // min(6, 8 − 2) = 6
+    let mut t = Table::new(Mode::Campaign).with("a", eater.supply(Supply::Food, 2));
+    roll(&mut t, Supply::Food, &[2]); // at least one die
+    let breather = pc().talent("calm_breather");
+    let suit = "irc_mk50_compression_suit";
+    let mut t = Table::new(Mode::Campaign).with("a", breather.clone().wearing(suit, 5));
+    roll(&mut t, Supply::Air, &[2, 3, 4]); // 5 − 2 = 3
+    let mut t = Table::new(Mode::Campaign).with("a", breather.wearing(suit, 2));
+    roll(&mut t, Supply::Air, &[2]);
     // Light Eater does not touch air.
+    let mut t = Table::new(Mode::Campaign).with("a", pc().talent("light_eater").wearing(suit, 2));
+    let ev = roll(&mut t, Supply::Air, &[1, 3]);
+    assert!(has(&ev, |e| matches!(
+        e,
+        Event::SupplyRolled {
+            item: Some(0),
+            from: 2,
+            to: 1,
+            ..
+        }
+    )));
+    assert_eq!(t.actor("a").items[0].supply, Some(1), "the suit's air");
+}
+
+/// Air needs a worn suit with air; power is in the devices (F-75).
+#[test]
+fn air_and_power_are_in_items() {
     let mut t =
-        Table::new(Mode::Campaign).with("a", pc().talent("light_eater").supply(Supply::Air, 2));
-    air(&mut t, &[2, 3]);
+        Table::new(Mode::Campaign).with("a", pc().supply(Supply::Air, 4).supply(Supply::Power, 4));
+    for supply in [Supply::Air, Supply::Power] {
+        let request = RollRequest::new("a", RollKind::Supply { supply });
+        assert!(t.try_run(Command::Roll { request }, &[]).is_err());
+    }
+    let mut t = Table::new(Mode::Campaign).with("a", pc().wearing("m3_personnel_armor", 4));
+    let request = RollRequest::new(
+        "a",
+        RollKind::Supply {
+            supply: Supply::Air,
+        },
+    );
+    assert!(
+        t.try_run(Command::Roll { request }, &[]).is_err(),
+        "M3 armor holds no air"
+    );
 }
 
 #[test]
@@ -732,7 +761,10 @@ fn story_point_cannot_be_spent_twice() {
 
 #[test]
 fn no_story_points_on_fixed_pools_or_supply_rolls() {
-    let mut t = Table::new(Mode::Cinematic).with("a", pc().player("p").supply(Supply::Air, 2));
+    let mut t = Table::new(Mode::Cinematic).with(
+        "a",
+        pc().player("p").wearing("irc_mk50_compression_suit", 2),
+    );
     t.state.story_points.insert("p".into(), 3);
     let mut armor = RollRequest::pool(2);
     armor.actor = Some("a".into());

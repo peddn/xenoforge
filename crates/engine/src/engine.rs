@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::active::{self, ActiveEffect, Modification, RollMatch};
 use crate::data::effects::{
-    ActorStat, Blocked, Change, Cold, Effect, EndEvent, Lasts, Op, ReplaceWith, Replaceable,
-    RollSpec, TriggerEvent, Unit, UsePeriod, Who,
+    ActorStat, Blocked, Change, Cold, Consumable, Effect, EndEvent, Lasts, Op, ReplaceWith,
+    Replaceable, RollSpec, TriggerEvent, Unit, UsePeriod, Who,
 };
 use crate::data::model::{
     Condition, CriticalInjury, Healing, PanicResult, RollRange, RulingSwitch, Skill, Talent, Trauma,
@@ -103,6 +103,17 @@ pub enum Command {
         to: Destination,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         count: Option<u16>,
+    },
+    /// Uses an item at hand: a dose, a meal, a drink, or a device with
+    /// power, which then needs a Power Supply roll [p. 34, 134–139].
+    UseItem { actor: ActorId, uid: u32 },
+    /// Recharges a device or refills a suit's air; full if no value is
+    /// given (F-75).
+    RefillItem {
+        actor: ActorId,
+        uid: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        supply: Option<u8>,
     },
 }
 
@@ -271,7 +282,17 @@ pub enum Event {
     SupplyRolled {
         actor: ActorId,
         supply: Supply,
+        /// The suit or device whose air or power it was (F-75).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        item: Option<u32>,
         dice: Vec<Die>,
+        from: u8,
+        to: u8,
+    },
+    /// Food or Water changed by eating or drinking [p. 137].
+    SupplyChanged {
+        actor: ActorId,
+        supply: Supply,
         from: u8,
         to: u8,
     },
@@ -337,6 +358,19 @@ pub enum Event {
         uid: u32,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         item: Option<Id>,
+    },
+    /// An item was used; what it does follows as events of its own.
+    ItemUsed {
+        actor: ActorId,
+        uid: u32,
+        item: Id,
+    },
+    ItemRefilled {
+        actor: ActorId,
+        uid: u32,
+        item: Id,
+        from: u8,
+        to: u8,
     },
 }
 
@@ -835,6 +869,8 @@ impl<'a> Ctx<'a> {
                 to,
                 count,
             } => self.move_item(&actor, uid, to, count),
+            Command::UseItem { actor, uid } => self.use_item(&actor, uid),
+            Command::RefillItem { actor, uid, supply } => self.refill_item(&actor, uid, supply),
         }
     }
 
@@ -1029,6 +1065,30 @@ impl<'a> Ctx<'a> {
     fn run_op(&mut self, actor: &str, owner: &str, op: &Op, flags: OpFlags) -> Result<()> {
         match op {
             Op::Stress { delta, .. } => self.change_stress(actor, *delta, owner),
+            Op::ClearStress => {
+                let level = self.actor(actor)?.stress;
+                self.change_stress(actor, -i8::try_from(level).unwrap_or(i8::MAX), owner)
+            }
+            Op::Supply { supply, delta } => {
+                let supply = match supply {
+                    Consumable::Food => Supply::Food,
+                    Consumable::Water => Supply::Water,
+                };
+                let a = self.actor_mut(actor)?;
+                let from = a.supplies.get(&supply).copied().unwrap_or(0);
+                let to =
+                    u8::try_from((i16::from(from) + i16::from(*delta)).max(0)).unwrap_or(u8::MAX);
+                a.supplies.insert(supply, to);
+                if from != to {
+                    self.emit(Event::SupplyChanged {
+                        actor: actor.to_owned(),
+                        supply,
+                        from,
+                        to,
+                    });
+                }
+                Ok(())
+            }
             Op::Damage { amount, .. } => self.damage(actor, *amount, flags.from_condition),
             Op::Roll {
                 roll,
@@ -1407,6 +1467,10 @@ impl<'a> Ctx<'a> {
                 }
             }
             self.remove_sources(id, |s| matches!(s.ends, Ending::After { left: 0, .. }))?;
+            // Doses count per Shift, e.g. Naproleve (F-74) [p. 137].
+            if unit == Unit::Shift {
+                self.actor_mut(id)?.doses.clear();
+            }
             if new_day {
                 self.end_event(id, EndEvent::DayChange)?;
             }

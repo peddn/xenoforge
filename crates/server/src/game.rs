@@ -221,8 +221,9 @@ fn decider(pending: &Pending) -> Option<&str> {
 }
 
 /// Who may give which command: players act for their own characters and
-/// answer their own decisions, and move, drop or hand over their own
-/// items; everything else is the game master's, new items too.
+/// answer their own decisions, and move, drop, hand over and use their own
+/// items; everything else is the game master's, new items and refilling
+/// too.
 fn check_permission(
     team: &Team,
     command: &Command,
@@ -243,7 +244,8 @@ fn check_permission(
         },
         Command::UseSignatureItem { actor }
         | Command::PerformAction { actor, .. }
-        | Command::MoveItem { actor, .. } => owns(actor),
+        | Command::MoveItem { actor, .. }
+        | Command::UseItem { actor, .. } => owns(actor),
         _ => false,
     };
     if allowed {
