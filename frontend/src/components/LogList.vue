@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import XDie from '@/ui/XDie.vue'
 import XStatus from '@/ui/XStatus.vue'
-import { bookingReason, choiceLabel, destinationLabel, itemName, modsText, moneyText, originLabel } from '@/labels'
+import { bookingReason, changeText, choiceLabel, destinationLabel, itemName, modsText, moneyText, originLabel } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
@@ -35,6 +35,9 @@ function what(event) {
 
 function describe(entry) {
   const e = entry.entry
+  if (e.type === 'changed') {
+    return { text: t('log.changed', { name: e.name, changes: e.changes.map((c) => changeText(c, t, rules)).join(', ') }) }
+  }
   if (e.type !== 'engine') {
     const key = e.type === 'character_offered' && !e.offered ? 'character_unoffered' : e.type
     return { text: t(`log.${key}`, { ...e, by: entry.by ?? '', name: e.name ?? '' }) }
@@ -52,7 +55,8 @@ function describe(entry) {
     case 'roll_finished':
       return {
         status: { tone: ev.outcome === 'success' ? 'ok' : 'warn', text: t(`outcome.${ev.outcome}`) },
-        text: `${t('log.successes', ev.successes)}, ${t('log.stunts', ev.stunts)}`,
+        // Skills without a stunt list count every success [p. 71].
+        text: ev.stunts ? `${t('log.successes', ev.successes)}, ${t('log.stunts', ev.stunts)}` : t('log.successes', ev.successes),
         detail: ev.against != null ? t('log.against', { against: t('log.successes', ev.against) }) : '',
       }
     case 'decision':
@@ -139,7 +143,10 @@ function describe(entry) {
     case 'item_used_up':
       return { text: t('log.item_used_up', { actor, item: itemName(ev, rules) }) }
     case 'trauma_check':
-      return { dice: ev.dice, text: ev.trauma ? t('log.trauma', { actor, trauma: rules.name(ev.trauma) }) : t('log.no_trauma', { actor }) }
+      return {
+        dice: ev.dice,
+        text: ev.trauma ? t('log.trauma', { actor, trauma: rules.name(ev.trauma), d6: ev.d6 ?? '–' }) : t('log.no_trauma', { actor }),
+      }
     default:
       return { text: t(`log.${ev.event}`, { ...ev, actor }) }
   }

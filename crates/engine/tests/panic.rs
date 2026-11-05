@@ -174,13 +174,7 @@ fn scream_makes_listeners_panic() {
         .with("npc", Actor::npc());
     let ev = panic_roll(&mut t, "a", 6);
     assert_eq!(panic_effect(&ev).1, "scream");
-    let candidates = ev
-        .iter()
-        .find_map(|e| match e {
-            Event::ChooseTargets { candidates, .. } => Some(candidates.clone()),
-            _ => None,
-        })
-        .unwrap();
+    let candidates = candidates(&t, &ev);
     assert_eq!(candidates, ["b"]);
     let ev = t.decide(&ev, Choice::Targets(vec!["b".into()]), &[5]);
     assert_eq!(panic_effect(&ev), (7, "nervous_twitch".into()));
@@ -255,6 +249,8 @@ fn no_panic_rolls_for_npcs() {
     assert!(matches!(err, RuleError::NotAllowed(_)));
 }
 
+/// The game master ends a panic by hand, e.g. Berserk when the target is
+/// Broken (F-29) [p. 104, 105].
 #[test]
 fn game_master_stops_panic() {
     let mut pc = pc();
@@ -276,7 +272,7 @@ fn trauma_on_a_failed_empathy_roll() {
     let ev = t.run(Command::EndSession, &[1, 2, /* trauma d6 */ 3]);
     assert!(has(
         &ev,
-        |e| matches!(e, Event::TraumaCheck { trauma: Some(t), .. } if t == "nightmares")
+        |e| matches!(e, Event::TraumaCheck { d6: Some(3), trauma: Some(t), .. } if t == "nightmares")
     ));
     let a = t.actor("a");
     assert!(!a.panic_13_plus);

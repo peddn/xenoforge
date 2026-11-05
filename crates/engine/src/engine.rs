@@ -238,10 +238,12 @@ pub enum Event {
         pending: PendingId,
         actor: ActorId,
         /// The talent, panic effect or rule that asks, e.g. `analysis`.
+        /// Who could be chosen stays in the open decision, which only the
+        /// game master sees: the list would give away a covert android
+        /// (A-14).
         #[serde(default)]
         source: Id,
         who: Who,
-        candidates: Vec<ActorId>,
     },
     /// The game master chose who is affected; none is a choice too.
     TargetsChosen {
@@ -327,6 +329,9 @@ pub enum Event {
     TraumaCheck {
         actor: ActorId,
         dice: Vec<Die>,
+        /// The D6 on the table of traumas after a failed roll [p. 101].
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        d6: Option<u8>,
         trauma: Option<Id>,
     },
     /// An Act ended: uses per Act are free again [p. 76, 104]. `act` is
@@ -816,7 +821,7 @@ impl<'a> Ctx<'a> {
 
     /// A Broken character can crawl and mumble, nothing else [p. 98].
     pub fn able(&self, id: &str) -> Result<()> {
-        if self.actor(id)?.broken() {
+        if self.actor(id)?.incapacitated() {
             return Err(RuleError::NotAllowed(format!(
                 "\"{id}\" is Broken and cannot act [p. 98]"
             )));
@@ -1302,7 +1307,6 @@ impl<'a> Ctx<'a> {
             actor: actor.to_owned(),
             source: owner.to_owned(),
             who,
-            candidates,
         });
         Ok(())
     }
@@ -1778,23 +1782,23 @@ impl<'a> Ctx<'a> {
             let empathy = self.actor(&actor)?.attribute("empathy");
             let dice = self.throw(empathy, 0);
             let failed = !dice.iter().any(Die::success);
-            let trauma = if failed {
-                let d6 = self.dice.d6();
-                let trauma = self
-                    .engine
-                    .rules
-                    .traumas
-                    .iter()
-                    .find(|t| t.d6 == d6)
-                    .map(|t| t.id.clone())
-                    .ok_or_else(|| RuleError::UnknownEntry(format!("trauma d6 {d6}")))?;
-                Some(trauma)
-            } else {
-                None
+            let d6 = failed.then(|| self.dice.d6());
+            let trauma = match d6 {
+                Some(d6) => Some(
+                    self.engine
+                        .rules
+                        .traumas
+                        .iter()
+                        .find(|t| t.d6 == d6)
+                        .map(|t| t.id.clone())
+                        .ok_or_else(|| RuleError::UnknownEntry(format!("trauma d6 {d6}")))?,
+                ),
+                None => None,
             };
             self.emit(Event::TraumaCheck {
                 actor: actor.clone(),
                 dice,
+                d6,
                 trauma: trauma.clone(),
             });
             self.actor_mut(&actor)?.panic_13_plus = false;

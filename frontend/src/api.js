@@ -23,12 +23,18 @@ export async function api(method, path, body) {
   }
   const response = await fetch(`/api${path}`, options)
   const text = await response.text()
-  const data = text ? JSON.parse(text) : null
   if (!response.ok) {
     if (response.status === 401) unauthorized()
-    throw new ApiError(response.status, data?.error ?? 'error', data?.message ?? response.statusText)
+    // An answer that is not the API's JSON, e.g. from a proxy, shows as is.
+    let data
+    try {
+      data = text ? JSON.parse(text) : null
+    } catch {
+      data = { message: text }
+    }
+    throw new ApiError(response.status, data?.error ?? 'error', data?.message || response.statusText)
   }
-  return data
+  return text ? JSON.parse(text) : null
 }
 
 export const get = (path) => api('GET', path)

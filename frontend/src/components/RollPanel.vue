@@ -33,6 +33,11 @@ const preview = ref(null)
 const offers = ref({ talents: [], items: [] })
 const error = ref('')
 const target = ref(null)
+// A COMMAND roll can end someone else's panic (F-36) [p. 71, 104].
+const calming = ref('')
+const panicking = computed(() =>
+  (team.view.characters ?? []).filter((c) => c.panicking && c.id !== props.character.id),
+)
 let timer = null
 
 // The situation in which a talent's bonus counts, from its rule data.
@@ -62,6 +67,9 @@ const request = computed(() => {
     kind: kinds[kind],
     modifiers,
     helpers: Number(helpers.value) || 0,
+    ...(kind === 'skill' && id === 'command' && calming.value
+      ? { purpose: { stop_panic: { target: String(calming.value) } } }
+      : {}),
     talents: talents.value,
     items: items.value,
   }
@@ -139,11 +147,19 @@ function perform(action) {
             >
               {{ rules.name(skill.id) }}
             </option>
-            <option :value="`attribute:${attribute.id}`">
+            <!-- An attribute alone has no Stress Dice (F-27): the game master's (A-08). -->
+            <option
+              v-if="team.view.is_gm"
+              :value="`attribute:${attribute.id}`"
+            >
               {{ t('roll.attributeOnly', { name: rules.name(attribute.id) }) }}
             </option>
           </optgroup>
-          <option value="death:">
+          <!-- Only the Broken roll for their life, androids never [p. 99, 111]. -->
+          <option
+            v-if="character.broken && !character.actor?.android"
+            value="death:"
+          >
             {{ t('roll.death') }}
           </option>
         </select>
@@ -180,6 +196,26 @@ function perform(action) {
           type="number"
           min="0"
         >
+      </XField>
+      <XField
+        v-if="what === 'skill:command' && panicking.length"
+        :label="t('roll.calm')"
+      >
+        <select
+          v-model="calming"
+          data-test="roll-calm"
+        >
+          <option value="">
+            –
+          </option>
+          <option
+            v-for="c in panicking"
+            :key="c.id"
+            :value="c.id"
+          >
+            {{ c.name }}
+          </option>
+        </select>
       </XField>
     </div>
     <XField :label="t('common.note')">

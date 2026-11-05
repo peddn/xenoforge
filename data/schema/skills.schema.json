@@ -33,6 +33,10 @@
         "id": {
           "type": "string"
         },
+        "no_stunts": {
+          "description": "No list of stunts: every success counts for the skill itself,\ne.g. Health back or the bonus of an order (MEDICAL AID, COMMAND)\n[p. 71].",
+          "type": "boolean"
+        },
         "page": {
           "type": "integer",
           "format": "uint16",

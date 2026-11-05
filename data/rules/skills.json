@@ -10,8 +10,8 @@
     { "id": "observation", "page": 58, "attribute": "wits" },
     { "id": "comtech", "page": 58, "attribute": "wits" },
     { "id": "survival", "page": 58, "attribute": "wits" },
-    { "id": "command", "page": 58, "attribute": "empathy" },
+    { "id": "command", "page": 58, "attribute": "empathy", "no_stunts": true },
     { "id": "manipulation", "page": 58, "attribute": "empathy" },
-    { "id": "medical_aid", "page": 58, "attribute": "empathy" }
+    { "id": "medical_aid", "page": 58, "attribute": "empathy", "no_stunts": true }
   ]
 }

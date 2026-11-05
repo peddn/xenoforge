@@ -118,6 +118,43 @@ describe('rolling', () => {
     expect(rolls[1].body.note).toBe('Tür zum Labor')
   })
 
+  it('offers an attribute alone to the game master only, and the Death Roll to the Broken (A-08, F-27)', async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    mockApi({ 'POST /teams/5/preview': { base_dice: 2, stress_dice: 0, modifications: [], talents: [], max_pushes: 1 } })
+    const team = useTeamStore()
+    const kinds = (character, isGm) => {
+      team.view = { id: 5, is_gm: isGm, characters: [character] }
+      const wrapper = mount(RollPanel, { props: { character }, global: { plugins: [pinia, i18n] } })
+      const values = wrapper.findAll('[data-test="roll-what"] option').map((o) => o.attributes('value'))
+      wrapper.unmount()
+      return values
+    }
+    const charlize = { id: 9, name: 'Charlize', actor: {} }
+    expect(kinds(charlize, false)).not.toContain('attribute:wits')
+    expect(kinds(charlize, false)).not.toContain('death:')
+    expect(kinds(charlize, true)).toContain('attribute:wits')
+    expect(kinds({ ...charlize, broken: true }, false)).toContain('death:')
+    // Androids make no Death Rolls [p. 111].
+    expect(kinds({ ...charlize, broken: true, actor: { android: true } }, true)).not.toContain('death:')
+  })
+
+  it("ends someone else's panic with COMMAND (F-36)", async () => {
+    vi.useFakeTimers()
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/preview': { base_dice: 2, stress_dice: 0, modifications: [], talents: [], max_pushes: 1 } })
+    const charlize = { id: 9, name: 'Charlize', actor: {}, panicking: false }
+    useTeamStore().view = { id: 5, characters: [charlize, { id: 7, name: 'Rosa', panicking: true }] }
+    const wrapper = mount(RollPanel, { props: { character: charlize }, global: { plugins: [pinia, i18n] } })
+    expect(wrapper.find('[data-test="roll-calm"]').exists()).toBe(false)
+    await wrapper.get('[data-test="roll-what"]').setValue('skill:command')
+    await wrapper.get('[data-test="roll-calm"]').setValue('7')
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+    expect(calls.at(-1).body.purpose).toEqual({ stop_panic: { target: '7' } })
+    wrapper.unmount()
+  })
+
   it('keeps the items to untick when a preview fails, and clears them for another skill', async () => {
     vi.useFakeTimers()
     const { pinia, i18n } = setup()
@@ -154,7 +191,7 @@ describe('rolling', () => {
     await vi.advanceTimersByTimeAsync(200)
     await flushPromises()
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
-    await wrapper.get('[data-test="roll-what"]').setValue('attribute:wits')
+    await wrapper.get('[data-test="roll-what"]').setValue('skill:comtech')
     await vi.advanceTimersByTimeAsync(200)
     await flushPromises()
     expect(calls.at(-1).items).toEqual([])
@@ -348,6 +385,46 @@ describe('rolling', () => {
     expect(gm.find('[data-test="decision"]').exists()).toBe(true)
   })
 
+  it('closes an offered sheet once someone else chose the character (A-12)', async () => {
+    const { pinia, i18n } = setup()
+    vi.stubGlobal(
+      'EventSource',
+      class {
+        addEventListener() {}
+        close() {}
+      },
+    )
+    const kim = { id: 7, name: 'Kim', owner_id: 1, owner_name: 'Mother', offered: true, actor: { health: 3 }, sheet: {}, hints: [] }
+    const view = {
+      id: 5,
+      name: 'Hope',
+      mode: 'cinematic',
+      gm: { id: 1, name: 'Mother' },
+      is_gm: false,
+      members: [],
+      characters: [kim],
+      pending: [],
+      story_points: {},
+      rulings: {},
+    }
+    mockApi({ 'GET /teams/5': view, 'GET /characters': [] })
+    const auth = useAuthStore()
+    auth.checked = true
+    auth.user = { id: 2, name: 'Ann', role: 'player' }
+    const r = router()
+    r.push('/teams/5')
+    await r.isReady()
+    const wrapper = mount(TeamView, { global: { plugins: [pinia, i18n, r] } })
+    await flushPromises()
+    await wrapper.get('[data-test="sheet-7"]').trigger('click')
+    expect(wrapper.find('[data-test="modal-close"]').exists()).toBe(true)
+    const team = useTeamStore()
+    team.view = { ...team.view, characters: [{ ...kim, owner_id: 3, offered: false, actor: null, sheet: null }] }
+    await flushPromises()
+    expect(wrapper.find('[data-test="modal-close"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('lets the game master correct values', async () => {
     const { pinia, i18n } = setup()
     vi.stubGlobal(
@@ -455,6 +532,37 @@ describe('log', () => {
     expect(blocks).toHaveLength(3)
     expect(blocks[1].findAll('[data-test="log-entry"]')).toHaveLength(2)
     expect(blocks[1].find('header').text()).toContain('Mother')
+  })
+
+  it('shows stunts only where there are some, corrections with before and after, the trauma D6', () => {
+    const { pinia, i18n } = setup()
+    const team = useTeamStore()
+    team.view = { id: 5, characters: [{ id: 9, name: 'Charlize' }] }
+    const entry = (id, e) => ({ id, batch: id, by: 'Mother', at: 0, entry: e })
+    const finished = (stunts) => ({ type: 'engine', event: { event: 'roll_finished', roll: 1, outcome: 'success', successes: 3, stunts } })
+    team.log = [
+      entry(1, finished(0)),
+      entry(2, finished(2)),
+      entry(3, {
+        type: 'changed',
+        character: 9,
+        name: 'Charlize',
+        changes: [
+          { path: 'stress', from: 7, to: 3 },
+          { path: 'attributes.wits', from: 3, to: 4 },
+        ],
+      }),
+      entry(4, { type: 'engine', event: { event: 'trauma_check', actor: '9', dice: [], d6: 3, trauma: 'nightmares' } }),
+    ]
+    const rows = mount(LogList, { global: { plugins: [pinia, i18n] } })
+      .findAll('[data-test="log-entry"]')
+      .map((r) => r.text())
+    // MEDICAL AID and COMMAND count every success [p. 71].
+    expect(rows[0]).toContain('3 Erfolge')
+    expect(rows[0]).not.toContain('Stunt')
+    expect(rows[1]).toContain('2 Stunts')
+    expect(rows[2]).toContain('Charlize: Stress 7 → 3, wits 3 → 4')
+    expect(rows[3]).toContain('(W6: 3)')
   })
 })
 

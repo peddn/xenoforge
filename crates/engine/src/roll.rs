@@ -255,12 +255,12 @@ impl Ctx<'_> {
     }
 
     /// A roll asked for by an operation, e.g. Freezing's STAMINA roll. A
-    /// Broken character cannot roll for skills [p. 98]; optional talents
-    /// that fit the roll are offered first.
+    /// Broken human cannot roll for skills [p. 98], a Broken android can
+    /// [p. 111]; optional talents that fit the roll are offered first.
     pub(crate) fn roll_for_op(&mut self, request: RollRequest, then: Continuation) -> Result<()> {
         let actor = request.actor.clone().unwrap_or_default();
         if let RollKind::Skill { skill } = &request.kind {
-            if self.actor(&actor)?.broken() {
+            if self.actor(&actor)?.incapacitated() {
                 self.emit(Event::RollSkipped {
                     actor,
                     skill: skill.clone(),
@@ -402,12 +402,25 @@ impl Ctx<'_> {
             None => return Err(RuleError::NotAllowed("this roll needs an actor".into())),
         };
 
-        if let (RollKind::Skill { .. }, Some(a)) = (&request.kind, &actor) {
-            if a.broken() {
+        match (&request.kind, &actor) {
+            (RollKind::Skill { .. }, Some(a)) if a.incapacitated() => {
                 return Err(RuleError::NotAllowed(
                     "a Broken character cannot roll for skills [p. 98]".into(),
                 ));
             }
+            // Only the Broken roll for their life, and androids never
+            // [p. 99, 111].
+            (RollKind::Death, Some(a)) if a.android => {
+                return Err(RuleError::NotAllowed(
+                    "androids make no Death Rolls [p. 111]".into(),
+                ));
+            }
+            (RollKind::Death, Some(a)) if !a.broken() => {
+                return Err(RuleError::NotAllowed(
+                    "only a Broken character makes Death Rolls [p. 99]".into(),
+                ));
+            }
+            _ => {}
         }
 
         let (mut skill, mut attribute) = match &request.kind {
@@ -698,10 +711,15 @@ impl Ctx<'_> {
 
     fn wait(&mut self, mut roll: RollState, options: Vec<Choice>) -> Result<()> {
         roll.offered = options.clone();
+        // The log is for everyone; a Story Point on offer would tell them
+        // the player has one. The open decision still offers it.
         self.emit(Event::Decision {
             pending: roll.id,
             actor: roll.request.actor.clone(),
-            options,
+            options: options
+                .into_iter()
+                .filter(|c| *c != Choice::StoryPoint)
+                .collect(),
         });
         self.state
             .pending
@@ -784,7 +802,13 @@ impl Ctx<'_> {
                     roll: roll.id,
                     player,
                 });
-                self.finish(roll)
+                // The automatic success stays through a push, like a six;
+                // pushing afterwards is allowed (F-78).
+                if self.engine.ruling_option(&self.state, "F-78") == "ends_roll" {
+                    self.finish(roll)
+                } else {
+                    self.offer_or_finish(roll)
+                }
             }
             Choice::Accept => {
                 if self.facehuggers_count(&roll) {
@@ -810,6 +834,17 @@ impl Ctx<'_> {
             return self.wait(roll, vec![Choice::StoryPoint, Choice::Accept]);
         }
         self.finish(roll)
+    }
+
+    /// Stunts come with skill rolls whose skill lists them [p. 58, 64–71],
+    /// and with a fixed pool standing in for one; not with Death Rolls,
+    /// rolls of an attribute alone or supply rolls.
+    fn has_stunts(&self, roll: &RollState) -> bool {
+        match &roll.request.kind {
+            RollKind::Skill { skill } => self.engine.skill(skill).is_some_and(|s| !s.no_stunts),
+            RollKind::FixedPool { .. } => true,
+            _ => false,
+        }
     }
 
     fn finish(&mut self, roll: RollState) -> Result<()> {
@@ -840,6 +875,7 @@ impl Ctx<'_> {
                 }
             }
         };
+        let stunts = if self.has_stunts(&roll) { stunts } else { 0 };
         self.emit(Event::RollFinished {
             roll: roll.id,
             outcome,

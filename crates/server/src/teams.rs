@@ -132,6 +132,10 @@ struct CharacterInTeam {
     agendas: Option<Vec<String>>,
     /// Broken as the engine sees it [p. 98], for the same people.
     broken: Option<bool>,
+    /// Panicking, for everyone: the Panic Roll is in the shared log
+    /// (A-01), and someone else's COMMAND roll can end it (F-36)
+    /// [p. 71, 104].
+    panicking: bool,
     /// Full Health [p. 30], for the same people.
     health_max: Option<u8>,
     /// What the character carries [p. 34], for the same people.
@@ -236,6 +240,7 @@ async fn view(
             agendas: (is_gm && cinematic)
                 .then(|| team.agendas.get(&character.id).cloned().unwrap_or_default()),
             broken: sees.then(|| character.data.actor.broken()),
+            panicking: character.data.actor.panic.is_some(),
             health_max: sees.then(|| state.engine.full_health(&character.data.actor)),
             encumbrance: sees.then(|| state.engine.encumbrance(&character.data.actor)),
             hints,
@@ -261,7 +266,15 @@ async fn view(
             })
             .collect(),
         characters: in_team,
-        pending: game::pending_views(&team.state, is_gm),
+        pending: game::pending_views(
+            &team.state,
+            is_gm,
+            &characters
+                .iter()
+                .filter(|c| c.owner_id == user.id)
+                .map(|c| c.id.to_string())
+                .collect::<Vec<_>>(),
+        ),
         story_points: team
             .state
             .story_points
@@ -375,7 +388,39 @@ async fn remove(
             "only the game master or the owner can do that",
         ));
     }
+    let player = character.owner_id;
     let mut tx = begin_write(&state.pool).await?;
+    // A prepared character goes back to its game master: when its player
+    // leaves, it stays in the team with its Agendas, like the characters
+    // nobody chose (A-12) [p. 26].
+    let lent = character.data.lent_by == Some(team.gm_id) && player != team.gm_id;
+    if lent {
+        character.owner_id = team.gm_id;
+        character.data.lent_by = None;
+    }
+    if lent && !is_gm {
+        characters::save(&mut tx, &character).await?;
+        drop_membership(&mut tx, id, player).await?;
+        // A new owner ends the undo history, as with a handover.
+        sqlx::query("DELETE FROM snapshots WHERE team_id = ?")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        let entries = vec![
+            Entry::CharacterHandedOver {
+                character: character.id,
+                name: character.name.clone(),
+                to: name_of(&state, team.gm_id).await?,
+            },
+            Entry::MemberLeft {
+                name: user.name.clone(),
+            },
+        ];
+        let stored = log::append(&mut tx, id, &user, entries, None).await?;
+        tx.commit().await?;
+        log::publish(&state, &stored);
+        return Ok(Json(stored));
+    }
     character.team_id = None;
     character.data.offered = false;
     if team.agendas.remove(&character.id).is_some() {
@@ -400,17 +445,7 @@ async fn remove(
         .bind(id)
         .execute(&mut *tx)
         .await?;
-    // A player without a character in the team no longer sees it.
-    sqlx::query(
-        "DELETE FROM members WHERE team_id = ? AND user_id = ? AND NOT EXISTS \
-         (SELECT 1 FROM characters WHERE team_id = ? AND owner_id = ?)",
-    )
-    .bind(id)
-    .bind(character.owner_id)
-    .bind(id)
-    .bind(character.owner_id)
-    .execute(&mut *tx)
-    .await?;
+    drop_membership(&mut tx, id, player).await?;
     // Older states still refer to the character; undo stops here.
     sqlx::query("DELETE FROM snapshots WHERE team_id = ?")
         .bind(id)
@@ -431,6 +466,25 @@ async fn remove(
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))
+}
+
+/// A player without a character in the team no longer sees it.
+async fn drop_membership(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    team_id: i64,
+    user_id: i64,
+) -> ApiResult<()> {
+    sqlx::query(
+        "DELETE FROM members WHERE team_id = ? AND user_id = ? AND NOT EXISTS \
+         (SELECT 1 FROM characters WHERE team_id = ? AND owner_id = ?)",
+    )
+    .bind(team_id)
+    .bind(user_id)
+    .bind(team_id)
+    .bind(user_id)
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
 }
 
 /// A player without a character in the team leaves it, or the game master

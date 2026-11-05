@@ -142,6 +142,7 @@ async fn claim(
     }
     character.owner_id = user.id;
     character.data.offered = false;
+    character.data.lent_by = Some(team.gm_id);
     let entry = Entry::CharacterClaimed {
         character: character.id,
         name: character.name.clone(),
@@ -203,6 +204,7 @@ async fn owner(
     }
     character.owner_id = body.owner;
     character.data.offered = false;
+    character.data.lent_by = (body.owner != team.gm_id).then_some(team.gm_id);
     let entry = Entry::CharacterHandedOver {
         character: character.id,
         name: character.name.clone(),

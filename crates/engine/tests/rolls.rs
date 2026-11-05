@@ -378,15 +378,80 @@ fn defender_panic_cancels_the_defence() {
 
 // ---- other roll kinds -------------------------------------------------------
 
-/// Death Roll: STAMINA without Stress Dice and without push [p. 99].
+/// Death Roll: STAMINA without Stress Dice and without push, only when
+/// Broken [p. 99]; never for androids [p. 111].
 #[test]
 fn death_roll() {
-    let mut t = Table::new(Mode::Campaign)
-        .with("a", pc().attr("strength", 2).skill("stamina", 1).stress(3));
+    let mut t = Table::new(Mode::Campaign).with(
+        "a",
+        pc().attr("strength", 2)
+            .skill("stamina", 1)
+            .stress(3)
+            .health(0),
+    );
     let ev = t.roll(RollRequest::new("a", RollKind::Death), &[1, 2, 3]);
     assert_eq!(started(&ev).1, 0);
     assert!(options(&ev).is_empty());
     assert_eq!(finished(&ev).0, Outcome::Failure);
+
+    let mut t = Table::new(Mode::Campaign)
+        .with("up", pc().attr("strength", 2).skill("stamina", 1))
+        .with("synth", pc().android().attr("strength", 5).health(0));
+    for actor in ["up", "synth"] {
+        let refused = t.try_run(
+            Command::Roll {
+                request: RollRequest::new(actor, RollKind::Death),
+            },
+            &[1, 2, 3],
+        );
+        assert!(refused.is_err(), "{actor}");
+    }
+}
+
+/// Each success beyond the first is a stunt, except for MEDICAL AID and
+/// COMMAND, which have no list: all successes count there [p. 64, 71].
+#[test]
+fn stunts_only_where_the_skill_lists_them() {
+    let mut t = Table::new(Mode::Campaign).with(
+        "a",
+        pc().attr("empathy", 3)
+            .attr("wits", 3)
+            .skill("medical_aid", 1)
+            .skill("observation", 1),
+    );
+    let ev = t.roll(RollRequest::skill("a", "observation"), &[6, 6, 6, 2]);
+    let ev = t.decide(&ev, Choice::Accept, &[]);
+    assert_eq!(finished(&ev), (Outcome::Success, 3, 2));
+    let ev = t.roll(RollRequest::skill("a", "medical_aid"), &[6, 6, 6, 2]);
+    let ev = t.decide(&ev, Choice::Accept, &[]);
+    assert_eq!(finished(&ev), (Outcome::Success, 3, 0));
+}
+
+/// Broken: a human cannot roll for skills [p. 98]; an android keeps
+/// working until System Shutdown [p. 111].
+#[test]
+fn a_broken_android_keeps_working() {
+    let mut t = Table::new(Mode::Campaign)
+        .with(
+            "human",
+            pc().attr("agility", 3).skill("piloting", 1).health(0),
+        )
+        .with(
+            "synth",
+            pc().android()
+                .attr("agility", 3)
+                .skill("piloting", 1)
+                .health(0),
+        );
+    let refused = t.try_run(
+        Command::Roll {
+            request: RollRequest::skill("human", "piloting"),
+        },
+        &[6, 6, 6, 6],
+    );
+    assert!(refused.is_err());
+    let ev = t.roll(RollRequest::skill("synth", "piloting"), &[6, 2, 3, 4]);
+    assert_eq!(finished(&ev).0, Outcome::Success);
 }
 
 /// Stoic applies to the Death Roll (F-46).
@@ -397,7 +462,8 @@ fn stoic_death_roll() {
         pc().attr("strength", 1)
             .attr("wits", 4)
             .skill("stamina", 1)
-            .talent("stoic"),
+            .talent("stoic")
+            .health(0),
     );
     let ev = t.roll(
         RollRequest::new("a", RollKind::Death).talent("stoic"),
@@ -527,11 +593,14 @@ fn story_point_once_per_skill_roll_in_cinematic_play() {
     t.state.story_points.insert("p".into(), 2);
     let ev = t.roll(RollRequest::skill("a", "observation"), &[2, 3]);
     assert_eq!(
-        options(&ev),
+        offered(&t, &ev),
         [Choice::Push, Choice::StoryPoint, Choice::Accept]
     );
+    // The log leaves the Story Point out: it would tell the others the
+    // player has one.
+    assert_eq!(options(&ev), [Choice::Push, Choice::Accept]);
     let ev = t.decide(&ev, Choice::Push, &[2, 3, 4]);
-    assert_eq!(options(&ev), [Choice::StoryPoint, Choice::Accept]);
+    assert_eq!(offered(&t, &ev), [Choice::StoryPoint, Choice::Accept]);
     let ev = t.decide(&ev, Choice::StoryPoint, &[]);
     assert_eq!(finished(&ev), (Outcome::Success, 1, 0));
     assert_eq!(t.state.story_points["p"], 1);
@@ -542,9 +611,10 @@ fn no_story_points_in_campaign_play_or_on_other_rolls() {
     let mut t = Table::new(Mode::Campaign).with("a", pc().attr("wits", 2).player("p"));
     t.state.story_points.insert("p".into(), 2);
     let ev = t.roll(RollRequest::skill("a", "observation"), &[2, 3]);
-    assert_eq!(options(&ev), [Choice::Push, Choice::Accept]);
+    assert_eq!(offered(&t, &ev), [Choice::Push, Choice::Accept]);
 
-    let mut t = Table::new(Mode::Cinematic).with("a", pc().attr("strength", 2).player("p"));
+    let mut t =
+        Table::new(Mode::Cinematic).with("a", pc().attr("strength", 2).player("p").health(0));
     t.state.story_points.insert("p".into(), 2);
     let ev = t.roll(RollRequest::new("a", RollKind::Death), &[2, 3]);
     assert!(options(&ev).is_empty());
@@ -753,10 +823,37 @@ fn story_point_cannot_be_spent_twice() {
     let mut t = Table::new(Mode::Cinematic).with("a", pc().attr("wits", 2).player("p"));
     t.state.story_points.insert("p".into(), 3);
     let ev = t.roll(RollRequest::skill("a", "observation"), &[2, 3]);
-    let _ = t.decide(&ev, Choice::StoryPoint, &[]);
+    let after = t.decide(&ev, Choice::StoryPoint, &[]);
     let again = t.try_decide(&ev, Choice::StoryPoint, &[]);
-    assert!(matches!(again, Err(RuleError::UnknownPending(_))));
+    assert!(matches!(again, Err(RuleError::InvalidChoice(_))));
+    let ev = t.decide(&after, Choice::Accept, &[]);
+    assert_eq!(finished(&ev), (Outcome::Success, 1, 0));
     assert_eq!(t.state.story_points["p"], 2);
+}
+
+/// After a Story Point the roll may still be pushed; its success stays
+/// like a six (F-78). The alternative ends the roll [p. 60–61].
+#[test]
+fn push_after_a_story_point() {
+    let table = || {
+        let mut t = Table::new(Mode::Cinematic).with("a", pc().attr("wits", 2).player("p"));
+        t.state.story_points.insert("p".into(), 1);
+        t
+    };
+    let mut t = table();
+    let ev = t.roll(RollRequest::skill("a", "observation"), &[2, 3]);
+    let ev = t.decide(&ev, Choice::StoryPoint, &[]);
+    assert_eq!(options(&ev), [Choice::Push, Choice::Accept]);
+    let ev = t.decide(&ev, Choice::Push, &[6, 2, 3]);
+    assert_eq!(finished(&ev), (Outcome::Success, 2, 1));
+    assert_eq!(t.actor("a").stress, 1);
+    assert_eq!(t.state.story_points["p"], 0);
+
+    let mut t = table();
+    t.state.rulings.insert("F-78".into(), "ends_roll".into());
+    let ev = t.roll(RollRequest::skill("a", "observation"), &[2, 3]);
+    let ev = t.decide(&ev, Choice::StoryPoint, &[]);
+    assert_eq!(finished(&ev), (Outcome::Success, 1, 0));
 }
 
 #[test]

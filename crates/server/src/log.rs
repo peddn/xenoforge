@@ -89,8 +89,81 @@ pub enum Entry {
         character: i64,
         name: String,
     },
+    /// What a correction changed, before and after; for the game master,
+    /// since players do not see other sheets (A-01, plan 10.2).
+    Changed {
+        character: i64,
+        name: String,
+        changes: Vec<Change>,
+    },
     /// The game master took back the last step.
     Undone,
+}
+
+/// One value a correction changed: where in the character's values
+/// (`health`, `attributes.wits`), before and after.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Change {
+    pub path: String,
+    pub from: serde_json::Value,
+    pub to: serde_json::Value,
+}
+
+/// What differs between two sets of values, one level into maps such as
+/// the attributes; lists count as one value.
+pub fn changes<T: Serialize>(before: &T, after: &T) -> Vec<Change> {
+    use serde_json::{Map, Value};
+    let empty = Map::new();
+    let as_map = |v: &Value| match v {
+        Value::Object(m) => Some(m.clone()),
+        _ => None,
+    };
+    let (Ok(Value::Object(a)), Ok(Value::Object(b))) =
+        (serde_json::to_value(before), serde_json::to_value(after))
+    else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    let keys: std::collections::BTreeSet<&String> = a.keys().chain(b.keys()).collect();
+    for key in keys {
+        let (x, y) = (
+            a.get(key).unwrap_or(&Value::Null),
+            b.get(key).unwrap_or(&Value::Null),
+        );
+        if x == y {
+            continue;
+        }
+        let maps = match (as_map(x), as_map(y)) {
+            (Some(m), Some(n)) => Some((m, n)),
+            (Some(m), None) if y.is_null() => Some((m, empty.clone())),
+            (None, Some(n)) if x.is_null() => Some((empty.clone(), n)),
+            _ => None,
+        };
+        match maps {
+            Some((m, n)) => {
+                let inner: std::collections::BTreeSet<&String> = m.keys().chain(n.keys()).collect();
+                for k in inner {
+                    let (p, q) = (
+                        m.get(k).cloned().unwrap_or(Value::Null),
+                        n.get(k).cloned().unwrap_or(Value::Null),
+                    );
+                    if p != q {
+                        out.push(Change {
+                            path: format!("{key}.{k}"),
+                            from: p,
+                            to: q,
+                        });
+                    }
+                }
+            }
+            None => out.push(Change {
+                path: key.clone(),
+                from: x.clone(),
+                to: y.clone(),
+            }),
+        }
+    }
+    out
 }
 
 /// A stored log entry.
@@ -156,6 +229,9 @@ fn visibility(entry: &Entry) -> &'static str {
         Entry::Engine {
             event: Event::Booked { .. },
         } => "gm",
+        // The values of a sheet are the owner's and the game master's
+        // (A-01); that a correction happened is said to all.
+        Entry::Changed { .. } => "gm",
         _ => "all",
     }
 }
