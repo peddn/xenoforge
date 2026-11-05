@@ -157,6 +157,8 @@ Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `
 
 ## Einstellungen
 
+Aufruf: `xenoforge-server [--seed]`. Mit `--seed` füllt der Server eine leere Datenbank mit Beispieldaten und startet dann (`seed.rs`). Die Daten entstehen über die eigene Schnittstelle im Prozess (`local.rs`), also mit denselben Prüfungen wie im Spiel; dieselbe Schnittstelle nutzen die Tests. Eine Datenbank mit Konten lehnt `--seed` ab.
+
 | Variable | Bedeutung | Standard |
 | --- | --- | --- |
 | `XENOFORGE_ADDR` | Adresse und Port | `127.0.0.1:3000` |

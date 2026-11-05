@@ -28,6 +28,21 @@ npm install
 npm run dev                            # http://localhost:5173, leitet /api an den Server weiter
 ```
 
+### Testdaten
+
+Zum schnellen Ausprobieren füllt `--seed` eine leere Datenbank mit Beispieldaten und startet dann den Server:
+
+```
+XENOFORGE_DB=test.db cargo run -p xenoforge-server -- --seed
+```
+
+Angelegt werden die Konten Mother (Spielleitung), Ann, Bob und Cid, alle mit dem Passwort `xenoforge-test`, dazu zwei Teams:
+
+- **Testlauf Kampagne:** Ann spielt Nat (Buchbeispiel S. 28), Bob eine Wissenschaftlerin, beide über den Assistenten erschaffen, mit Buddy und Rival. Ann hat außerdem einen halb fertigen Entwurf.
+- **Testlauf Szenario** (Cinematic): drei Charaktere der Spielleitung zur Wahl, einer davon ein verdeckter Android, jeder mit Agenden für drei Akte. Ann und Cid sind ohne Charakter beigetreten.
+
+Eine Datenbank mit Konten lehnt `--seed` ab, damit nie Beispieldaten in echte Daten geraten. Zum Zurücksetzen `test.db` löschen und neu starten. Mehrere Personen gleichzeitig testet man in getrennten Browsern oder privaten Fenstern.
+
 ## Betrieb
 
 Ein Programm, eine Datenbankdatei, kein Docker:
