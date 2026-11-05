@@ -10,7 +10,9 @@ pub mod cast;
 pub mod characters;
 pub mod error;
 pub mod game;
+pub mod local;
 pub mod log;
+pub mod seed;
 pub mod teams;
 
 use std::path::{Path, PathBuf};
@@ -73,13 +75,6 @@ async fn health() -> Json<Health> {
         status: "ok",
         version: env!("CARGO_PKG_VERSION"),
     })
-}
-
-/// Opens the database, runs migrations, loads and checks the rule data and
-/// builds the router.
-pub async fn app(config: &Config) -> Result<Router, Box<dyn std::error::Error>> {
-    let state = state(config).await?;
-    Ok(router(state, &config.static_dir, &config.data_dir))
 }
 
 /// The shared state: database (migrated), rules (checked), dice.

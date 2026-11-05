@@ -11,7 +11,7 @@ use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 use xenoforge_engine::dice::ScriptedDice;
-use xenoforge_server::{AppState, Config};
+use xenoforge_server::{AppState, Config, local};
 
 struct Server {
     app: Router,
@@ -50,47 +50,30 @@ impl Server {
     }
 }
 
-/// A browser: keeps the session cookie.
+/// A browser: the in-process client of the server, which keeps the session
+/// cookie, with assertions for the tests.
 struct Client<'s> {
     server: &'s Server,
-    cookie: Option<String>,
+    inner: local::Client,
 }
 
 impl<'s> Client<'s> {
     fn new(server: &'s Server) -> Self {
         Self {
             server,
-            cookie: None,
+            inner: local::Client::new(server.app.clone()),
         }
     }
 
     async fn call(&mut self, method: &str, path: &str, body: Option<Value>) -> (StatusCode, Value) {
-        let mut request = Request::builder().method(method).uri(path);
-        if let Some(cookie) = &self.cookie {
-            request = request.header(header::COOKIE, cookie);
-        }
-        let request = match body {
-            Some(body) => request
-                .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(body.to_string())),
-            None => request.body(Body::empty()),
-        }
-        .unwrap();
-        let response = self.server.app.clone().oneshot(request).await.unwrap();
-        if let Some(set) = response.headers().get(header::SET_COOKIE) {
-            let pair = set.to_str().unwrap().split(';').next().unwrap().to_owned();
-            self.cookie = Some(pair);
-        }
-        let status = response.status();
-        let bytes = response.into_body().collect().await.unwrap().to_bytes();
-        let value = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
-        (status, value)
+        self.inner.call(method, path, body).await
     }
 
     async fn ok(&mut self, method: &str, path: &str, body: Option<Value>) -> Value {
-        let (status, value) = self.call(method, path, body).await;
-        assert!(status.is_success(), "{method} {path}: {status} {value}");
-        value
+        self.inner
+            .ok(method, path, body)
+            .await
+            .unwrap_or_else(|e| panic!("{e}"))
     }
 
     async fn register(&mut self, name: &str, role: &str) -> i64 {
@@ -702,7 +685,7 @@ async fn event_stream_replays_the_log() {
         .unwrap();
     request.headers_mut().insert(
         header::COOKIE,
-        player.cookie.clone().unwrap().parse().unwrap(),
+        player.inner.cookie().unwrap().parse().unwrap(),
     );
     let response = server.app.clone().oneshot(request).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
@@ -1301,4 +1284,72 @@ async fn campaign_has_no_takeover() {
     newcomer
         .ok("GET", &format!("/api/teams/{team}"), None)
         .await;
+}
+
+/// `--seed` fills an empty database through the API and refuses one with
+/// accounts in it.
+#[tokio::test]
+async fn sample_data() {
+    let server = server("seed").await;
+    let lines = xenoforge_server::seed::seed(server.app.clone(), &server.state.pool)
+        .await
+        .unwrap();
+    assert_eq!(lines.len(), 3);
+    assert!(
+        xenoforge_server::seed::seed(server.app.clone(), &server.state.pool)
+            .await
+            .is_err(),
+        "only into an empty database"
+    );
+
+    let mut cid = Client::new(&server);
+    cid.ok(
+        "POST",
+        "/api/auth/login",
+        Some(json!({ "name": "Cid", "password": xenoforge_server::seed::PASSWORD })),
+    )
+    .await;
+    let teams = cid.ok("GET", "/api/teams", None).await;
+    let scenario = teams[0]["id"].as_i64().unwrap();
+    let view = cid.ok("GET", &format!("/api/teams/{scenario}"), None).await;
+    let offered: Vec<&Value> = view["characters"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c["offered"] == true)
+        .collect();
+    assert_eq!(offered.len(), 3);
+    assert!(
+        offered.iter().all(|c| c["actor"]["android"] == false),
+        "the covert android passes as human"
+    );
+    assert_eq!(view["story_points"][cid_id(&view)], 1);
+
+    let mut ann = Client::new(&server);
+    ann.ok(
+        "POST",
+        "/api/auth/login",
+        Some(json!({ "name": "Ann", "password": xenoforge_server::seed::PASSWORD })),
+    )
+    .await;
+    let characters = ann.ok("GET", "/api/characters", None).await;
+    let statuses: Vec<&str> = characters
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["data"]["status"].as_str().unwrap())
+        .collect();
+    assert_eq!(statuses.len(), 2);
+    assert!(statuses.contains(&"finished") && statuses.contains(&"draft"));
+}
+
+/// The id of the one member without a character in a team view.
+fn cid_id(view: &Value) -> String {
+    view["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|m| m["name"] == "Cid")
+        .unwrap()["id"]
+        .to_string()
 }
