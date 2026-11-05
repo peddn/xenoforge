@@ -115,6 +115,22 @@ async function supplyRoll(supply) {
   }
 }
 
+// A booking by the game master: wages, a reward, an expense, a loan (F-76).
+const amount = ref('')
+const reason = ref('')
+async function book() {
+  error.value = ''
+  const value = Number(String(amount.value).replace(',', '.'))
+  if (!Number.isFinite(value) || !value || !reason.value.trim()) return
+  try {
+    await team.command({ command: 'book', actor: String(props.character.id), amount: Math.round(value * 100), note: reason.value })
+    amount.value = ''
+    reason.value = ''
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 async function leave() {
   error.value = ''
   try {
@@ -170,6 +186,8 @@ async function leave() {
         :gear-add="team.view.is_gm"
         :gear-use="own || team.view.is_gm"
         :gear-refill="team.view.is_gm"
+        :gear-buy="team.view.is_gm"
+        :money="own || team.view.is_gm"
         :others="others"
         :send-item="item"
       />
@@ -261,6 +279,33 @@ async function leave() {
       >
         {{ t('gm.correct') }}
       </XButton>
+      <span
+        v-if="!editing"
+        class="flex flex-wrap items-end gap-2"
+        data-test="booking"
+      >
+        <XField :label="t('money.amount')">
+          <input
+            v-model="amount"
+            inputmode="decimal"
+            class="w-28"
+            data-test="booking-amount"
+          >
+        </XField>
+        <XField :label="t('money.reason')">
+          <input
+            v-model="reason"
+            maxlength="100"
+            data-test="booking-reason"
+          >
+        </XField>
+        <XButton
+          data-test="booking-go"
+          @click="book"
+        >
+          {{ t('money.book') }}
+        </XButton>
+      </span>
       <span
         v-if="!editing && supplyRolls.length"
         class="flex flex-wrap items-center gap-2"

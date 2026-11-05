@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import GearPanel from '@/components/GearPanel.vue'
 import XFacts from '@/ui/XFacts.vue'
+import { balance, bookingReason, moneyText } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 
 // The character sheet to read, in the order of the printed one [p. 389]:
@@ -26,12 +27,15 @@ const props = defineProps({
   // Characters to hand items to.
   others: { type: Array, default: () => [] },
   sendItem: { type: Function, default: undefined },
+  // Money only for the owner and the game master (A-15).
+  money: { type: Boolean, default: false },
+  gearBuy: { type: Boolean, default: false },
   // Names of the team's characters; without them buddy and rival are left out.
   names: { type: Object, default: null },
   // Without the texts, where they are edited next to the sheet.
   texts: { type: Boolean, default: true },
 })
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const rules = useRulesStore()
 
 const facts = computed(() => {
@@ -51,6 +55,7 @@ const facts = computed(() => {
   // Food and Water; air and power are in the items (F-75) [p. 34].
   const supplies = props.actor.supplies ?? {}
   list.push([t('sheet.supplies'), ['food', 'water'].map((s) => `${t(`supply.${s}`)} ${supplies[s] ?? 0}`).join(' · ')])
+  if (props.money) list.push([t('money.title'), moneyText(balance(props.actor.ledger), locale.value)])
   if (props.startCash) {
     list.push([
       t('sheet.startCash'),
@@ -126,8 +131,26 @@ const talentText = (id) => {
       :can-add="gearAdd"
       :can-use="gearUse"
       :can-refill="gearRefill"
+      :can-buy="gearBuy"
       :others="others"
       :send="sendItem"
     />
+    <div
+      v-if="money && actor.ledger?.length"
+      class="grid gap-1"
+      data-test="ledger"
+    >
+      <span class="text-sm text-dim uppercase">{{ t('money.ledger') }}</span>
+      <ul class="grid gap-0.5">
+        <li
+          v-for="(booking, i) in [...actor.ledger].reverse()"
+          :key="i"
+          class="flex flex-wrap gap-2"
+        >
+          <span :class="booking.amount < 0 ? 'text-amber' : 'text-strong'">{{ booking.amount > 0 ? '+' : '' }}{{ moneyText(booking.amount, locale) }}</span>
+          <span>{{ bookingReason(booking.reason, t, rules) }}</span>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>

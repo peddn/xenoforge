@@ -129,6 +129,22 @@
     "air": "Luft",
     "power": "Energie"
   },
+  "money": {
+    "title": "Geld",
+    "ledger": "Buchungen",
+    "start": "Startgeld",
+    "purchase": "Kauf: {item} × {count}",
+    "reloads": "Magazine: {item} × {count}",
+    "book": "Buchen",
+    "amount": "Betrag in $ (− für Ausgaben)",
+    "reason": "Grund",
+    "buy": "Kaufen",
+    "sell": "Verkaufen statt geben",
+    "price": "Preis in $ (leer: Katalog)",
+    "catalog": "Katalogpreis {price}",
+    "noPrice": "kein Katalogpreis, bitte Preis angeben",
+    "buyReload": "Magazin kaufen"
+  },
   "join": {
     "title": "Einladung",
     "invited": "{gm} lädt dich in das Team {team} ein.",
@@ -342,7 +358,9 @@
     "toCharacter": "an {name} gegeben",
     "item_used": "{actor} benutzt {item}",
     "item_refilled": "{actor}: {item} aufgefüllt, {from} → {to}",
-    "supply_changed": "{actor}: {supply} {from} → {to}"
+    "supply_changed": "{actor}: {supply} {from} → {to}",
+    "booked": "{actor}: {amount} – {reason}, Kontostand {balance}",
+    "reloads_added": "{actor}: {item} + {count} Magazin(e)"
   },
   "about": {
     "title": "Über Xenoforge",

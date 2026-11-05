@@ -15,7 +15,7 @@ import CreationWizard from '@/components/CreationWizard.vue'
 import GearPanel from '@/components/GearPanel.vue'
 import RollPanel from '@/components/RollPanel.vue'
 import SheetDialog from '@/components/SheetDialog.vue'
-import { cashFormula, choiceLabel, modsText, originLabel, problemText, quarters, weightText } from '@/labels'
+import { cashFormula, choiceLabel, moneyText, modsText, originLabel, problemText, quarters, weightText } from '@/labels'
 import { guard, routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
@@ -825,6 +825,64 @@ describe('gear', () => {
     })
   })
 
+  it('lets the game master sell gear and reloads (F-76)', async () => {
+    const { pinia, i18n } = setup()
+    const send = vi.fn(async () => true)
+    const wrapper = mount(GearPanel, {
+      props: {
+        actor: { items: [{ uid: 0, item: 'm4a3_service_pistol', count: 1, place: 'carried' }] },
+        canAdd: true,
+        canBuy: true,
+        send,
+      },
+      global: { plugins: [pinia, i18n] },
+    })
+    await wrapper.get('[data-test="buy-reload-0"]').trigger('click')
+    await wrapper.get('[data-test="gear-search"]').setValue('m4a3')
+    await wrapper.get('[data-test="pick-m4a3_service_pistol"]').trigger('click')
+    await wrapper.get('[data-test="buying"]').setValue(true)
+    expect(wrapper.get('[data-test="catalog-price"]').text()).toBe(`Katalogpreis ${moneyText(20000, 'de')}`)
+    await wrapper.get('[data-test="add-go"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-test="gear-search"]').setValue('m4a3')
+    await wrapper.get('[data-test="pick-m4a3_service_pistol"]').trigger('click')
+    await wrapper.get('[data-test="price"]').setValue('150,50')
+    await wrapper.get('[data-test="add-go"]').trigger('click')
+    await flushPromises()
+    expect(send.mock.calls.map((c) => c[0])).toEqual([
+      { command: 'buy_reloads', uid: 0, count: 1 },
+      { command: 'buy_item', item: { item: 'm4a3_service_pistol' } },
+      { command: 'buy_item', item: { item: 'm4a3_service_pistol' }, price: 15050 },
+    ])
+  })
+
+  it('shows the balance and bookings to the owner, and books for the game master (A-15)', async () => {
+    const { pinia, i18n } = setup()
+    const calls = mockApi({ 'POST /teams/5/commands': [] })
+    useAuthStore().user = { id: 1, role: 'gm' }
+    const ledger = [
+      { amount: 40000, reason: { kind: 'start' } },
+      { amount: -2000, reason: { kind: 'purchase', item: 'beer', count: 5 } },
+    ]
+    const character = { id: 3, name: 'Gorman', owner_id: 2, actor: { ledger, items: [] }, sheet: {}, hints: [] }
+    useTeamStore().view = { id: 5, mode: 'campaign', is_gm: true, characters: [character] }
+    const wrapper = mount(SheetDialog, { props: { character }, global: { plugins: [pinia, i18n] } })
+    expect(wrapper.text()).toContain(`Geld${moneyText(38000, 'de')}`)
+    const bookings = wrapper.get('[data-test="ledger"]').text()
+    expect(bookings).toContain('Kauf: beer × 5')
+    expect(bookings.indexOf('Kauf')).toBeLessThan(bookings.indexOf('Startgeld'))
+    await wrapper.get('[data-test="booking-amount"]').setValue('-12,5')
+    await wrapper.get('[data-test="booking-reason"]').setValue('Miete')
+    await wrapper.get('[data-test="booking-go"]').trigger('click')
+    await flushPromises()
+    expect(calls[0].body).toEqual({ command: { command: 'book', actor: '3', amount: -1250, note: 'Miete' } })
+    const other = mount(CharacterSheet, {
+      props: { sheet: {}, actor: { ledger: [], items: [] } },
+      global: { plugins: [pinia, i18n] },
+    })
+    expect(other.text()).not.toContain('Geld')
+  })
+
   it('names items in the log and weights as the book writes them', () => {
     const { pinia, i18n } = setup()
     const team = useTeamStore()
@@ -839,6 +897,8 @@ describe('gear', () => {
       event({ event: 'supply_rolled', actor: '3', uid: 5, supply: 'power', item: 'm314_motion_tracker', dice: [{ kind: 'stress', face: 1, locked: false }], from: 5, to: 4 }),
       event({ event: 'item_refilled', actor: '3', uid: 6, item: 'm314_motion_tracker', from: 0, to: 5 }),
       event({ event: 'source_applied', actor: '3', uid: 7, origin: { used: { item: 'beer', index: 0 } }, ends: { after: { unit: 'shift', left: 1 } } }),
+      event({ event: 'booked', actor: '3', uid: 8, booking: { amount: -2000, reason: { kind: 'note', text: 'Miete' } }, balance: 38000 }),
+      event({ event: 'reloads_added', actor: '3', uid: 9, item: 'm4a3_service_pistol', count: 2 }),
     ]
     const text = mount(LogList, { global: { plugins: [pinia, i18n] } }).text()
     expect(text).toContain('Gorman bekommt knife × 1')
@@ -849,6 +909,8 @@ describe('gear', () => {
     expect(text).toContain('Gorman: Vorratswurf Energie (m314_motion_tracker), 5 → 4')
     expect(text).toContain('Gorman: m314_motion_tracker aufgefüllt, 0 → 5')
     expect(text).toContain('Gorman: beer')
+    expect(text).toContain(`Gorman: ${moneyText(-2000, 'de')} – Miete, Kontostand ${moneyText(38000, 'de')}`)
+    expect(text).toContain('Gorman: m4a3_service_pistol + 2 Magazin(e)')
     expect([0, 1, 2, 4, 14].map(quarters)).toEqual(['0', '¼', '½', '1', '3½'])
     expect(weightText('1/4')).toBe('¼')
   })

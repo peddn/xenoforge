@@ -129,6 +129,22 @@
     "air": "Air",
     "power": "Power"
   },
+  "money": {
+    "title": "Money",
+    "ledger": "Bookings",
+    "start": "Starting cash",
+    "purchase": "Bought: {item} × {count}",
+    "reloads": "Reloads: {item} × {count}",
+    "book": "Book",
+    "amount": "Amount in $ (− for costs)",
+    "reason": "Reason",
+    "buy": "Buy",
+    "sell": "Sell instead of give",
+    "price": "Price in $ (empty: catalog)",
+    "catalog": "Catalog price {price}",
+    "noPrice": "no catalog price, please name one",
+    "buyReload": "Buy a reload"
+  },
   "join": {
     "title": "Invitation",
     "invited": "{gm} invites you to the team {team}.",
@@ -342,7 +358,9 @@
     "toCharacter": "given to {name}",
     "item_used": "{actor} uses {item}",
     "item_refilled": "{actor}: {item} refilled, {from} → {to}",
-    "supply_changed": "{actor}: {supply} {from} → {to}"
+    "supply_changed": "{actor}: {supply} {from} → {to}",
+    "booked": "{actor}: {amount} – {reason}, balance {balance}",
+    "reloads_added": "{actor}: {item} + {count} reload(s)"
   },
   "about": {
     "title": "About Xenoforge",

@@ -109,3 +109,28 @@ export function destinationLabel(to, t, names) {
   if (typeof to === 'string') return t(`log.to.${to}`)
   return t('log.toCharacter', { name: names[to.character] ?? `#${to.character}` })
 }
+
+/** An amount in cents as dollars, e.g. 123400 → "$1,234" or "1.234 $". */
+export function moneyText(cents, locale) {
+  const whole = cents % 100 === 0
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
+  }).format(cents / 100)
+}
+
+/** The balance: the sum of the bookings, in cents. */
+export function balance(ledger) {
+  return (ledger ?? []).reduce((sum, b) => sum + b.amount, 0)
+}
+
+/** Why money came in or went out. */
+export function bookingReason(reason, t, rules) {
+  if (reason.kind === 'start') return t('money.start')
+  if (reason.kind === 'note') return reason.text
+  if (reason.kind === 'reloads') return t('money.reloads', { item: rules.name(reason.item), count: reason.count })
+  const item = reason.item ? rules.name(reason.item) : (reason.name ?? '')
+  return t('money.purchase', { item, count: reason.count })
+}

@@ -831,4 +831,4 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 
 Offen:
 
-Derzeit keine. Phasen 0, 1, 2a, 2b.1 und 2b.2 sind abgeschlossen (PR #1 bis #13). Phase 2c.1 ist abgeschlossen (PR #14, dazu #15 und #16). Phase 2c.2 ist in Arbeit, danach folgt 2c.3.
+Derzeit keine. Phasen 0, 1, 2a, 2b.1 und 2b.2 sind abgeschlossen (PR #1 bis #13). Phase 2c.1 und 2c.2 sind abgeschlossen (PR #14 bis #17). Phase 2c.3 liegt als Pull Request vor; danach folgt die Testsitzung, die Phase 2 abschließt.

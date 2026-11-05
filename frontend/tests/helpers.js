@@ -56,6 +56,7 @@ export const rulesData = {
       page: 119,
       category: 'pistol',
       weight: '1/2',
+      cost: { cents: 20000 },
       weapon: { skill: 'ranged_combat', bonus: 2, damage: 1, range: 'medium', reloads: true },
     },
     { id: 'binoculars', page: 133, category: 'vision', weight: '1/2' },
