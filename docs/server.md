@@ -27,12 +27,14 @@ Browser ── HTTP (JSON) ──▶ axum ──▶ Engine (rein)
 
 | Befehl | Spieler | Spielleitung |
 | --- | --- | --- |
-| `roll` für eigenen Charakter: Fertigkeit, Attribut, Death Roll; Helfer und Ausrüstungsbonus | ja | ja |
-| `roll` mit Schwierigkeit, fester Pool, Vorrat, einzelne Stresswürfel (A-08) | nein | ja |
+| `roll` für eigenen Charakter: Fertigkeit, Attribut, Death Roll; Helfer und eigene Gegenstände (F-59) | ja | ja |
+| `roll` mit Schwierigkeit, freiem Ausrüstungsbonus, fester Pool, Vorrat, einzelne Stresswürfel (A-08) | nein | ja |
 | `roll` für fremde Charaktere oder ohne Charakter | nein | ja |
 | `decide` | wenn die Entscheidung beim eigenen Charakter liegt | ja |
 | `decide` bei der Wahl der Betroffenen (`targets`) | nein | ja |
 | `use_signature_item`, `perform_action` für eigenen Charakter, als Ziel jeder im Team (Pull Rank) | ja | ja |
+| `move_item` für eigenen Charakter: mitnehmen, anziehen, verstauen, ablegen, an einen anderen Charakter geben | ja | ja |
+| `add_item` (neue Gegenstände) | nein | ja |
 | alle übrigen (Stress, Schaden, Panik, Quellen, Akt- und Sitzungsende, Story Points setzen …) | nein | ja |
 | Vorschau eines Wurfs | eigener Charakter, Regeln wie bei `roll` | alle |
 | Werte korrigieren, Rückgängig | nein | ja |
@@ -42,7 +44,7 @@ Browser ── HTTP (JSON) ──▶ axum ──▶ Engine (rein)
 Ein Wurf bringt höchstens eine Schwierigkeit und einen Ausrüstungsbonus mit, als Kennung und Wert:
 
 - `{"source": "difficulty_hard", "value": -2}`: nur die Spielleitung, nur mit dem Wert aus der Tabelle S. 63 (`data/rules/constants.json`).
-- `{"source": "gear", "value": 2}`: 0 bis `gear_bonus_max`. Mit dem Ausrüstungskatalog (2c) kommt der Bonus vom Gegenstand.
+- `{"source": "gear", "value": 2}`: nur die Spielleitung, 0 bis `gear_bonus_max`, für improvisierte Ausrüstung. Spieler wählen stattdessen ihre Gegenstände (`items`, F-59); deren Bonus prüft die Engine.
 
 Helfer stehen in `helpers`; es zählen höchstens drei (S. 63). Alles andere lehnt der Server ab.
 
@@ -68,11 +70,11 @@ Nach dem Befehl teilt der Server den neuen Stand wieder auf und speichert Team, 
 
 Ein Charakter hat einen Status:
 
-- **Entwurf:** Spieler erschaffen mit dem Assistenten. Der Server speichert den Entwurf, lässt die Engine die Figur bauen und gibt ihre Probleme mit Schritt und Buchseite zurück. Ein Entwurf kann keinem Team beitreten. **Fertigstellen** geht nur ohne Probleme; dann würfelt der Server das Startgeld, und der Entwurf wird zum Bogen.
+- **Entwurf:** Spieler erschaffen mit dem Assistenten. Der Server speichert den Entwurf, lässt die Engine die Figur bauen und gibt ihre Probleme mit Schritt und Buchseite zurück. Ein Entwurf kann keinem Team beitreten. **Fertigstellen** geht nur ohne Probleme; dann würfelt der Server das Startgeld und Mengen der Startausrüstung wie „W6 Dosen“ (F-60), und der Entwurf wird zum Bogen.
 - **Fertig:** Die Werte ändern sich nur im Spiel. Name, Aussehen, Agenda (F-54), Signature Item und Notizen bleiben frei.
-- **Frei:** Nur Spielleitungskonten legen frei an, für vorgefertigte Charaktere und Szenarien; nur sie bearbeiten außerhalb eines Teams auch die Werte und die Karriere. Charaktere von vor dem Assistenten gelten als frei.
+- **Frei:** Nur Spielleitungskonten legen frei an, für vorgefertigte Charaktere und Szenarien; nur sie bearbeiten außerhalb eines Teams auch die Werte, die Karriere und die Ausrüstung. Die Ausrüstung ändert sich dabei über dieselben Befehle wie im Spiel (`add_item`, `move_item`), die der Server auf den Charakter allein anwendet; so gelten dieselben Regeln. Charaktere von vor dem Assistenten gelten als frei.
 
-Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung. Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt in Campaign der Besitzer, in Cinematic die Spielleitung, weil das Szenario sie vorgibt (S. 31). Sie haben einen eigenen Pfad, damit Speichern der Texte sie nie berührt: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Texte haben höchstens 4000 Zeichen. Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
+Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur der Spielleitung; die Engine prüft auch dabei die Gegenstände. Charakter und Team-Ansicht bringen die Traglast mit, wie die Engine sie zählt (`encumbrance`, in Vierteln eines Gegenstands). Volle Health folgt STRENGTH (S. 30, Tough +2), solange Health nicht selbst geändert wurde. Buddy und Rival wählt in Campaign der Besitzer, in Cinematic die Spielleitung, weil das Szenario sie vorgibt (S. 31). Sie haben einen eigenen Pfad, damit Speichern der Texte sie nie berührt: andere Spielercharaktere desselben Teams, nicht derselbe, beide freiwillig (F-52). Texte haben höchstens 4000 Zeichen. Verlässt einer das Team, fallen die Verweise weg. Agenda, Buddy und Rival sieht wie alle Bogenwerte nur der Besitzer und die Spielleitung.
 
 ### Rückgängig
 
@@ -115,7 +117,8 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `POST /characters` | `{}` für einen Entwurf, `{ free: true, name }` nur Spielleitung | neuer Charakter, ein Entwurf mit `problems` |
 | `GET /characters/{id}` | – | Charakter |
 | `PUT /characters/{id}` | Entwurf: `{ data: { draft } }`; sonst `{ name, data: { sheet, actor } }` | Charakter, beim Entwurf mit `problems`; Werte nur bei freien Charakteren der Spielleitung außerhalb eines Teams |
-| `POST /characters/{id}/finish` | – | fertiger Charakter mit `start_cash`; 400, solange es Probleme gibt |
+| `POST /characters/{id}/finish` | – | fertiger Charakter mit `start_cash` und `start_gear`; 400, solange es Probleme gibt |
+| `POST /characters/{id}/items` | `{ command: "add_item", item }` oder `{ command: "move_item", uid, to, count? }` | Charakter; nur freie Charaktere der Spielleitung außerhalb eines Teams, Übergeben nur im Team |
 | `PUT /characters/{id}/relations` | `{ buddy, rival }`, Ids oder `null` | Charakter; nur im Team (F-52); in Cinematic nur die Spielleitung |
 | `DELETE /characters/{id}` | – | nur außerhalb eines Teams, sonst 409 |
 
@@ -143,7 +146,7 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | Methode und Pfad | Inhalt | Antwort |
 | --- | --- | --- |
 | `POST /teams/{id}/commands` | `{ command, note? }`, ein Engine-Befehl und auf Wunsch eine Notiz | neue Protokolleinträge, soweit sichtbar |
-| `POST /teams/{id}/preview` | Wurfanfrage wie in `roll` | Würfelzahl und Modifikatoren, ohne zu würfeln |
+| `POST /teams/{id}/preview` | Wurfanfrage wie in `roll` | Würfelzahl und Modifikatoren, passende Talente und Gegenstände, ohne zu würfeln |
 | `POST /teams/{id}/undo` | – | Eintrag `undone` |
 | `GET /teams/{id}/events` | `Last-Event-ID` oder `?after=<id>` | Server-Sent Events, je Eintrag `{ id, batch, visible_to, by, at, entry }` |
 

@@ -248,7 +248,7 @@ Die Reihenfolge folgt dem Buch [S. 27]. Jeder Schritt zeigt die Regel mit Seiten
 5. **Name** aus den Vorschlägen der Karriere oder frei; **Aussehen** in wenigen Worten [S. 30].
 6. **Persönliche Agenda:** einer der drei Vorschläge oder eigene, im Spiel nur für Spieler und Spielleitung sichtbar, beim Sitzungsabschluss für die Gruppe [S. 31, 213].
 7. **Buddy und Rival:** je ein anderer Spielercharakter, nicht derselbe, freiwillig (F-52). Gewählt wird im Team, weil es erst dort die anderen Spielercharaktere gibt [S. 31].
-8. **Ausrüstung** (mit 2c): zwei Gegenstände aus zwei verschiedenen „A oder B“-Zeilen der Karriere. Jede Waffe bekommt zwei volle Magazine extra, „W6 Dosen“ wird gewürfelt, Kleidung ist frei [S. 33]. Dazu ein **Signature Item**, meist winzig.
+8. **Ausrüstung**: zwei Gegenstände aus zwei verschiedenen „A oder B“-Zeilen der Karriere (F-60). Jede Waffe bekommt zwei volle Magazine extra, „W6 Dosen“ wird gewürfelt, Kleidung ist frei [S. 33]. Dazu ein **Signature Item**, meist winzig.
 9. **Startgeld** wird gewürfelt und protokolliert: Kid $W6, Company Agent und Officer $2W6×100, alle anderen $W6×100 [S. 39–55].
 10. **Abgeleitete Werte:** Health = STRENGTH (Tough +2), Stresslevel 0, Traglast = STRENGTH × 2 [S. 30, 34].
 
@@ -269,11 +269,12 @@ Ein Android ist ein Schalter am Charakter, kein eigener Charaktertyp. Er wirkt i
 ### 5.4 Ausrüstung und Traglast
 
 - **Katalog** mit allen Gegenständen aus Kapitel 6: Waffen, Rüstungen, Geräte, Medikamente, Nahrung, Fahrzeuge, jeweils mit Gewicht, Preis, Bonus auf Fertigkeit und Vorratswert. Dazu **freie Gegenstände**, denn NSC und Szenarien nennen Ausrüstung, die nicht im Katalog steht.
-- **Gewicht** 0 (winzig), ¼, ½, 1, 2, 3 oder 4. Traglast normal STRENGTH × 2. Bis STRENGTH × 4 ist überladen erlaubt; dann verlangt Rennen oder Kriechen im Kampf eine MOBILITY-Probe. Mehr geht nicht [S. 34]. Food und Water zählen als aufgerundet Vorrat ÷ 4 Gegenstände [S. 34–35].
-- **Ort** pro Gegenstand: am Körper oder verstaut; Lagerung im Schiff kommt mit Phase 5. Was nicht am Körper ist, steht im Wurfdialog nicht zur Verfügung und zählt nicht zur Traglast [S. 33, 34].
+- **Gewicht** 0 (winzig), ¼, ½, 1, 2, 3 oder 4. Traglast normal STRENGTH × 2. Bis STRENGTH × 4 ist überladen erlaubt; dann verlangt Rennen oder Kriechen im Kampf eine MOBILITY-Probe. Mehr geht nicht [S. 34]. Food und Water zählen als aufgerundet Vorrat ÷ 4 Gegenstände [S. 34–35], auch über 8 (F-69); Magazine wiegen nichts (F-70).
+- **Ort** pro Gegenstand: dabei, angezogen (ein Anzug) oder verstaut; Lagerung im Schiff kommt mit Phase 5. Was nicht am Körper ist, steht im Wurfdialog nicht zur Verfügung und zählt nicht zur Traglast [S. 33, 34].
 - **Waffen:** Zahl der Reservemagazine, zu Beginn zwei (F-61); geladen oder leer und Nachladen als langsame Aktion kommen mit dem Kampf [S. 96].
 - **Geräte mit Vorrat** wie Bewegungsmelder, Schneidbrenner, Stun Baton oder XM99A verlangen nach jeder Nutzung einen Power-Wurf; Rüstungen tragen ihren Air-Vorrat.
-- **Bonus im Wurf:** Wer würfelt, bekommt passende Gegenstände am Körper zum Ankreuzen angeboten (z. B. Electronic Tools +1 auf COMTECH); jeder zählt einmal, bei Angriffen nur die benutzte Waffe (F-59). Getragene Anzüge wirken von selbst (APEsuit SURVIVAL +3, Mk.50 nach F-66).
+- **Bonus im Wurf:** Wer würfelt, bekommt passende Gegenstände am Körper zum Ankreuzen angeboten (z. B. Electronic Tools +1 auf COMTECH); jeder zählt einmal, bei Angriffen nur die benutzte Waffe (F-59). Getragene Anzüge wirken von selbst (APEsuit SURVIVAL +3, Mk.50 nach F-66). Das persönliche Medkit ist nach der Probe verbraucht (F-68); das chirurgische Besteck ist auch eine Nahkampfwaffe (F-67).
+- **Später:** Wirkung von Bier, Schnaps und Naproleve beim Verbrauch und Raketenpreise mit 2c.2; Waffenregeln wie der Granatwerfer der M41A oder das Zielen der XM99A mit dem Kampf (Phase 3); Power Loader (HEAVY MACHINERY 2) und Raketen mit Zielbeschränkung mit Fahrzeugen und Schiffen (Phase 5).
 - **Verbrauch:** Medikamente und Nahrung haben Dosen; ihre Wirkung wird beim Benutzen als Effekt gesetzt (Naproleve: Stresslevel auf 0) [S. 136–139].
 - **Gruppenbesitz:** Fahrzeuge, Schiffe und auf Wunsch Vorräte gehören der Gruppe [S. 33–34].
 - **Geld:** eigenes Feld mit Buchungsliste, obwohl der gedruckte Bogen keines hat.
@@ -829,4 +830,4 @@ Die Engine läuft dabei mit vorgegebenen Würfelergebnissen, damit sich die gedr
 
 Offen:
 
-Derzeit keine. Phasen 0, 1, 2a, 2b.1 und 2b.2 sind abgeschlossen (PR #1 bis #13). Phase 2c.1 ist in Arbeit.
+Derzeit keine. Phasen 0, 1, 2a, 2b.1 und 2b.2 sind abgeschlossen (PR #1 bis #13). Phase 2c.1 liegt als Pull Request vor; danach folgt 2c.2.
