@@ -8,6 +8,7 @@ import XField from '@/ui/XField.vue'
 import XPanel from '@/ui/XPanel.vue'
 import { get, post } from '@/api'
 import { useCharactersStore } from '@/stores/characters'
+import { refusal } from '@/labels'
 
 // Joining a team: the player chooses one of their free characters (A-04).
 const { t } = useI18n()
@@ -26,7 +27,7 @@ onMounted(async () => {
     await characters.load()
     chosen.value = free.value[0]?.id ?? 'none'
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 })
 
@@ -37,7 +38,7 @@ async function join() {
     const result = await post(`/join/${route.params.token}`, { character })
     router.push(`/teams/${result.team}`)
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 </script>

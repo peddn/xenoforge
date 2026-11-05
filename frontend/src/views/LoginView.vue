@@ -7,6 +7,7 @@ import XButton from '@/ui/XButton.vue'
 import XField from '@/ui/XField.vue'
 import XPanel from '@/ui/XPanel.vue'
 import { useAuthStore } from '@/stores/auth'
+import { refusal } from '@/labels'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -26,7 +27,7 @@ async function submit() {
     else await auth.register(name.value, password.value, role.value)
     router.push(route.query.next ?? '/')
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 </script>

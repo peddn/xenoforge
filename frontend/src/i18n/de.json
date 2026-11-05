@@ -29,7 +29,8 @@
     "remove": "Entfernen",
     "add": "Hinzufügen",
     "close": "Schließen",
-    "note": "Anlass (freiwillig)"
+    "note": "Anlass (freiwillig)",
+    "refused": "Abgelehnt: {message}"
   },
   "home": {
     "characters": "Meine Charaktere",
@@ -73,7 +74,9 @@
     "startGear": "Startausrüstung gewürfelt",
     "gearRolled": "{name} × {count} (gewürfelt: {dice})",
     "supplies": "Vorräte",
-    "supplyRoll": "Vorratswurf"
+    "supplyRoll": "Vorratswurf",
+    "useSignatureItem": "Signature Item einsetzen (Stress −1)",
+    "signatureItemUsed": "in diesem Akt oder dieser Sitzung schon eingesetzt"
   },
   "gear": {
     "title": "Ausrüstung",
@@ -178,6 +181,7 @@
     "difficulty": "Schwierigkeit",
     "gear": "Ausrüstung",
     "helpers": "Helfer",
+    "calm": "Panik beenden bei",
     "preview": "{base} Grundwürfel, {stress} Stresswürfel",
     "difficultyByGm": "Eine Schwierigkeit oder einen Bonus für improvisierte Ausrüstung legt die Spielleitung fest: Sie löst den Wurf dann für deinen Charakter aus.",
     "talentActions": "Talent einsetzen",
@@ -200,7 +204,8 @@
     "waiting": "Wartet auf {name} · {what}",
     "titleFor": "Entscheidung: {name}",
     "pushesLeft": "kein Push mehr | 1 Push übrig | {n} Pushes übrig",
-    "pushHint": "Pushen: Stress +1, alle Würfel ohne Erfolg werden neu geworfen."
+    "pushHint": "Pushen: Stress +1, alle Würfel ohne Erfolg werden neu geworfen.",
+    "rollOf": "Wurf {what}: pushen oder annehmen?"
   },
   "op": {
     "stress": "Stress {delta}",
@@ -254,7 +259,10 @@
     "revealAndroid": "Android enthüllen",
     "revealAndroidConfirm": "{name} als Android enthüllen? Menschen in der Nähe bekommen Stress.",
     "correctionStale": "Die Werte haben sich inzwischen geändert, etwa weil jemand etwas benutzt hat. Lade die Korrektur neu, damit nichts verloren geht.",
-    "reloadCorrection": "Neu laden"
+    "reloadCorrection": "Neu laden",
+    "confirmUndo": "Zurücknehmen: {step}?",
+    "undoSilent": "den letzten Schritt",
+    "undoChanged": "Inzwischen kam ein anderer Schritt dazu. Bitte noch einmal ansehen."
   },
   "cold": {
     "above_freezing": "über null",
@@ -284,6 +292,7 @@
     "removeConfirm": "{name} wirklich aus dem Team nehmen?",
     "leave": "Team verlassen",
     "leaveConfirm": "Mit {name} das Team verlassen?",
+    "leaveReturns": "Austreten? {name} geht an die Spielleitung zurück und bleibt im Team.",
     "act": "Akt {act}",
     "waiting": "Ohne Charakter:",
     "scenarioOver": "Szenario beendet",
@@ -318,7 +327,7 @@
     "source_applied": "{actor}: {source}",
     "source_ended": "{actor}: {source} endet",
     "talent_used": "{actor} nutzt {talent}",
-    "trauma": "{actor}: Trauma {trauma}",
+    "trauma": "{actor}: Trauma {trauma} (W6: {d6})",
     "no_trauma": "{actor}: kein Trauma",
     "pushed": "{actor} pusht",
     "story_point_spent": "Story Point eingesetzt",
@@ -332,6 +341,7 @@
     "character_joined": "{name} kommt ins Team",
     "character_removed": "{name} verlässt das Team",
     "corrected": "Die Spielleitung korrigiert {name}",
+    "changed": "{name}: {changes}",
     "undone": "Letzter Schritt zurückgenommen",
     "successes": "kein Erfolg | {n} Erfolg | {n} Erfolge",
     "stunts": "kein Stunt | {n} Stunt | {n} Stunts",
@@ -365,7 +375,9 @@
     "item_refilled": "{actor}: {item} aufgefüllt, {from} → {to}",
     "supply_changed": "{actor}: {supply} {from} → {to}",
     "booked": "{actor}: {amount} – {reason}, Kontostand {balance}",
-    "reloads_added": "{actor}: {item} + {count} Magazin(e)"
+    "reloads_added": "{actor}: {item} + {count} Magazin(e)",
+    "roll_result": "{actor}, {what}: {result}",
+    "undoneMark": "zurückgenommen"
   },
   "about": {
     "title": "Über Xenoforge",
@@ -448,7 +460,8 @@
     "or": "oder",
     "gearDice": "{dice} × {name}",
     "gearCount": "{count} × {name}",
-    "gearExtras": "Schusswaffen kommen mit zwei vollen Magazinen. Mengen in Würfeln würfelt der Server beim Fertigstellen. Kleidung hast du ohnehin."
+    "gearExtras": "Schusswaffen kommen mit zwei vollen Magazinen. Mengen in Würfeln würfelt der Server beim Fertigstellen. Kleidung hast du ohnehin.",
+    "noEffectForAndroids": "Wirkt bei einem Android nicht: nur Stress, Push oder Panik (S. 29)."
   },
   "cast": {
     "offer": "Zur Wahl anbieten",

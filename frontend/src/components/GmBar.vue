@@ -5,15 +5,27 @@ import { useI18n } from 'vue-i18n'
 import XButton from '@/ui/XButton.vue'
 import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
+import { refusal } from '@/labels'
+import { useLogText } from '@/logText'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
 // The game master's actions for the whole team: a fixed pool such as
 // Mother's, the end of an Act or session, and undo. Ending an Act or a
-// session asks once more first.
+// session, and undo, ask once more first; undo names the step.
 const { t } = useI18n()
 const team = useTeamStore()
 const rules = useRulesStore()
+const { describe } = useLogText()
+
+// What undo takes back, in the words of the log: who and the first entry.
+const undoStep = computed(() => {
+  const batch = team.view.undo?.batch
+  const first = batch == null ? null : team.log.find((e) => (e.batch ?? e.id) === batch)
+  if (!first) return t('gm.undoSilent')
+  const text = describe(first).text ?? ''
+  return first.by ? `${first.by}: ${text}` : text
+})
 const pool = ref(8)
 const note = ref('')
 const error = ref('')
@@ -23,11 +35,26 @@ async function attempt(work) {
   try {
     await work()
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 
 const run = (command) => attempt(() => team.command(command))
+
+// Another step came in between: show the newer one and ask again.
+async function undo() {
+  error.value = ''
+  try {
+    await team.undo(team.view.undo?.step)
+  } catch (e) {
+    if (e.status === 409) {
+      await team.refresh()
+      error.value = t('gm.undoChanged')
+    } else {
+      error.value = refusal(e, t)
+    }
+  }
+}
 
 // Ending an Act: who furthered their Agenda gets a Story Point (A-13,
 // p. 216). Characters of the game master have no player to reward.
@@ -86,13 +113,14 @@ function rollPool() {
         data-test="end-session"
         @confirm="run({ command: 'end_session' })"
       />
-      <XButton
+      <XConfirm
+        v-if="team.view.undo"
         variant="danger"
+        :label="t('gm.undo')"
+        :question="t('gm.confirmUndo', { step: undoStep })"
         data-test="undo"
-        @click="attempt(() => team.undo())"
-      >
-        {{ t('gm.undo') }}
-      </XButton>
+        @confirm="undo"
+      />
     </div>
     <fieldset
       v-if="endingAct"

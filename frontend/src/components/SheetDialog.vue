@@ -9,7 +9,7 @@ import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
 import XStatus from '@/ui/XStatus.vue'
 import { put } from '@/api'
-import { originLabel, parseMoney } from '@/labels'
+import { originLabel, parseMoney, refusal } from '@/labels'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
@@ -57,13 +57,24 @@ watch(
   { immediate: true },
 )
 
+// Once per Act or session the owner turns to their signature item:
+// stress −1 [p. 104]. Androids have no stress level.
+async function useSignatureItem() {
+  error.value = ''
+  try {
+    await team.command({ command: 'use_signature_item', actor: String(props.character.id) })
+  } catch (e) {
+    error.value = refusal(e, t)
+  }
+}
+
 async function saveRelations() {
   error.value = ''
   try {
     await put(`/characters/${props.character.id}/relations`, { buddy: buddy.value ?? null, rival: rival.value ?? null })
     await team.refresh()
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 
@@ -83,7 +94,7 @@ async function save() {
     note.value = ''
   } catch (e) {
     stale.value = e.status === 409
-    error.value = stale.value ? t('gm.correctionStale') : e.message
+    error.value = stale.value ? t('gm.correctionStale') : refusal(e, t)
   }
 }
 
@@ -96,7 +107,7 @@ async function item(command) {
     await team.refresh()
     return true
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
     return false
   }
 }
@@ -119,7 +130,7 @@ async function supplyRoll(supply) {
   try {
     await team.command({ command: 'roll', request: { actor: String(props.character.id), kind: { supply: { supply } } } })
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 
@@ -137,7 +148,7 @@ async function book() {
     amount.value = ''
     reason.value = ''
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 
@@ -146,7 +157,7 @@ async function leave() {
   try {
     await team.removeCharacter(props.character.id)
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 </script>
@@ -201,6 +212,22 @@ async function leave() {
         :others="others"
         :send-item="item"
       />
+      <div
+        v-if="own && !team.view.is_gm && !character.actor.android"
+        class="flex flex-wrap items-center gap-2"
+      >
+        <XButton
+          :disabled="character.actor.signature_item_used"
+          data-test="use-signature-item"
+          @click="useSignatureItem"
+        >
+          {{ t('sheet.useSignatureItem') }}
+        </XButton>
+        <span
+          v-if="character.actor.signature_item_used"
+          class="text-sm text-dim"
+        >{{ t('sheet.signatureItemUsed') }}</span>
+      </div>
       <div
         v-if="setsRelations && others.length"
         class="flex flex-wrap items-end gap-2"
@@ -353,7 +380,7 @@ async function leave() {
       <XConfirm
         variant="danger"
         :label="t('team.leave')"
-        :question="t('team.leaveConfirm', { name: character.name })"
+        :question="t(character.returns ? 'team.leaveReturns' : 'team.leaveConfirm', { name: character.name })"
         data-test="leave"
         @confirm="leave"
       />

@@ -179,11 +179,13 @@ struct Snapshot {
     characters: Vec<(i64, Actor)>,
 }
 
+/// Keeps the state before a command or correction; answers the row, so
+/// the entries the step writes can be noted with it (`mark_snapshot`).
 async fn save_snapshot(
     tx: &mut Transaction<'_, Sqlite>,
     team: &Team,
     characters: &[Character],
-) -> ApiResult<()> {
+) -> ApiResult<i64> {
     let snapshot = Snapshot {
         team: team.state.clone(),
         characters: characters
@@ -191,12 +193,13 @@ async fn save_snapshot(
             .map(|c| (c.id, c.data.actor.clone()))
             .collect(),
     };
-    sqlx::query("INSERT INTO snapshots (team_id, state, created_at) VALUES (?, ?, ?)")
+    let row = sqlx::query("INSERT INTO snapshots (team_id, state, created_at) VALUES (?, ?, ?)")
         .bind(team.id)
         .bind(serde_json::to_string(&snapshot)?)
         .bind(now())
         .execute(&mut **tx)
-        .await?;
+        .await?
+        .last_insert_rowid();
     sqlx::query(
         "DELETE FROM snapshots WHERE team_id = ? AND id NOT IN \
          (SELECT id FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT ?)",
@@ -206,7 +209,44 @@ async fn save_snapshot(
     .bind(UNDO_DEPTH)
     .execute(&mut **tx)
     .await?;
+    Ok(row)
+}
+
+/// Notes which log entries the step after a snapshot wrote.
+async fn mark_snapshot(
+    tx: &mut Transaction<'_, Sqlite>,
+    snapshot: i64,
+    stored: &[Stored],
+) -> ApiResult<()> {
+    sqlx::query("UPDATE snapshots SET batch = ? WHERE id = ?")
+        .bind(stored.first().map(|s| s.batch))
+        .bind(snapshot)
+        .execute(&mut **tx)
+        .await?;
     Ok(())
+}
+
+/// What undo would take back, for the game master: the step (its
+/// snapshot) and the batch of log entries it wrote; none if it wrote none
+/// or the snapshot is older than this record.
+pub async fn undo_target(
+    pool: &sqlx::SqlitePool,
+    team: i64,
+) -> ApiResult<Option<(i64, Option<i64>)>> {
+    Ok(
+        sqlx::query("SELECT id, batch FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1")
+            .bind(team)
+            .fetch_optional(pool)
+            .await?
+            .map(|row| (row.get("id"), row.get("batch"))),
+    )
+}
+
+/// The step the game master saw named before taking it back.
+#[derive(Deserialize)]
+struct UndoBody {
+    #[serde(default)]
+    step: Option<i64>,
 }
 
 /// The actor whose owner decides a pending decision; `None` means only
@@ -276,15 +316,14 @@ pub fn check_texts(command: &Command) -> ApiResult<()> {
 /// What a roll may bring along (A-08): a difficulty from the table on
 /// p. 63 and a free gear bonus up to `gear_bonus_max`, each at most once.
 /// Both are the game master's: players choose their items instead (F-59).
-/// Players roll skill, attribute and death rolls only.
+/// Players roll skill and death rolls only; a roll of an attribute alone
+/// has no Stress Dice (F-27), so only the rules or the game master ask for
+/// one.
 fn check_roll(engine: &Engine, request: &RollRequest, is_gm: bool) -> ApiResult<()> {
-    let player_kind = matches!(
-        request.kind,
-        RollKind::Skill { .. } | RollKind::Attribute { .. } | RollKind::Death
-    );
+    let player_kind = matches!(request.kind, RollKind::Skill { .. } | RollKind::Death);
     if !is_gm && !player_kind {
         return Err(ApiError::forbidden(
-            "players roll skill, attribute and death rolls (A-08)",
+            "players roll skill and death rolls (A-08)",
         ));
     }
     let (mut gear, mut difficulty) = (false, false);
@@ -385,13 +424,14 @@ async fn command(
         let mut dice = state.dice.lock().unwrap_or_else(PoisonError::into_inner);
         state.engine.apply(&mut game, body.command, &mut **dice)?
     };
-    save_snapshot(&mut tx, &team, &characters).await?;
+    let snapshot = save_snapshot(&mut tx, &team, &characters).await?;
     store(&mut tx, id, game, &mut characters).await?;
     let entries = events
         .into_iter()
         .map(|event| Entry::Engine { event })
         .collect();
     let stored = log::append(&mut tx, id, &user, entries, note).await?;
+    mark_snapshot(&mut tx, snapshot, &stored).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(
@@ -429,10 +469,13 @@ async fn preview(
 }
 
 /// Takes back the last command or correction.
+/// Takes back the last step. With the step the game master saw named, a
+/// newer one in between is refused rather than taken back unseen.
 async fn undo(
     State(state): State<AppState>,
     user: User,
     Path(id): Path<i64>,
+    body: Option<Json<UndoBody>>,
 ) -> ApiResult<Json<Vec<Stored>>> {
     let _guard = state.lock.lock().await;
     let team = load_team(&state.pool, id).await?;
@@ -440,12 +483,19 @@ async fn undo(
         return Err(ApiError::forbidden("only the game master can undo"));
     }
     let mut tx = begin_write(&state.pool).await?;
-    let row =
-        sqlx::query("SELECT id, state FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1")
-            .bind(id)
-            .fetch_optional(&mut *tx)
-            .await?
-            .ok_or_else(|| ApiError::conflict("nothing to undo"))?;
+    let row = sqlx::query(
+        "SELECT id, state, batch FROM snapshots WHERE team_id = ? ORDER BY id DESC LIMIT 1",
+    )
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?
+    .ok_or_else(|| ApiError::conflict("nothing to undo"))?;
+    let expected = body.and_then(|Json(b)| b.step);
+    if expected.is_some_and(|step| step != row.get::<i64, _>("id")) {
+        return Err(ApiError::conflict(
+            "another step came in between; look again before taking it back",
+        ));
+    }
     let mut snapshot: Snapshot = serde_json::from_str(row.get("state"))?;
     // Numbers of decisions and rolls are never handed out twice: the log
     // already names the newer ones.
@@ -465,7 +515,8 @@ async fn undo(
         .bind(row.get::<i64, _>("id"))
         .execute(&mut *tx)
         .await?;
-    let stored = log::append(&mut tx, id, &user, vec![Entry::Undone], None).await?;
+    let batch: Option<i64> = row.get("batch");
+    let stored = log::append(&mut tx, id, &user, vec![Entry::Undone { batch }], None).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))
@@ -528,14 +579,23 @@ pub async fn correct(
         .retain(|s, _| matches!(s, Supply::Food | Supply::Water));
     characters::check_actor(&state, &actor)?;
     state.engine.check_overload(&character.data.actor, &actor)?;
-    save_snapshot(&mut tx, &team, &characters).await?;
-    character.data.actor = actor;
+    let snapshot = save_snapshot(&mut tx, &team, &characters).await?;
+    let before = std::mem::replace(&mut character.data.actor, actor);
     characters::save(&mut tx, &character).await?;
-    let entry = Entry::Corrected {
+    let changes = log::changes(&before, &character.data.actor);
+    let mut entries = vec![Entry::Corrected {
         character: character.id,
         name: character.name.clone(),
-    };
-    let stored = log::append(&mut tx, id, &user, vec![entry], note).await?;
+    }];
+    if !changes.is_empty() {
+        entries.push(Entry::Changed {
+            character: character.id,
+            name: character.name.clone(),
+            changes,
+        });
+    }
+    let stored = log::append(&mut tx, id, &user, entries, note).await?;
+    mark_snapshot(&mut tx, snapshot, &stored).await?;
     tx.commit().await?;
     log::publish(&state, &stored);
     Ok(Json(stored))
@@ -605,8 +665,10 @@ impl From<&RollState> for RollView {
     }
 }
 
-/// Open decisions; the choice of targets only for the game master.
-pub fn pending_views(state: &GameState, is_gm: bool) -> Vec<PendingView> {
+/// Open decisions; the choice of targets only for the game master. Whether
+/// a player may spend a Story Point tells the others they have one, so
+/// that option is for the owner and the game master only.
+pub fn pending_views(state: &GameState, is_gm: bool, own: &[String]) -> Vec<PendingView> {
     state
         .pending
         .iter()
@@ -628,6 +690,9 @@ pub fn pending_views(state: &GameState, is_gm: bool) -> Vec<PendingView> {
                 Pending::Roll(roll) => {
                     view.kind = "roll";
                     view.options = roll.offered.clone();
+                    if !is_gm && !view.actor.as_ref().is_some_and(|a| own.contains(a)) {
+                        view.options.retain(|c| *c != Choice::StoryPoint);
+                    }
                     view.roll = Some(RollView::from(&**roll));
                 }
                 Pending::StartRoll { options, .. } => {

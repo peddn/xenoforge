@@ -105,8 +105,9 @@ export const useTeamStore = defineStore('team', () => {
     return post(`/teams/${view.value.id}/preview`, request)
   }
 
-  async function undo() {
-    return post(`/teams/${view.value.id}/undo`)
+  // With the step the game master saw named, so no other is taken back.
+  async function undo(step) {
+    return post(`/teams/${view.value.id}/undo`, step != null ? { step } : {})
   }
 
   // `base`: the values the correction started from (refused if outdated).

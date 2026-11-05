@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import XButton from '@/ui/XButton.vue'
 import XFacts from '@/ui/XFacts.vue'
 import XField from '@/ui/XField.vue'
-import { cashFormula, problemText, weightText } from '@/labels'
+import { cashFormula, problemText, refusal, weightText } from '@/labels'
 import { useCharactersStore } from '@/stores/characters'
 import { useRulesStore } from '@/stores/rules'
 
@@ -182,7 +182,7 @@ async function save() {
     }
     error.value = ''
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   } finally {
     inFlight = false
     if (again) {
@@ -199,7 +199,7 @@ async function finish() {
   try {
     emit('finished', await characters.finish(props.character.id))
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 </script>
@@ -369,6 +369,12 @@ async function finish() {
             v-if="rules.entry('talents', id)?.later"
             class="text-sm text-dim"
           >{{ t('wizard.later', { part: t(`wizard.part.${rules.entry('talents', id).later}`) }) }}</span>
+          <!-- Only stress, pushes or panic: nothing for an android (plan 5.3, p. 29). -->
+          <span
+            v-if="draft.android && rules.entry('talents', id)?.no_effect_for_androids"
+            class="text-sm text-amber"
+            :data-test="`talent-no-effect-${id}`"
+          >{{ t('wizard.noEffectForAndroids') }}</span>
         </span>
       </label>
       <XField

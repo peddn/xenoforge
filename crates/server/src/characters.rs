@@ -73,6 +73,10 @@ pub struct CharacterData {
     /// Offered in its team for a player to choose (A-12).
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub offered: bool,
+    /// The game master whose prepared character a player chose or was
+    /// given; it goes back to them when the player leaves (A-12) [p. 26].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lent_by: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -592,6 +596,7 @@ async fn finish(
         start_cash,
         start_gear,
         offered: false,
+        lent_by: None,
     };
     let mut tx = begin_write(&state.pool).await?;
     save(&mut tx, &character).await?;

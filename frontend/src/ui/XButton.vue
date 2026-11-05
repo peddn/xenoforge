@@ -15,7 +15,8 @@ const VARIANTS = {
   highlight: 'border-amber bg-amber text-bg',
   notice: 'border-amber text-amber',
 }
-const SIZES = { normal: 'px-3 py-1', small: 'px-2 py-0.5 text-sm' }
+// On phones a little taller, so a finger hits them.
+const SIZES = { normal: 'px-3 py-1 max-sm:min-h-10', small: 'px-2 py-0.5 text-sm max-sm:min-h-9' }
 </script>
 
 <template>

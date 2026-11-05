@@ -308,6 +308,11 @@ pub struct Skill {
     pub id: Id,
     pub page: Page,
     pub attribute: Id,
+    /// No list of stunts: every success counts for the skill itself,
+    /// e.g. Health back or the bonus of an order (MEDICAL AID, COMMAND)
+    /// [p. 71].
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub no_stunts: bool,
 }
 
 /// When an action can be taken.
@@ -489,6 +494,10 @@ pub struct Talent {
     /// Can be taken more than once, each time for another parameter.
     #[serde(default, skip_serializing_if = "is_false")]
     pub repeatable: bool,
+    /// Works only through stress, pushes or panic, which androids do not
+    /// have; the wizard marks it for them (plan 5.3) [p. 29, 111].
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub no_effect_for_androids: bool,
     /// The part of the app that will make the talent work; until then it
     /// can be chosen and is shown, without effect.
     #[serde(default, skip_serializing_if = "Option::is_none")]

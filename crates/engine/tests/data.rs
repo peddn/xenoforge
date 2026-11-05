@@ -309,3 +309,157 @@ fn finds_pushes_on_rolls_that_cannot_be_pushed() {
     });
     assert_found(&problems, "only skill rolls can be pushed");
 }
+
+// ---- errata and rulings that live in the data -----------------------------
+
+fn item(data: &Data, id: &str) -> serde_json::Value {
+    let item = data
+        .rules
+        .gear
+        .iter()
+        .find(|i| i.id == id)
+        .unwrap_or_else(|| panic!("no item {id}"));
+    serde_json::to_value(item).unwrap()
+}
+
+/// The Pilot's key skills as corrected (E-01) [p. 51].
+#[test]
+fn pilot_key_skills_follow_the_errata() {
+    let data = load();
+    let pilot = data.rules.careers.iter().find(|c| c.id == "pilot").unwrap();
+    assert_eq!(pilot.key_skills, ["piloting", "ranged_combat", "comtech"]);
+}
+
+/// The weapon tables count, not the infographics (E-03) [p. 119–124].
+#[test]
+fn weapons_follow_the_tables() {
+    let data = load();
+    for (id, bonus, damage, range) in [
+        ("m4a3_service_pistol", 2, 1, "medium"),
+        ("armat_m41a_pulse_rifle", 1, 2, "long"),
+        ("m42a_scope_rifle", 2, 2, "extreme"),
+        ("armat_m41ae2_heavy_pulse_rifle", 1, 3, "extreme"),
+    ] {
+        let weapon = &item(&data, id)["weapon"];
+        assert_eq!(
+            (&weapon["bonus"], &weapon["damage"], &weapon["range"]),
+            (
+                &serde_json::json!(bonus),
+                &serde_json::json!(damage),
+                &serde_json::json!(range)
+            ),
+            "{id}"
+        );
+    }
+}
+
+/// Career items without stats: a weight by the rule of thumb, no price
+/// (F-64) [p. 34, 39–55].
+#[test]
+fn career_items_have_a_weight_and_no_price() {
+    let data = load();
+    let others: Vec<_> = data
+        .rules
+        .gear
+        .iter()
+        .filter(|i| serde_json::to_value(i.category).unwrap() == "other")
+        .collect();
+    assert!(!others.is_empty());
+    for item in others {
+        assert!(item.weight.is_some(), "{}", item.id);
+        assert!(item.cost.is_none(), "{}", item.id);
+    }
+}
+
+/// The HoloTab helps COMMAND and OBSERVATION, as the text says (F-65)
+/// [p. 131, 132].
+#[test]
+fn holotab_helps_command_and_observation() {
+    let data = load();
+    let holotab = item(&data, "holotab");
+    assert_eq!(
+        holotab["effects"][0]["applies_to"]["skills"],
+        serde_json::json!(["command", "observation"])
+    );
+    assert_eq!(holotab["effects"][0]["change"]["add"], 2);
+}
+
+/// The surgical kit as a weapon: close combat, bonus 0, damage 2, Engaged
+/// (F-67) [p. 126, 136].
+#[test]
+fn surgical_kit_is_a_close_combat_weapon() {
+    let data = load();
+    let weapon = &item(&data, "surgical_kit")["weapon"];
+    assert_eq!(weapon["skill"], "close_combat");
+    assert!(weapon["bonus"].is_null() || weapon["bonus"] == 0);
+    assert_eq!(weapon["damage"], 2);
+    assert_eq!(weapon["range"], "engaged");
+}
+
+/// Phobia: Stress near the object, a Panic Roll after more than one Round
+/// near it (F-41) [p. 101]; the hint says so in both languages.
+#[test]
+fn phobia_counts_one_round() {
+    let data = load();
+    for (lang, word) in [("de", "eine Runde"), ("en", "one Round")] {
+        let text = &data.i18n[lang]["phobia.hint"];
+        assert!(text.contains(word), "{lang}: {text}");
+    }
+}
+
+/// Every career suggests names, looks, signature items and Agendas, with
+/// texts in both languages (A-11) [p. 39–55].
+#[test]
+fn careers_make_suggestions() {
+    let data = load();
+    for career in &data.rules.careers {
+        assert!(!career.names.is_empty(), "{}", career.id);
+        for (kind, ids) in [
+            ("look", &career.looks),
+            ("item", &career.items),
+            ("agenda", &career.agendas),
+        ] {
+            assert!(!ids.is_empty(), "{} {kind}", career.id);
+            for id in ids {
+                for lang in ["de", "en"] {
+                    let key = format!("{}.{kind}.{id}", career.id);
+                    assert!(data.i18n[lang].contains_key(&key), "{lang}: {key}");
+                }
+            }
+        }
+    }
+}
+
+/// A talent is marked as without effect for androids exactly when all it
+/// does is about pushes, panic, facehuggers on Stress Dice or the supply
+/// of air, food and water, which androids do not have or need (plan 5.3)
+/// [p. 29, 111]. Talents whose effects come later are marked by hand:
+/// Machinegunner (no stress to spare) and Light Sleeper (no sleep).
+#[test]
+fn talents_without_effect_for_androids() {
+    let human_rolls = ["panic", "air_supply", "food_supply", "water_supply"];
+    let only_human = |effect: &serde_json::Value| match effect["kind"].as_str() {
+        Some("modifier") => {
+            effect["modifies"] == "pushes"
+                || effect["applies_to"]["rolls"].as_array().is_some_and(|r| {
+                    !r.is_empty() && r.iter().all(|x| human_rolls.iter().any(|h| x == h))
+                })
+        }
+        Some("replacement") => {
+            effect["replaces"] == "facehuggers_in_roll"
+                || effect["replaces"].get("panic_result").is_some()
+        }
+        _ => false,
+    };
+    for talent in &load().rules.talents {
+        let effects = serde_json::to_value(&talent.effects).unwrap();
+        let effects = effects.as_array().unwrap();
+        if effects.is_empty() {
+            let by_hand = ["machinegunner", "light_sleeper"].contains(&talent.id.as_str());
+            assert_eq!(talent.no_effect_for_androids, by_hand, "{}", talent.id);
+            continue;
+        }
+        let expected = effects.iter().all(only_human);
+        assert_eq!(talent.no_effect_for_androids, expected, "{}", talent.id);
+    }
+}

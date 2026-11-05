@@ -27,8 +27,8 @@ Browser ── HTTP (JSON) ──▶ axum ──▶ Engine (rein)
 
 | Befehl | Spieler | Spielleitung |
 | --- | --- | --- |
-| `roll` für eigenen Charakter: Fertigkeit, Attribut, Death Roll; Helfer und eigene Gegenstände (F-59) | ja | ja |
-| `roll` mit Schwierigkeit, freiem Ausrüstungsbonus, fester Pool, Vorrat, einzelne Stresswürfel (A-08) | nein | ja |
+| `roll` für eigenen Charakter: Fertigkeit, Death Roll; Helfer und eigene Gegenstände (F-59) | ja | ja |
+| `roll` mit Schwierigkeit, freiem Ausrüstungsbonus, reines Attribut, fester Pool, Vorrat, einzelne Stresswürfel (A-08) | nein | ja |
 | `roll` für fremde Charaktere oder ohne Charakter | nein | ja |
 | `decide` | wenn die Entscheidung beim eigenen Charakter liegt | ja |
 | `decide` bei der Wahl der Betroffenen (`targets`) | nein | ja |
@@ -48,7 +48,7 @@ Ein Wurf bringt höchstens eine Schwierigkeit und einen Ausrüstungsbonus mit, a
 - `{"source": "difficulty_hard", "value": -2}`: nur die Spielleitung, nur mit dem Wert aus der Tabelle S. 63 (`data/rules/constants.json`).
 - `{"source": "gear", "value": 2}`: nur die Spielleitung, 0 bis `gear_bonus_max`, für improvisierte Ausrüstung. Spieler wählen stattdessen ihre Gegenstände (`items`, F-59); deren Bonus prüft die Engine.
 
-Helfer stehen in `helpers`; es zählen höchstens drei (S. 63). Alles andere lehnt der Server ab.
+Helfer stehen in `helpers`; es zählen höchstens drei (S. 63). Alles andere lehnt der Server ab. Freie Texte in Befehlen haben Grenzen (Name eines freien Gegenstands 60 Zeichen, Grund einer Buchung 200). Was schon an der Form scheitert, etwa ein negativer Schaden, beantwortet der Server wie jeden Fehler als `{ error, message }`.
 
 ## Sichtbarkeit (A-01)
 
@@ -56,9 +56,13 @@ Helfer stehen in `helpers`; es zählen höchstens drei (S. 63). Alles andere leh
 - Agenden pro Akt (Cinematic) sieht die Spielleitung alle, der Besitzer nur die des laufenden Akts (A-13). Sie liegen beim Team, nicht im Charakter, damit sie über die Charakter-Schnittstelle nie herausgehen.
 - Was im Spiel geschieht, steht nach A-01 im gemeinsamen Protokoll, so wie es am Tisch angesagt würde: Würfe, Stress und Schaden, Panik, eingesetzte Talente und die Entscheidungen, auf die gewartet wird.
 - Geld, also die Buchungsliste im Charakter, sehen nur der Besitzer und die Spielleitung; bei einem angebotenen Charakter sehen es die anderen nicht. Die Buchungen im Protokoll sieht nur die Spielleitung (A-15). Damit der Kontostand beim Besitzer trotzdem stimmt, bekommen die Spieler statt der Buchung ein leeres Ereignis `refresh` und laden ihre Ansicht neu; was gebucht wurde, steht nicht darin. Dasselbe gilt für Story Points, die die Spielleitung von Hand setzt.
-- Story Points sieht jeder Spieler für sich, die Spielleitung für alle. Dass jemand beim Aktende einen bekommt, steht für alle im Protokoll (S. 216); was die Spielleitung von Hand setzt, nur für sie.
+- Story Points sieht jeder Spieler für sich, die Spielleitung für alle. Dass jemand beim Aktende einen bekommt, steht für alle im Protokoll (S. 216); was die Spielleitung von Hand setzt, nur für sie. Dass ein Wurf einen Story Point anbietet, sehen nur der Besitzer und die Spielleitung: Das Ereignis `decision` im Protokoll lässt ihn weg, die offene Entscheidung in der Team-Ansicht zeigt ihn nur ihnen.
+- Ob ein Charakter von der Spielleitung vorbereitet ist (`prepared`) und damit an sie zurückgehen kann, sieht nur sie (A-12).
+- Tödlich verletzt (`fatally_injured`, braucht Death Rolls) sehen dieselben wie die Werte. Ob ein Charakter beim Austritt an die Spielleitung zurückgeht (`returns`), sehen Besitzer und Spielleitung.
+- Ob jemand in Panik ist, sehen alle (`panicking` in der Team-Ansicht), denn der Panikwurf steht im Protokoll; eine COMMAND-Probe eines anderen kann sie beenden (F-36).
+- Eine Korrektur steht für alle im Protokoll; was sie geändert hat, vorher und nachher (`changed`), sieht nur die Spielleitung, weil die Werte eines Bogens nicht allen gehören.
 - Jeder Protokolleintrag ist entweder für **alle** im Team oder nur für die **Spielleitung** sichtbar. Nur für die Spielleitung sind Hinweise der Engine, die als solche markiert sind. Gefiltert wird an einer Stelle (`log.rs`), für das Nachladen und für den Live-Strom gleich.
-- Wen ein Effekt trifft, entscheidet nur die Spielleitung; die offene Entscheidung sehen Spieler nicht, im Protokoll steht nur, dass gewählt wird.
+- Wen ein Effekt trifft, entscheidet nur die Spielleitung; die offene Entscheidung sehen Spieler nicht, im Protokoll steht nur, dass gewählt wird. Wer zur Wahl steht, steht nicht darin, weil die Liste einen verdeckten Android verriete (A-14).
 
 ## Spielstand
 
@@ -81,7 +85,7 @@ Im Team ändern sich die Werte nur noch über Befehle oder über eine Korrektur 
 
 ### Rückgängig
 
-Vor jedem Befehl und jeder Korrektur legt der Server einen Schnappschuss des Team-Dokuments und der Werte aller Charaktere an; die letzten 20 bleiben erhalten. **Rückgängig** stellt den letzten wieder her und schreibt das ins Protokoll; die alten Einträge bleiben stehen. Name, Aussehen und Notizen bleiben, wie der Spieler sie zuletzt gespeichert hat, und Nummern von Würfen und Entscheidungen werden nie zweimal vergeben. Wird ein Charakter aus dem Team genommen, endet die Kette, weil ältere Stände ihn noch enthalten.
+Vor jedem Befehl und jeder Korrektur legt der Server einen Schnappschuss des Team-Dokuments und der Werte aller Charaktere an; die letzten 20 bleiben erhalten. Zu jedem merkt er sich, welche Protokolleinträge der Schritt geschrieben hat (`batch`, die Nummer des ersten). **Rückgängig** stellt den letzten wieder her und schreibt das ins Protokoll (`undone` mit `batch`); die alten Einträge bleiben stehen, die Oberfläche markiert sie als zurückgenommen. Die Team-Ansicht nennt der Spielleitung, was Rückgängig zurücknehmen würde (`undo.step` und `undo.batch`; `batch` ist leer bei einem Schritt ohne Eintrag und bei Schnappschüssen von vor dieser Angabe), damit sie vorher nachfragt. Schickt die Oberfläche den gesehenen Schritt mit (`{ step }`), lehnt der Server mit `409` ab, wenn inzwischen ein anderer dazukam. Name, Aussehen und Notizen bleiben, wie der Spieler sie zuletzt gespeichert hat, und Nummern von Würfen und Entscheidungen werden nie zweimal vergeben. Wird ein Charakter aus dem Team genommen, endet die Kette, weil ältere Stände ihn noch enthalten.
 
 ## Speicher (SQLite)
 
@@ -135,7 +139,7 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | `POST /teams/{id}/invite` | Spielleitung | – | neues Einladungs-Token |
 | `POST /teams/{id}/characters` | Spielleitung | `{ character }` | eigenen Charakter hinzufügen |
 | `PUT /teams/{id}/characters/{c}` | Spielleitung | `{ actor, base?, note? }` | Werte korrigieren; 409, wenn sich der Charakter seit `base` geändert hat |
-| `DELETE /teams/{id}/characters/{c}` | Spielleitung oder Besitzer | – | Charakter aus dem Team nehmen bzw. austreten |
+| `DELETE /teams/{id}/characters/{c}` | Spielleitung oder Besitzer | – | Charakter aus dem Team nehmen bzw. austreten; ein Charakter der Spielleitung, den der Spieler gewählt oder bekommen hat (`lent_by`), geht an sie zurück und bleibt beim Austritt im Team (A-12) |
 | `GET /join/{token}` | angemeldet | – | Team, Spielleitung, Modus |
 | `POST /join/{token}` | angemeldet | `{ character }`, Id oder `null` | Beitritt mit freiem Charakter oder ohne (A-12) |
 | `PUT /teams/{id}/characters/{c}/offer` | Spielleitung | `{ offered }` | eigenen Charakter zur Wahl anbieten oder zurückziehen |
@@ -150,12 +154,12 @@ Alle Pfade beginnen mit `/api`. Antworten sind JSON; Fehler haben die Form `{ "e
 | --- | --- | --- |
 | `POST /teams/{id}/commands` | `{ command, note? }`, ein Engine-Befehl und auf Wunsch eine Notiz | neue Protokolleinträge, soweit sichtbar |
 | `POST /teams/{id}/preview` | Wurfanfrage wie in `roll` | Würfelzahl und Modifikatoren, passende Talente und Gegenstände, ohne zu würfeln |
-| `POST /teams/{id}/undo` | – | Eintrag `undone` |
+| `POST /teams/{id}/undo` | wahlweise `{ step }`, der Schritt, den die Spielleitung gesehen hat | Eintrag `undone` mit `batch`; `409`, wenn ein anderer Schritt dazukam |
 | `GET /teams/{id}/events` | `Last-Event-ID` oder `?after=<id>` | Server-Sent Events, je Eintrag `{ id, batch, visible_to, by, at, entry }`; dazu `event: refresh` ohne Nummer, wenn sich Verborgenes am eigenen Bogen geändert hat |
 
 Offene Entscheidungen (`pending` in der Ansicht des Teams) bringen bei einem Wurf den bisherigen Stand mit (`roll`): Fertigkeit oder Attribut, Würfel, Erfolge und übrige Pushes. Die Erfolge zählt die Engine. Bei der Wahl der Betroffenen, die nur die Spielleitung sieht, kommen dazu, wessen Aktion oder Panik fragt (`by`), welches Talent, welcher Panikeffekt oder welche Regel dahintersteht (`source`) und was jedem Gewählten geschieht (`ops`, z. B. Stress −1). Die Wahl selbst steht als `targets_chosen` im Protokoll, auch wenn sie nichts ändert. Die Oberfläche lädt die Ansicht nach jedem Befehl neu, nicht nur bei neuen Einträgen.
 
-Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `character_joined`, `character_removed` (durch die Spielleitung), `character_left` (der Spieler tritt aus), `corrected`, `undone`. Alle Einträge eines Befehls tragen in `batch` die Nummer des ersten; die Oberfläche zeigt sie als einen Block. Eine Notiz zum Befehl (`note`, höchstens 200 Zeichen) steht am ersten Eintrag; sie ist für alle sichtbar wie der Befehl selbst. Freie Texte in Befehlen haben Grenzen wie die übrigen: der Name eines freien Gegenstands höchstens 60 Zeichen, der Grund einer Buchung höchstens 200.
+Einträge im Protokoll (`entry.type`): `engine` (mit dem Ereignis der Engine), `character_joined`, `character_removed` (durch die Spielleitung), `character_left` (der Spieler tritt aus), `corrected`, `changed` (was eine Korrektur geändert hat: `path`, `from`, `to`, nur für die Spielleitung), `undone`. Alle Einträge eines Befehls tragen in `batch` die Nummer des ersten; die Oberfläche zeigt sie als einen Block. Eine Notiz zum Befehl (`note`, höchstens 200 Zeichen) steht am ersten Eintrag; sie ist für alle sichtbar wie der Befehl selbst.
 
 ### Regeldaten
 

@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import XButton from '@/ui/XButton.vue'
 import XConfirm from '@/ui/XConfirm.vue'
 import XField from '@/ui/XField.vue'
-import { originLabel } from '@/labels'
+import { originLabel, refusal } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
@@ -39,11 +39,15 @@ const needsCold = computed(() => {
 
 const cinematic = computed(() => team.view.mode === 'cinematic')
 const ownedByGm = computed(() => props.character.owner_id === team.view.gm?.id)
-// Taking a character away from a player is for Cinematic play only (p. 32).
-const canHandOver = computed(() => ownedByGm.value || cinematic.value)
+// The game master's own characters go to members; a player's goes back
+// to the game master, in Cinematic play only and only a prepared one
+// (A-12, p. 32).
+const canHandOver = computed(() => ownedByGm.value || (cinematic.value && props.character.prepared))
 const people = computed(() =>
-  [team.view.gm, ...(team.view.members ?? [])].filter((p) => p && p.id !== props.character.owner_id),
+  ownedByGm.value ? (team.view.members ?? []).filter((p) => p.id !== props.character.owner_id) : [team.view.gm],
 )
+// Only human player characters have a stress level [p. 29, 103].
+const stressLevel = computed(() => !props.character.actor?.android)
 const newOwner = ref(null)
 const acts = computed(() => rules.constant('cinematic_acts'))
 const agendas = ref([])
@@ -75,7 +79,7 @@ async function attempt(work) {
   try {
     await work()
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 
@@ -114,12 +118,17 @@ function apply() {
         >
       </XField>
       <XButton
+        :disabled="!stressLevel"
         data-test="stress-up"
         @click="run({ command: 'change_stress', actors: [actor], delta: amount })"
       >
         {{ t('gm.stressUp') }}
       </XButton>
-      <XButton @click="run({ command: 'change_stress', actors: [actor], delta: -amount })">
+      <XButton
+        :disabled="!stressLevel || !character.actor?.stress"
+        data-test="stress-down"
+        @click="run({ command: 'change_stress', actors: [actor], delta: -amount })"
+      >
         {{ t('gm.stressDown') }}
       </XButton>
       <XButton @click="run({ command: 'damage', actor, amount })">
@@ -127,13 +136,23 @@ function apply() {
       </XButton>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <XButton @click="run({ command: 'panic_roll', actor })">
+      <XButton
+        :disabled="!stressLevel"
+        @click="run({ command: 'panic_roll', actor })"
+      >
         {{ t('gm.panicRoll') }}
       </XButton>
-      <XButton @click="run({ command: 'stop_panic', actor })">
+      <XButton
+        :disabled="!character.actor?.panic"
+        @click="run({ command: 'stop_panic', actor })"
+      >
         {{ t('gm.stopPanic') }}
       </XButton>
-      <XButton @click="run({ command: 'use_signature_item', actor })">
+      <XButton
+        :disabled="!stressLevel || character.actor?.signature_item_used"
+        data-test="gm-signature-item"
+        @click="run({ command: 'use_signature_item', actor })"
+      >
         {{ t('gm.signatureItem') }}
       </XButton>
       <!-- A covert android revealed: humans nearby gain stress (A-14, p. 103). -->

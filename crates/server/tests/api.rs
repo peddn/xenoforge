@@ -433,6 +433,16 @@ async fn rule_errors_are_reported() {
         .await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert_eq!(body["error"], "rule");
+    // A body that does not fit is refused in the same format.
+    let (status, body) = gm
+        .command(
+            team,
+            json!({ "command": "damage", "actor": "1", "amount": -3 }),
+        )
+        .await;
+    assert!(status.is_client_error(), "{status}");
+    assert_eq!(body["error"], "bad_request", "{body}");
+    assert!(body["message"].as_str().is_some_and(|m| !m.is_empty()));
 }
 
 /// Players roll without difficulty; modifications are checked (A-08).
@@ -465,6 +475,13 @@ async fn roll_modifications_follow_a08() {
         (
             "player",
             json!({ "actor": actor, "kind": { "fixed_pool": { "dice": 200 } } }),
+            StatusCode::FORBIDDEN,
+        ),
+        // A roll of an attribute alone has no Stress Dice (F-27); only the
+        // rules or the game master ask for one.
+        (
+            "player",
+            json!({ "actor": actor, "kind": { "attribute": { "attribute": "wits" } } }),
             StatusCode::FORBIDDEN,
         ),
         (
@@ -606,17 +623,43 @@ async fn correction_and_undo() {
         4
     );
 
-    gm.command(
-        team,
-        json!({ "command": "change_stress", "actors": [actor], "delta": 1 }),
-    )
-    .await;
+    let (_, entries) = gm
+        .command(
+            team,
+            json!({ "command": "change_stress", "actors": [actor], "delta": 1 }),
+        )
+        .await;
     assert_eq!(
         stress(&player.ok("GET", &format!("/api/teams/{team}"), None).await),
         5
     );
-    gm.ok("POST", &format!("/api/teams/{team}/undo"), None)
+    // The game master learns what undo takes back, and the log says so.
+    let batch = entries[0]["batch"].clone();
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(view["undo"]["batch"], batch);
+    let step = view["undo"]["step"].as_i64().unwrap();
+    let view = player.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(view["undo"].is_null(), "the game master's");
+    // A step the game master did not see is not taken back unseen.
+    let (status, _) = gm
+        .call(
+            "POST",
+            &format!("/api/teams/{team}/undo"),
+            Some(json!({ "step": step - 1 })),
+        )
         .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    let undone = gm
+        .ok(
+            "POST",
+            &format!("/api/teams/{team}/undo"),
+            Some(json!({ "step": step })),
+        )
+        .await;
+    assert_eq!(
+        undone[0]["entry"],
+        json!({ "type": "undone", "batch": batch })
+    );
     assert_eq!(
         stress(&player.ok("GET", &format!("/api/teams/{team}"), None).await),
         4
@@ -627,6 +670,17 @@ async fn correction_and_undo() {
         stress(&player.ok("GET", &format!("/api/teams/{team}"), None).await),
         0
     );
+    // Stress −1 at 0 writes nothing: the step has no entries to name.
+    gm.command(
+        team,
+        json!({ "command": "change_stress", "actors": [actor], "delta": -1 }),
+    )
+    .await;
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(view["undo"]["step"].is_i64());
+    assert!(view["undo"]["batch"].is_null());
+    gm.ok("POST", &format!("/api/teams/{team}/undo"), None)
+        .await;
     let (status, _) = player
         .call("POST", &format!("/api/teams/{team}/undo"), None)
         .await;
@@ -1150,7 +1204,10 @@ async fn gear_outside_a_team() {
 }
 
 /// Buddy and rival: other player characters of the same team, not the
-/// same one; gone when one of them leaves (F-52) [p. 31].
+/// same one; gone when one of them leaves (F-52) [p. 31]. Until phase 4
+/// knows the time between sessions they change at any time (F-58)
+/// [p. 36]. The Campaign agenda is the owner's and the game master's
+/// (A-03).
 #[tokio::test]
 async fn buddy_and_rival() {
     let server = server("buddy").await;
@@ -1185,6 +1242,9 @@ async fn buddy_and_rival() {
         assert_eq!(status, StatusCode::BAD_REQUEST);
     }
     player
+        .ok("PUT", &path, Some(relations(json!(burke), Value::Null)))
+        .await;
+    player
         .ok("PUT", &path, Some(relations(Value::Null, json!(burke))))
         .await;
     // Saving texts leaves buddy and rival alone.
@@ -1205,6 +1265,15 @@ async fn buddy_and_rival() {
         .clone();
     assert_eq!(sheet["rival"], burke, "the game master sees the sheet");
     assert_eq!(sheet["agenda"], "Get home.");
+    let view = other.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let seen = view["characters"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["id"] == charlize)
+        .unwrap()
+        .clone();
+    assert!(seen["sheet"].is_null(), "not Burke's to see (A-03)");
 
     other
         .ok(
@@ -1361,12 +1430,20 @@ async fn outdated_corrections_are_refused() {
     assert_eq!(fresh["sources"].as_array().unwrap().len(), 1);
     let mut changed = fresh.clone();
     changed["stress"] = json!(3);
-    gm.ok(
-        "PUT",
-        &path,
-        Some(json!({ "actor": changed, "base": fresh })),
-    )
-    .await;
+    let entries = gm
+        .ok(
+            "PUT",
+            &path,
+            Some(json!({ "actor": changed, "base": fresh })),
+        )
+        .await;
+    // Before and after, for the game master only (plan 10.2, A-01).
+    assert_eq!(entries[1]["entry"]["type"], "changed");
+    assert_eq!(
+        entries[1]["entry"]["changes"],
+        json!([{ "path": "stress", "from": fresh["stress"], "to": 3 }])
+    );
+    assert_eq!(entries[1]["visible_to"], "gm");
     let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
     assert_eq!(view["characters"][0]["actor"]["stress"], 3);
     assert_eq!(
@@ -1561,6 +1638,7 @@ async fn choosing_and_handing_over() {
     let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
     let offered = find(&view, nat);
     assert_eq!(offered["offered"], true);
+    assert!(offered["prepared"].is_null(), "the game master's to know");
     assert!(
         offered["actor"].is_object(),
         "offered characters can be read"
@@ -1657,6 +1735,48 @@ async fn choosing_and_handing_over() {
     assert_eq!(view["story_points"][ann_id.to_string()], 1);
     assert_eq!(find(&view, nat)["agenda"], "Save the girl.");
 
+    // Whether Ann may spend a Story Point is hers and the game master's
+    // to see; for Bob it would tell that she has one.
+    let gm_view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let mut actor = find(&gm_view, nat)["actor"].clone();
+    actor["attributes"]["wits"] = json!(3);
+    gm.ok(
+        "PUT",
+        &format!("/api/teams/{team}/characters/{nat}"),
+        Some(json!({ "actor": actor })),
+    )
+    .await;
+    let (status, entries) = ann
+        .command(
+            team,
+            json!({ "command": "roll", "request": { "actor": nat.to_string(), "kind": { "skill": { "skill": "observation" } } } }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{entries}");
+    assert!(!entries.to_string().contains("story_point"), "{entries}");
+    // Players roll in the open: they decide on the push (A-02) [p. 60].
+    assert!(
+        entries
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|e| e["visible_to"] == "all")
+    );
+    let options = |view: &Value| view["pending"][0]["options"].to_string();
+    let view = ann.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(options(&view).contains("story_point"));
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(options(&view).contains("story_point"));
+    let view = bob.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert!(options(&view).contains("accept"));
+    assert!(!options(&view).contains("story_point"));
+    let pending = view["pending"][0]["id"].clone();
+    ann.command(
+        team,
+        json!({ "command": "decide", "pending": pending, "choice": "accept" }),
+    )
+    .await;
+
     // Story Points go to players of the team.
     let (status, _) = gm
         .command(
@@ -1712,6 +1832,39 @@ async fn choosing_and_handing_over() {
     assert_eq!(entries[0]["entry"]["type"], "member_left");
     let (status, _) = ann.call("GET", &format!("/api/teams/{team}"), None).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
+
+    // Bob leaves with the prepared Ripley: she goes back to the game
+    // master and stays in the team with her Agendas (A-12) [p. 26].
+    gm.ok(
+        "PUT",
+        &path(ripley, "agendas"),
+        Some(json!({ "agendas": ["Bring it home."] })),
+    )
+    .await;
+    // Bob also gets Nat; giving one back, he stays a member.
+    gm.ok("PUT", &path(nat, "owner"), Some(json!({ "owner": bob_id })))
+        .await;
+    let view = bob.ok("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(find(&view, ripley)["returns"], true);
+    let kinds = |entries: &Value| -> Vec<String> {
+        entries
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["entry"]["type"].as_str().unwrap().to_owned())
+            .collect()
+    };
+    let leave = |c: i64| format!("/api/teams/{team}/characters/{c}");
+    let entries = bob.ok("DELETE", &leave(nat), None).await;
+    assert_eq!(kinds(&entries), ["character_handed_over"]);
+    let entries = bob.ok("DELETE", &leave(ripley), None).await;
+    assert_eq!(kinds(&entries), ["character_handed_over", "member_left"]);
+    let (status, _) = bob.call("GET", &format!("/api/teams/{team}"), None).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let view = gm.ok("GET", &format!("/api/teams/{team}"), None).await;
+    let back = find(&view, ripley);
+    assert_eq!(back["owner_id"], gm_id);
+    assert_eq!(back["agendas"], json!(["Bring it home."]));
 }
 
 /// In Campaign play the game master does not take characters from

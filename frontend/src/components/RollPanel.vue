@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
 import XField from '@/ui/XField.vue'
-import { itemName, modsText } from '@/labels'
+import { itemName, modsText, refusal } from '@/labels'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
 
@@ -33,6 +33,13 @@ const preview = ref(null)
 const offers = ref({ talents: [], items: [] })
 const error = ref('')
 const target = ref(null)
+// A COMMAND roll can end someone else's panic (F-36) [p. 71, 104].
+const calming = ref('')
+const panicking = computed(() =>
+  (team.view.characters ?? []).filter((c) => c.panicking && c.id !== props.character.id),
+)
+// A panic that ended meanwhile is no longer a purpose.
+const calmed = computed(() => panicking.value.find((c) => String(c.id) === String(calming.value)))
 let timer = null
 
 // The situation in which a talent's bonus counts, from its rule data.
@@ -62,6 +69,9 @@ const request = computed(() => {
     kind: kinds[kind],
     modifiers,
     helpers: Number(helpers.value) || 0,
+    ...(kind === 'skill' && id === 'command' && calmed.value
+      ? { purpose: { stop_panic: { target: String(calmed.value.id) } } }
+      : {}),
     talents: talents.value,
     items: items.value,
   }
@@ -88,7 +98,7 @@ watch(
         error.value = ''
       } catch (e) {
         preview.value = null
-        error.value = e.message
+        error.value = refusal(e, t)
       }
     }, 150)
   },
@@ -106,7 +116,7 @@ async function send(command) {
     await team.command(command, note.value)
     emit('done')
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 
@@ -139,11 +149,19 @@ function perform(action) {
             >
               {{ rules.name(skill.id) }}
             </option>
-            <option :value="`attribute:${attribute.id}`">
+            <!-- An attribute alone has no Stress Dice (F-27): the game master's (A-08). -->
+            <option
+              v-if="team.view.is_gm"
+              :value="`attribute:${attribute.id}`"
+            >
               {{ t('roll.attributeOnly', { name: rules.name(attribute.id) }) }}
             </option>
           </optgroup>
-          <option value="death:">
+          <!-- The Broken and the fatally injured roll for their life, androids never [p. 99, 111]. -->
+          <option
+            v-if="(character.broken || character.fatally_injured) && !character.actor?.android"
+            value="death:"
+          >
             {{ t('roll.death') }}
           </option>
         </select>
@@ -180,6 +198,26 @@ function perform(action) {
           type="number"
           min="0"
         >
+      </XField>
+      <XField
+        v-if="what === 'skill:command' && panicking.length"
+        :label="t('roll.calm')"
+      >
+        <select
+          v-model="calming"
+          data-test="roll-calm"
+        >
+          <option value="">
+            –
+          </option>
+          <option
+            v-for="c in panicking"
+            :key="c.id"
+            :value="c.id"
+          >
+            {{ c.name }}
+          </option>
+        </select>
       </XField>
     </div>
     <XField :label="t('common.note')">

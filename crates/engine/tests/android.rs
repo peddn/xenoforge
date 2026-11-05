@@ -31,13 +31,7 @@ fn reveal_gives_stress_nearby() {
         }
     );
     assert!(!t.actor("holroyd").covert);
-    let candidates = ev
-        .iter()
-        .find_map(|e| match e {
-            Event::ChooseTargets { candidates, .. } => Some(candidates.clone()),
-            _ => None,
-        })
-        .unwrap();
+    let candidates = candidates(&t, &ev);
     assert_eq!(candidates, ["ann", "davis"], "humans only (F-39)");
     t.decide(&ev, Choice::Targets(vec!["davis".into()]), &[]);
     assert_eq!((t.actor("davis").stress, t.actor("ann").stress), (2, 0));

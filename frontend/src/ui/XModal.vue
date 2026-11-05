@@ -33,6 +33,7 @@ function backdrop(event) {
   >
     <XPanel
       :title="title"
+      sticky
       class="max-sm:min-h-full"
     >
       <template #actions>

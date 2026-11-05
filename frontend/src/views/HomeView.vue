@@ -9,6 +9,7 @@ import XPanel from '@/ui/XPanel.vue'
 import { get, post } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useCharactersStore } from '@/stores/characters'
+import { refusal } from '@/labels'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -37,7 +38,7 @@ async function createCharacter(name) {
     newCharacter.value = ''
     router.push(`/characters/${character.id}`)
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 
@@ -47,7 +48,7 @@ async function createTeam() {
     const team = await post('/teams', { name: newTeam.value, mode: newMode.value })
     router.push(`/teams/${team.id}`)
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 </script>

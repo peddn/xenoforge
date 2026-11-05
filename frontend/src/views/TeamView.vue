@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useCharactersStore } from '@/stores/characters'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
+import { refusal } from '@/labels'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -57,17 +58,25 @@ async function removeMember(member) {
     await del(`/teams/${team.view.id}/members/${member.id}`)
     await team.refresh()
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 const freeOwn = computed(() => characters.list.filter((c) => !c.team_id && c.data.status !== 'draft'))
 // Looked up live, so the dialog shows current values; it closes when the
-// character leaves the team or the decision is made.
+// character leaves the team, its values are no longer to be seen (an
+// offered character someone else chose) or the decision is made.
 const current = computed(() => {
   if (!dialog.value || !team.view) return null
   if (dialog.value.kind === 'decision') return team.view.pending.find((p) => p.id === dialog.value.id)
-  return team.view.characters.find((c) => c.id === dialog.value.id)
+  const character = team.view.characters.find((c) => c.id === dialog.value.id)
+  return character?.actor ? character : null
 })
+// Gone is gone: the dialog does not come back by itself, e.g. when the
+// character is offered again later.
+watch(current, (now) => {
+  if (dialog.value && !now) dialog.value = null
+})
+
 const title = computed(() => {
   const { kind } = dialog.value
   if (kind === 'decision') {
@@ -103,7 +112,7 @@ async function addOwn() {
     await characters.load()
     await team.refresh()
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 </script>

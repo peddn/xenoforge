@@ -28,6 +28,9 @@ export function originLabel(origin, t, rules) {
 
 /** What an open decision is about, e.g. "Roll: push or accept?". */
 export function decisionText(pending, t, rules) {
+  // Which roll waits, so two open rolls of one character differ.
+  const rolled = pending.roll?.skill ?? pending.roll?.attribute
+  if (pending.kind === 'roll' && rolled) return t('decision.rollOf', { what: rules.name(rolled) })
   if (['roll', 'start_roll', 'overkill'].includes(pending.kind)) return t(`decision.kind.${pending.kind}`)
   if (pending.question) return rules.text(pending.question)
   if (pending.who) return t('decision.targets', { who: t(`who.${pending.who}`) })
@@ -152,6 +155,34 @@ export function parseMoney(text, locale) {
   const cents = Number(whole.replaceAll(group, '') || 0) * 100 + Number(fraction.padEnd(2, '0'))
   if (!Number.isSafeInteger(cents)) return NaN
   return cents === 0 ? 0 : sign * cents
+}
+
+/** A value a correction changed, e.g. "Stress 1 → 3" (plan 10.2). */
+export function changeText(change, t, rules) {
+  const [group, key] = change.path.split('.')
+  const named = { health: 'sheet.health', stress: 'sheet.stress', talents: 'sheet.talents', android: 'sheet.android' }
+  let label = change.path
+  if ((group === 'attributes' || group === 'skills') && key) label = rules.name(key)
+  else if (group === 'supplies' && key) label = t(`supply.${key}`)
+  else if (named[group] && !key) label = t(named[group])
+  const value = (v) => {
+    if (v == null) return '–'
+    if (typeof v === 'boolean') return t(v ? 'choice.yes' : 'choice.no')
+    if (Array.isArray(v)) return v.length ? v.map((x) => (typeof x === 'string' ? rules.name(x) : JSON.stringify(x))).join(', ') : '–'
+    if (typeof v === 'object') return JSON.stringify(v)
+    return String(v)
+  }
+  return `${label} ${value(change.from)} → ${value(change.to)}`
+}
+
+/**
+ * An error to show: what the server refused, marked as such in the
+ * interface's language; its reason comes as the server gives it.
+ */
+export function refusal(error, t) {
+  // Not logged in and not found are no refusals.
+  const refused = error?.status >= 400 && error?.status < 500 && ![401, 404].includes(error.status)
+  return refused ? t('common.refused', { message: error.message }) : (error?.message ?? String(error))
 }
 
 /** The balance: the sum of the bookings, in cents. */

@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import XButton from '@/ui/XButton.vue'
 import XStatus from '@/ui/XStatus.vue'
-import { originLabel } from '@/labels'
+import { originLabel, refusal } from '@/labels'
 import { useAuthStore } from '@/stores/auth'
 import { useRulesStore } from '@/stores/rules'
 import { useTeamStore } from '@/stores/team'
@@ -19,6 +19,8 @@ const rules = useRulesStore()
 const team = useTeamStore()
 
 const mine = (c) => c.owner_id === auth.user?.id
+// Who already plays a character in the team takes no second one (A-12).
+const plays = computed(() => (team.view.characters ?? []).some(mine))
 const error = ref('')
 
 // A player takes an offered character; whoever comes first gets it (A-12).
@@ -28,7 +30,7 @@ async function claim(c) {
     await team.claim(c.id)
     await team.refresh()
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 // Story Points exist in Cinematic play only (F-06) and belong to the player.
@@ -70,7 +72,7 @@ const storyPoints = (c) => (c.owner_id === team.view.gm?.id ? '–' : (team.view
               class="mt-1 flex flex-wrap items-center gap-1"
             >
               <XButton
-                v-if="c.offered && !team.view.is_gm"
+                v-if="c.offered && !team.view.is_gm && !plays"
                 variant="highlight"
                 size="small"
                 :data-test="`claim-${c.id}`"

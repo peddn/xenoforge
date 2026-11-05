@@ -15,6 +15,7 @@ import { get, post } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useCharactersStore } from '@/stores/characters'
 import { useRulesStore } from '@/stores/rules'
+import { refusal } from '@/labels'
 
 // One's own character: a draft in the wizard, otherwise the sheet. Texts and
 // the agenda can always be edited (F-54). Values and gear only on a free
@@ -37,7 +38,7 @@ onMounted(async () => {
   try {
     character.value = await get(`/characters/${route.params.id}`)
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 })
 
@@ -47,7 +48,7 @@ async function save() {
     character.value = await store.save(character.value)
     message.value = t('common.saved')
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 
@@ -62,7 +63,7 @@ async function item(command) {
     character.value.encumbrance = saved.encumbrance
     return true
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
     return false
   }
 }
@@ -73,7 +74,7 @@ async function remove() {
     await store.remove(character.value.id)
     router.push('/')
   } catch (e) {
-    error.value = e.message
+    error.value = refusal(e, t)
   }
 }
 </script>
